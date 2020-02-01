@@ -470,9 +470,9 @@ def findTape(contours, image, centerX, centerY):
     # Seen vision targets (correct angle, adjacent to each other)
     targets = []
 
-    if len(contours) >= 2:
+    if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:2]
 
         cntHeight = 0
 
