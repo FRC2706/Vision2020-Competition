@@ -25,6 +25,9 @@ from networktables import NetworkTables
 from networktables.util import ntproperty
 import math
 
+#
+print('OpenCV version is', cv2.__version__)
+
 ########### SET RESOLUTION TO 256x144 !!!! ############
 
 # import the necessary packages
