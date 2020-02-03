@@ -291,6 +291,11 @@ def findTargets(frame, mask):
 
 # Finds the balls from the masked image and displays them on original stream + network tables
 def findPowerCell(frame, mask):
+
+    global networkTable
+    if networkTable.getBoolean("SendMask", False):
+        return mask
+
     # Finds contours
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     # Take each frame
@@ -1062,7 +1067,7 @@ if __name__ == "__main__":
                 # Checks if you just want camera for Cargo processing, by dent of everything else being false, true by default
                 #if (networkTable.getBoolean("Cargo", True)):
                 if switch != 3:
-                    print("find Power Cell")
+                    print("RL: find Power Cell")
                 switch = 3
                 #cap.autoExpose = True
                 boxBlur = blurImg(frame, yellow_blur)

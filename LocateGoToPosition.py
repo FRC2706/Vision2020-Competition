@@ -12,6 +12,10 @@ print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
 print()
 
+# input parameters
+distance_using_width = True
+camera_focal_length_in_pixels = 10
+
 # define colors
 purple = (165, 0, 120)
 blue = (255, 0, 0)
@@ -137,10 +141,6 @@ while(True):
     #-------------------------
 
     # Moment and Centroid
-    # RL took next line out
-    #cnt = contours[0]
-    #print(cnt)
-    #print('original',len(cnt),cnt)
     print('original contour length = ', len(cnt))
     M = cv2.moments(cnt)
     #print( M )
@@ -191,7 +191,7 @@ while(True):
     print('bounding rectangle aspect = ', float(w)/float(h))
     print('bounding rectangle extend = ', float(area)/(float(w)*float(h)))
 
-    # rotated rectangle
+    # minimum area rectangle (i.e. rotated)
     rect = cv2.minAreaRect(cnt)
     print('rotated rectangle = ',rect)
     (x,y),(width,height),angleofrotation = rect
@@ -201,6 +201,14 @@ while(True):
     if abs(height) > 0:
         print('minimum area rectangle aspect = ', float(width)/height)
         print('minimum area rectangle extent = ', float(area)/(width*height))
+
+    # estimate target distance from camera
+    d = 0.0
+    if (distance_using_width):
+        d = (camera_focal_length_in_pixels/float(width)) * target_width
+    else:
+        d = (camera_focal_length_in_pixels/float(width)) * target_width
+
 
     # minimum enclosing circle
     (x,y),radius = cv2.minEnclosingCircle(cnt)
