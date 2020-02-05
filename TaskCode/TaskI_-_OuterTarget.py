@@ -57,6 +57,7 @@ strImageFolder = str(strVisionRoot / 'OuterTargetHalfDistance')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
+#strImageFolder = str(strVisionRoot / 'OuterTargetLiger')
 
 print (strImageFolder)
 booBlankUpper = False
