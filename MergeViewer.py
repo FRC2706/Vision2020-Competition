@@ -42,6 +42,7 @@ green = (0, 255, 0)
 red = (0, 0, 255)
 cyan = (252, 252, 3)
 white = (255, 255, 255)
+magenta = (255, 0, 255)
 
 # counts frames for writing images
 frameStop = 0
@@ -63,8 +64,8 @@ def load_images_from_folder(folder):
             images.append(img)
     return images
 
-images = load_images_from_folder("./OuterTargetImages")
-#images = load_images_from_folder("./OuterTargetHalfScale")
+#images = load_images_from_folder("./OuterTargetImages")
+images = load_images_from_folder("./OuterTargetHalfScale")
 #images = load_images_from_folder("./PowerCell25Scale")
 #images = load_images_from_folder("./PowerCellImages")
 #images = load_images_from_folder("./PowerCellFullScale")
@@ -551,8 +552,6 @@ def findOuterTarget(frame, mask):
     centerX = (screenWidth / 2) - .5
     centerY = (screenHeight / 2) - .5
     # Finds contours
-    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-    #_, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
     if len(contours) == 0:
@@ -565,30 +564,20 @@ def findOuterTarget(frame, mask):
     print("Number of points in contour: ", len(cnt))
     cv2.drawContours(image, [cnt], -1, purple, 3)
 
-    #hull = cv2.convexHull(cnt)
-    #print('hull', hull)
-    #print('hull contour length = ', len(hull))
-    #cv2.drawContours(image, hull, -1, red, 5, lineType=8)
-
-    # Get the changes in angle for each hull point
-    #thetas = []
-    #for point in hull:
-    #    thetas.append(math.atan2(point[0][1], point[0][0]))
-    #print("thetas=", thetas)
-
     # Get the left, right, and bottom points
     # extreme points
     leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
     rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
     topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
     bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+
     # draw extreme points
 
     # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
     cv2.circle(image, leftmost, 3, green, -1)
     cv2.circle(image, rightmost, 3, red, -1)
-    #cv2.circle(image, topmost, 12, white, -1)
-    cv2.circle(image, bottommost, 3, blue, -1)
+    #cv2.circle(image, topmost, 3, white, -1)
+    cv2.circle(image, bottommost, 3, magenta, -1)
     print('extreme points', leftmost,rightmost,topmost,bottommost)
 
     # Calculate centroid
@@ -612,44 +601,65 @@ def findOuterTarget(frame, mask):
 
     # Run through all points in the contour, collecting points to build lines whose
     # intersection gives the fourth point.
-    num_points_to_collect = 20
-
+    topmost_index = leftmost_index = bottommost_index = rightmost_index = -1
     for i in range(len(cnt)):
         point = tuple(cnt[i][0])
         if (point == topmost):
-            t_ind = i
+            topmost_index = i
             print("Found topmost:", topmost, " at index ", i)
-        elif (point == leftmost):
+        if (point == leftmost):
             print("Found leftmost:", leftmost, " at index ", i)
             leftmost_index = i
-        elif (point == bottommost):
+        if (point == bottommost):
             print("Found bottommost:", bottommost, " at index ", i)
             bottommost_index = i
-        elif (point == rightmost):
+        if (point == rightmost):
             print("Found rightmost:", rightmost, " at index ", i)
             rightmost_index = i
 
+    if ((topmost_index == -1)   or (leftmost_index == -1) or 
+        (rightmost_index == -1) or (bottommost_index == -1)    ):
+        print ("Critical point(s) not found in contour")
+        return image
+
+    # In some cases, topmost and rightmost pixel will be the same so that index of
+    # rightmost pixel in contour will be zero (instead of near the end of the contour)
+    # To handle this case correctly and keep the code simple, set index of rightmost
+    # pixel to be the final one in the contour. (The corresponding point and the actual
+    # rightmost pixel will be very close.) 
+    if rightmost_index == 0:
+        rightmost_index = len(cnt-1)
+
     if bottommost_is_left == True:
         # Get set of points after bottommost
-        num_points_to_collect = int(0.25*(rightmost_index-leftmost_index))
+        num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
         print("num_points_to_collect=", num_points_to_collect)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
         line1_points = cnt[bottommost_index:bottommost_index+num_points_to_collect+1]
         # Get set of points before rightmost
-        num_points_to_collect = int(0.25*(bottommost_index-leftmost_index))
+        num_points_to_collect = max(int(0.25*(bottommost_index-leftmost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
         print("num_points_to_collect=", num_points_to_collect)
-        line2_points = cnt[rightmost_index-num_points_to_collect:rightmost_index+1]
+        line2_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
     else:
         # Get set of points after leftmost
-        num_points_to_collect = int(0.25*(rightmost_index-bottommost_index))
+        num_points_to_collect = max(int(0.25*(rightmost_index-bottommost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
         print("num_points_to_collect=", num_points_to_collect)
         line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
         # Get set of point before bottommost
-        num_points_to_collect = int(0.25*(rightmost_index-leftmost_index))
+        num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
         print("num_points_to_collect=", num_points_to_collect)
         line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
-
-    #print("line1_points=", line1_points)
-    #print("line2_points=", line2_points)
 
     x1 = [line1_points[i][0][0] for i in range(len(line1_points))]
     y1 = [line1_points[i][0][1] for i in range(len(line1_points))]
@@ -667,14 +677,6 @@ def findOuterTarget(frame, mask):
     int_point = tuple([int(xint), int(yint)])
     print("int_point=", int_point)
     cv2.circle(image, int_point, 3, white, -1)
-
-    # Get the four points
-    #corners = cv2.goodFeaturesToTrack(mask,25,0.01,10)
-    #corners = np.int0(corners)
-
-    #for i in corners:
-    #    x,y = i.ravel()
-        #cv2.circle(image,(x,y),3,255,-1)
 
     # Shows the contours overlayed on the original video
     return image
