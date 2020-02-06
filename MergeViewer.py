@@ -25,7 +25,27 @@ import math
 
 import os
 
-########### SET RESOLUTION TO 256x144 !!!! ############
+# from https://www.pyimagesearch.com/2015/08/10/checking-your-opencv-version-using-python/
+def is_cv3():
+    # if we are using OpenCV 3.X, then our cv2.__version__ will start
+    # with '3.'
+    return check_opencv_version("3.")
+ 
+def is_cv4():
+    # if we are using OpenCV 4.X, then our cv2.__version__ will start
+    # with '4.'
+    return check_opencv_version("4.")
+
+def check_opencv_version(major, lib=None):
+    # if the supplied library is None, import OpenCV
+    if lib is None:
+        import cv2 as lib
+    # return whether or not the current OpenCV version matches the
+    # major version number
+    return lib.__version__.startswith(major) 
+
+
+########### SET RESOLUTION TO 640x480 !!!! ############
 
 # import the necessary packages
 import datetime
@@ -42,7 +62,7 @@ ImageCounter = 0
 
 # Angles in radians
 
-# image size ratioed to 16:9
+# image size ratioed to 4:3
 
 
 # Lifecam 3000 from datasheet
@@ -56,16 +76,19 @@ def load_images_from_folder(folder):
             images.append(img)
     return images
 
-#images = load_images_from_folder("./OuterTargetImages")
-images = load_images_from_folder("./OuterTargetHalfScale")
-#images = load_images_from_folder("./OuterTargetSketchup")
+# Power Cell Images
 #images = load_images_from_folder("./PowerCell25Scale")
 #images = load_images_from_folder("./PowerCellImages")
 #images = load_images_from_folder("./PowerCellFullScale")
 #images = load_images_from_folder("./PowerCellFullMystery")
 #images = load_images_from_folder("./PowerCellSketchup")
-#images = load_images_from_folder("./PowerCellSketchup")
 #images = load_images_from_folder("./LifeCamPhotos")
+
+# Outer Target Images
+#images = load_images_from_folder("./OuterTargetImages")
+images = load_images_from_folder("./OuterTargetHalfScale")
+#images = load_images_from_folder("./OuterTargetHalfDistance")
+#images = load_images_from_folder("./OuterTargetSketchup")
 
 
 # finds height/width of camera frame (eg. 640 width, 480 height)
@@ -93,14 +116,14 @@ V_FOCAL_LENGTH = image_height / (2 * math.tan((verticalView / 2)))
 # blurs have to be odd
 green_blur = 1
 orange_blur = 27
-yellow_blur = 3
+yellow_blur = 1
 
 # define range of green of retroreflective tape in HSV
-lower_green = np.array([23, 50, 35])
-upper_green = np.array([85, 255, 255])
+lower_green = np.array([55, 55, 55])
+upper_green = np.array([100, 255, 255])
 
-lower_yellow = np.array([20, 35, 100])
-upper_yellow = np.array([60, 255, 255])
+lower_yellow = np.array([14, 150, 100])
+upper_yellow = np.array([30, 255, 255])
 
 switch = 1
 
@@ -186,10 +209,11 @@ def threshold_video(lower_color, upper_color, blur):
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):
 
-
     # Finds contours
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    #contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    if is_cv3():
+        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    else:
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
 
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
@@ -211,7 +235,11 @@ def findTargets(frame, mask):
 # Finds the balls from the masked image and displays them on original stream + network tables
 def findPowerCell(frame, mask):
     # Finds contours
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    if is_cv3():
+        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    else:
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+
     # Take each frame
     # Gets the shape of video
     screenHeight, screenWidth, _ = frame.shape
@@ -238,7 +266,7 @@ def findBall(contours, image, centerX, centerY):
 
     if len(contours) > 0:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:5]
         cntHeight = 0
         biggestPowerCell = []
         for cnt in cntsSorted:
@@ -246,8 +274,8 @@ def findBall(contours, image, centerX, centerY):
 
             #print("bounding rec height: " + str(h))
             #print("bounding rec width: " + str(w))
-            print("bounding rec x: " + str(y))
-            print("bounding rec y: " + str(x))
+            #print("bounding rec x: " + str(y))
+            #print("bounding rec y: " + str(x))
             print("bounding rec height: " + str(h))
             print("bounding rec width: " + str(w))
         
@@ -307,7 +335,7 @@ def findBall(contours, image, centerX, centerY):
 
                     # Appends important info to array
                     if [cx, cy, cnt, cntHeight] not in biggestPowerCell:
-                        biggestPowerCell.append([cx, cy, cnt, cntHeight])
+                        biggestPowerCell.append([cx, cy, cnt, cntHeight, aspect_ratio])
 
         # Check if there are PowerCell seen
         if (len(biggestPowerCell) > 0):
@@ -329,14 +357,15 @@ def findBall(contours, image, centerX, centerY):
 
             # draw extreme points
             # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
-            cv2.circle(image, leftmost, 12, (0,255,0), -1)
-            cv2.circle(image, rightmost, 12, (0,0,255), -1)
-            cv2.circle(image, topmost, 12, (255,255,255), -1)
-            cv2.circle(image, bottommost, 12, (255,0,0), -1)
-            print('extreme points', leftmost,rightmost,topmost,bottommost)
+            cv2.circle(image, leftmost, 6, (0,255,0), -1)
+            cv2.circle(image, rightmost, 6, (0,0,255), -1)
+            cv2.circle(image, topmost, 6, (255,255,255), -1)
+            cv2.circle(image, bottommost, 6, (255,0,0), -1)
+            #print('extreme points', leftmost,rightmost,topmost,bottommost)
 
             print("topmost: " + str(topmost[0]))
             print("bottommost: " + str(bottommost[0]))
+           
             #xCoord of the closest ball will be the x position differences between the topmost and 
             #bottom most points
             if (topmost[0] > bottommost[0]):
@@ -345,8 +374,10 @@ def findBall(contours, image, centerX, centerY):
                 xCoord = int(round((bottommost[0]-topmost[0])/2)+topmost[0])
 
             print(xCoord)
-            if (aspect_ratio > 0.9 and aspect_ratio < 1.1):
+            if (closestPowerCell[4] > 0.9 and closestPowerCell[4] < 1.2):
                 xCoord = closestPowerCell[0]
+
+            print ("aspect ratio of ball: " + str(closestPowerCell[4]))     
 
             finalTarget.append(calculateYaw(xCoord, centerX, H_FOCAL_LENGTH))
             finalTarget.append(calculateDistWPILib(closestPowerCell[3]))
@@ -354,9 +385,10 @@ def findBall(contours, image, centerX, centerY):
 
             # Puts the yaw on screen
             # Draws yaw of target + line where center of target is
+            finalYaw = round(finalTarget[1]*1000)/1000
             cv2.putText(image, "Yaw: " + str(finalTarget[0]), (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6,
                         (255, 255, 255))
-            cv2.putText(image, "Dist: " + str(finalTarget[1]), (40, 100), cv2.FONT_HERSHEY_COMPLEX, .6,
+            cv2.putText(image, "Dist: " + str(finalYaw), (40, 100), cv2.FONT_HERSHEY_COMPLEX, .6,
                         (255, 255, 255))
             cv2.line(image, (xCoord, screenHeight), (xCoord, 0), (255, 0, 0), 2)
 
@@ -580,9 +612,11 @@ def findTape(contours, image, centerX, centerY):
     # Seen vision targets (correct angle, adjacent to each other)
     targets = []
 
-    if len(contours) >= 2:
+    if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:2]
+
+        cntHeight = 0
 
        
         for cnt in cntsSorted:
@@ -832,7 +866,10 @@ def findTape(contours, image, centerX, centerY):
 # Finds the balls from the masked image and displays them on original stream + network tables
 def findControlPanel(frame, mask):
     # Finds contours
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    if is_cv3:
+        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    else:
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     # Take each frame
     # Gets the shape of video
     screenHeight, screenWidth, _ = frame.shape
@@ -865,7 +902,7 @@ def checkBall(cntSize, cntAspectRatio):
     #this checks that the area of the contour is greater than the image width divide by 2
     #And that the aspect ratio of the bounding rectangle (width / height) is close to 1 which 
     #is basically a circle however this would filter out 'tadpoles'
-    print ("aspect ratio of ball: " + str(cntAspectRatio)) 
+    
    # return (cntSize > (image_width / 2)) and (round(cntAspectRatio) > 1)
     return (cntSize > (image_width / 2)) and (cntAspectRatio > 0.75)
 
@@ -944,8 +981,6 @@ def calculateDistWPILib(cntHeight):
     # print("after 2: ", VIEWANGLE)
     # VIEWANGLE = math.radians(68.5)
     distance = ((TARGET_HEIGHT * image_height) / (2 * PIX_HEIGHT * math.tan(VIEWANGLE)))
-    # distance = ((0.02) * distance ** 2) + ((69/ 100) * distance) + (47 / 50)
-    # distance = ((-41/450) * distance ** 2) + ((149 / 100) * distance) - (9 / 25)
 
     return distance
 
@@ -1069,7 +1104,7 @@ while True:
     currentImg += 1
     print(imgLength)
 
-    if (currentImg == imgLength-1 ):
+    if (currentImg == imgLength):
          currentImg = 0
 
     img = images[currentImg]
