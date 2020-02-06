@@ -25,6 +25,9 @@ from networktables import NetworkTables
 from networktables.util import ntproperty
 import math
 
+#
+print('OpenCV version is', cv2.__version__)
+
 ########### SET RESOLUTION TO 256x144 !!!! ############
 
 # import the necessary packages
@@ -206,8 +209,8 @@ orange_blur = 27
 yellow_blur = 3
 
 # define range of green of retroreflective tape in HSV
-lower_green = np.array([40, 75, 75])
-upper_green = np.array([96, 255, 255])
+lower_green = np.array([55, 55, 55])
+upper_green = np.array([100, 255, 255])
 
 #lower_yellow = np.array([15, 205, 100])
 #upper_yellow = np.array([27, 255, 255])
@@ -467,9 +470,9 @@ def findTape(contours, image, centerX, centerY):
     # Seen vision targets (correct angle, adjacent to each other)
     targets = []
 
-    if len(contours) >= 2:
+    if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:2]
 
         cntHeight = 0
 
