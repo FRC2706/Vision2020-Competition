@@ -16,7 +16,8 @@ import time
 import sys
 from threading import Thread
 import random
-
+from scipy import stats
+from scipy.interpolate import UnivariateSpline
 
 import cv2
 import numpy as np
@@ -30,11 +31,17 @@ import os
 # import the necessary packages
 import datetime
 
+print("Using python version {0}".format(sys.version))
+print('OpenCV Version = ', cv2.__version__)
+print()
 
-# Class to examine Frames per second of camera stream. Currently not used.
-
-
-###################### PROCESSING OPENCV ################################
+# define colors
+purple = (165, 0, 120)
+blue = (255, 0, 0)
+green = (0, 255, 0)
+red = (0, 0, 255)
+cyan = (252, 252, 3)
+white = (255, 255, 255)
 
 # counts frames for writing images
 frameStop = 0
@@ -56,13 +63,13 @@ def load_images_from_folder(folder):
             images.append(img)
     return images
 
-#images = load_images_from_folder("./OuterTargetImages")
+images = load_images_from_folder("./OuterTargetImages")
 #images = load_images_from_folder("./OuterTargetHalfScale")
 #images = load_images_from_folder("./PowerCell25Scale")
 #images = load_images_from_folder("./PowerCellImages")
 #images = load_images_from_folder("./PowerCellFullScale")
 #images = load_images_from_folder("./PowerCellFullMystery")
-images = load_images_from_folder("./PowerCellSketchup")
+#images = load_images_from_folder("./PowerCellSketchup")
 #images = load_images_from_folder("./LifeCamPhotos")
 
 # finds height/width of camera frame (eg. 640 width, 480 height)
@@ -88,15 +95,9 @@ verticalView = math.atan(math.tan(diagonalView / 2) * (verticalAspect / diagonal
 H_FOCAL_LENGTH = image_width / (2 * math.tan((horizontalView / 2)))
 V_FOCAL_LENGTH = image_height / (2 * math.tan((verticalView / 2)))
 # blurs have to be odd
-green_blur = 1
+green_blur = 5
 orange_blur = 27
 yellow_blur = 1
-
-#colours
-purple = (165, 0, 120)
-blue = (255, 0, 0)
-green = (0, 255, 0)
-red = (0, 0, 255)
 
 # define range of green of retroreflective tape in HSV
 lower_green = np.array([40, 75, 75])
@@ -107,8 +108,8 @@ upper_yellow = np.array([30, 255, 255])
 
 # initialize some variable used later for user input
 color_is_yellow = True
-lower_color = lower_green
-upper_color = upper_green
+lower_color = lower_yellow
+upper_color = upper_yellow
 
 
 switch = 1
@@ -179,96 +180,6 @@ def findTargets(frame, mask):
     # Shows the contours overlayed on the original video
     return image
 
-
-#Rachel trying to figure out outer target
-def findOuterTarget(frame, mask):
-    # Take each frame
-    screenHeight, screenWidth, _ = frame.shape
-    centerX = (screenWidth / 2) - .5
-    centerY = (screenHeight / 2) - .5
-    strIm = "/Users/rachellucyshyn/Documents/GitHub/Vision2020-Competition/OuterTargetHalfScale/outer+10f+00d.jpg"
-    im = cv2.imread(strIm)
-    cv2.imshow('im', im)
-    cv2.waitKey(0)
-    size = im.shape
-    #mask
-    imgBinaryMask = cv2.inRange(im, lower_green, upper_green)
-    imgColorMask = cv2.bitwise_and(im,im, mask = imgBinaryMask) # frame = OG image
-    cv2.imshow('binary mask', imgBinaryMask)
-    cv2.imshow('color mask', imgColorMask)
-    #contours
-    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-
-    if len(contours) > 0:
-        # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
-        cntHeight = 0
-        cnt = contours[0]
-        print('original contour length = ', len(cnt))
-
-    else:
-        print('no contours found')
-        return
-
-
-    # extreme points
-    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
-    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
-    # draw extreme points
-    cv2.circle(imgShowMaths, leftmost, 12, red, -1)
-    cv2.circle(imgShowMaths, rightmost, 12, green, -1)
-    print('extreme points', leftmost,rightmost)
-    cv2.drawContours(imgShowMaths, cnt, -1, purple, 10)
-    cv2.imshow('imgShowMaths', imgShowMaths)
-
-    #2D image points. If you change the image, you need to change vector
-    image_points = np.array([
-                                (leftmost, rightmost),  
-                            ], dtype="double")
-    
-    # 3D model points.
-    model_points = np.array([
-                                (1, 1, 0.0),                            
-                            ])
-    
-    
-    # Camera internals
-    
-    focal_length = size[1]
-    center = (size[1]/2, size[0]/2)
-    camera_matrix = np.array(
-                            [[676.9254872329606, 0.0, 303.89220514146695],
-                            [0.0, 677.9589084754188, 226.64049249597682],
-                            [0, 0, 1]], dtype = "double"
-                            )
-    
-    print('Camera Matrix :\n {0}',format(camera_matrix))
-    
-    dist_coeffs = [0.16171387685839064, -0.9962959377099949, -4.1461568670164935e-05, 0.0015151549452291568, 1.2305006106358898]
-    (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.CV_ITERATIVE)
-    print(dist_coeffs)
-    print('Rotation Vector:\n {0}', format(rotation_vector))
-    print ('Translation Vector:\n {0}', format(translation_vector))
-    
-
-    
-    
-    #(nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
-    
-    for p in image_points:
-        cv2.circle(im, (int(p[0]), int(p[1])), 3, (0,0,255), -1)
-    
-    
-    p1 = ( int(image_points[0][0]), int(image_points[0][1]))
-    p2 = ( int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
-    
-    cv2.line(im, p1, p2, (255,0,0), 2)
-    
-    # Display image
-    cv2.imshow("Output", im)
-    cv2.waitKey(0)
-
-   
 
 # Finds the balls from the masked image and displays them on original stream + network tables
 def findPowerCell(frame, mask):
@@ -619,6 +530,156 @@ def findControlPanel(frame, mask):
     # Shows the contours overlayed on the original video
     return image
 
+# Finds curvature of a set of points
+def curvature(pts):
+    x = [pts[i][0][0] for i in range(len(pts))]
+    y = [pts[i][0][1] for i in range(len(pts))]
+    spl = UnivariateSpline(x, y)
+    curv = []
+    for i in range(len(x)):
+        derivs = spl.derivatives(x[i])
+        c = abs(derivs[1]*(1 + derivs[0]**2)**-1.5)
+        curv.append(c)
+    return(curv)
+
+
+# Finds the balls from the masked image and displays them on original stream + network tables
+def findOuterTarget(frame, mask):
+    # Gets the shape of video
+    screenHeight, screenWidth, _ = frame.shape
+    # Gets center of height and width
+    centerX = (screenWidth / 2) - .5
+    centerY = (screenHeight / 2) - .5
+    # Finds contours
+    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    #_, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+    if len(contours) == 0:
+        return frame
+
+    # Copies frame and stores it in image
+    image = frame.copy()
+
+    cnt = sorted(contours,key=cv2.contourArea, reverse=True)[0]
+    print("Number of points in contour: ", len(cnt))
+    cv2.drawContours(image, [cnt], -1, purple, 3)
+
+    #hull = cv2.convexHull(cnt)
+    #print('hull', hull)
+    #print('hull contour length = ', len(hull))
+    #cv2.drawContours(image, hull, -1, red, 5, lineType=8)
+
+    # Get the changes in angle for each hull point
+    #thetas = []
+    #for point in hull:
+    #    thetas.append(math.atan2(point[0][1], point[0][0]))
+    #print("thetas=", thetas)
+
+    # Get the left, right, and bottom points
+    # extreme points
+    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
+    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
+    topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
+    bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+    # draw extreme points
+
+    # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
+    cv2.circle(image, leftmost, 3, green, -1)
+    cv2.circle(image, rightmost, 3, red, -1)
+    #cv2.circle(image, topmost, 12, white, -1)
+    cv2.circle(image, bottommost, 3, blue, -1)
+    print('extreme points', leftmost,rightmost,topmost,bottommost)
+
+    # Calculate centroid
+    M = cv2.moments(cnt)
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    print('centroid = ',cx,cy)
+    cv2.line(image,(cx-10,cy-10),(cx+10,cy+10),red,2)
+    cv2.line(image,(cx-10,cy+10),(cx+10,cy-10),red,2)
+
+    # Determine if bottom point is to the left or right of target based on centroid
+    bottommost_is_left = False
+    if bottommost[0] < cx:
+        bottommost_is_left = True
+        print("bottommost is on the left")
+    else:
+        bottommost_is_left = False
+        print("bottommost is on the right") 
+
+    # Order of points in contour appears to be top, left, bottom, right
+
+    # Run through all points in the contour, collecting points to build lines whose
+    # intersection gives the fourth point.
+    num_points_to_collect = 20
+
+    for i in range(len(cnt)):
+        point = tuple(cnt[i][0])
+        if (point == topmost):
+            t_ind = i
+            print("Found topmost:", topmost, " at index ", i)
+        elif (point == leftmost):
+            print("Found leftmost:", leftmost, " at index ", i)
+            leftmost_index = i
+        elif (point == bottommost):
+            print("Found bottommost:", bottommost, " at index ", i)
+            bottommost_index = i
+        elif (point == rightmost):
+            print("Found rightmost:", rightmost, " at index ", i)
+            rightmost_index = i
+
+    if bottommost_is_left == True:
+        # Get set of points after bottommost
+        num_points_to_collect = int(0.25*(rightmost_index-leftmost_index))
+        print("num_points_to_collect=", num_points_to_collect)
+        line1_points = cnt[bottommost_index:bottommost_index+num_points_to_collect+1]
+        # Get set of points before rightmost
+        num_points_to_collect = int(0.25*(bottommost_index-leftmost_index))
+        print("num_points_to_collect=", num_points_to_collect)
+        line2_points = cnt[rightmost_index-num_points_to_collect:rightmost_index+1]
+    else:
+        # Get set of points after leftmost
+        num_points_to_collect = int(0.25*(rightmost_index-bottommost_index))
+        print("num_points_to_collect=", num_points_to_collect)
+        line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
+        # Get set of point before bottommost
+        num_points_to_collect = int(0.25*(rightmost_index-leftmost_index))
+        print("num_points_to_collect=", num_points_to_collect)
+        line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
+
+    #print("line1_points=", line1_points)
+    #print("line2_points=", line2_points)
+
+    x1 = [line1_points[i][0][0] for i in range(len(line1_points))]
+    y1 = [line1_points[i][0][1] for i in range(len(line1_points))]
+    m1, b1, r_value1, p_value1, std_err1 = stats.linregress(x1,y1)
+    print("m1=", m1, " b1=", b1)
+
+    x2 = [line2_points[i][0][0] for i in range(len(line2_points))]
+    y2 = [line2_points[i][0][1] for i in range(len(line2_points))]
+    m2, b2, r_value2, p_value2, std_err2 = stats.linregress(x2,y2)
+    print("m2=", m2, " b2=", b2)
+
+    xint = (b2-b1)/(m1-m2)
+    yint = m1*xint+b1
+    print("xint=", xint, " yint=", yint)
+    int_point = tuple([int(xint), int(yint)])
+    print("int_point=", int_point)
+    cv2.circle(image, int_point, 3, white, -1)
+
+    # Get the four points
+    #corners = cv2.goodFeaturesToTrack(mask,25,0.01,10)
+    #corners = np.int0(corners)
+
+    #for i in corners:
+    #    x,y = i.ravel()
+        #cv2.circle(image,(x,y),3,255,-1)
+
+    # Shows the contours overlayed on the original video
+    return image
+
+
 # Draws Contours and finds the colour the control panel wheel is resting at
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
@@ -779,7 +840,6 @@ currentImg = 0
 
 def draw_circle(event,x,y,flags,param):
 
-
     if event == cv2.EVENT_LBUTTONDOWN:
         green = np.uint8([[[img[y, x, 0], img[y, x, 1], img[y, x, 2]]]])
         print(x, y, img[y, x, 2], img[y, x, 1], img[y, x, 0], cv2.cvtColor(green,cv2.COLOR_BGR2HSV))
@@ -809,27 +869,27 @@ while True:
     else:
 
         if Tape:
-
             threshold = threshold_video(lower_green, upper_green, frame)
             processed = findTargets(frame, threshold)
-
         else:
             if PowerCell:
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
                 processed = findPowerCell(frame, threshold)
             elif ControlPanel:
-
                 boxBlur = blurImg(frame, yellow_blur)
                 # cv2.putText(frame, "Find Cargo", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, (255, 255, 255))
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)
                 processed = findControlPanel(frame, threshold)
             elif OuterTarget:
-                threshold = threshold_video(lower_green, upper_green, frame)
+                color_is_yellow = False
+                lower_color = lower_green
+                upper_color = upper_green
+                boxBlur = blurImg(frame, green_blur)
+                threshold = threshold_video(lower_green, upper_green, boxBlur)
                 processed = findOuterTarget(frame, threshold)
 
-
-    cv2.imshow("raw", im)
+    cv2.imshow("raw", img)
     cv2.imshow("threshold", threshold)
     cv2.imshow("processed", processed)
     cv2.setMouseCallback('raw', draw_circle)
@@ -953,16 +1013,11 @@ while True:
         print ("Unrecognized key: ", key)
 
 
-    if (currentImg == imgLength):
-         currentImg = 0
 
     #currentImg += 1
     #print(imgLength)
 
-    #if (currentImg == imgLength-1 ):
-    #     currentImg = 0
+    if (currentImg == imgLength):
+         currentImg = 0
 
     img = images[currentImg]
-
-
-

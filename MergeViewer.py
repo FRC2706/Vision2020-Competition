@@ -92,24 +92,12 @@ green_blur = 1
 orange_blur = 27
 yellow_blur = 1
 
-#colours
-purple = (165, 0, 120)
-blue = (255, 0, 0)
-green = (0, 255, 0)
-red = (0, 0, 255)
-
 # define range of green of retroreflective tape in HSV
 lower_green = np.array([40, 75, 75])
 upper_green = np.array([96, 255, 255])
 
 lower_yellow = np.array([14, 150, 100])
 upper_yellow = np.array([30, 255, 255])
-
-# initialize some variable used later for user input
-color_is_yellow = True
-lower_color = lower_green
-upper_color = upper_green
-
 
 switch = 1
 
@@ -161,7 +149,7 @@ def findTargets(frame, mask):
 
 
     # Finds contours
-    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
 
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
@@ -180,100 +168,10 @@ def findTargets(frame, mask):
     return image
 
 
-#Rachel trying to figure out outer target
-def findOuterTarget(frame, mask):
-    # Take each frame
-    screenHeight, screenWidth, _ = frame.shape
-    centerX = (screenWidth / 2) - .5
-    centerY = (screenHeight / 2) - .5
-    strIm = "/Users/rachellucyshyn/Documents/GitHub/Vision2020-Competition/OuterTargetHalfScale/outer+10f+00d.jpg"
-    im = cv2.imread(strIm)
-    cv2.imshow('im', im)
-    cv2.waitKey(0)
-    size = im.shape
-    #mask
-    imgBinaryMask = cv2.inRange(im, lower_green, upper_green)
-    imgColorMask = cv2.bitwise_and(im,im, mask = imgBinaryMask) # frame = OG image
-    cv2.imshow('binary mask', imgBinaryMask)
-    cv2.imshow('color mask', imgColorMask)
-    #contours
-    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-
-    if len(contours) > 0:
-        # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
-        cntHeight = 0
-        cnt = contours[0]
-        print('original contour length = ', len(cnt))
-
-    else:
-        print('no contours found')
-        return
-
-
-    # extreme points
-    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
-    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
-    # draw extreme points
-    cv2.circle(imgShowMaths, leftmost, 12, red, -1)
-    cv2.circle(imgShowMaths, rightmost, 12, green, -1)
-    print('extreme points', leftmost,rightmost)
-    cv2.drawContours(imgShowMaths, cnt, -1, purple, 10)
-    cv2.imshow('imgShowMaths', imgShowMaths)
-
-    #2D image points. If you change the image, you need to change vector
-    image_points = np.array([
-                                (leftmost, rightmost),  
-                            ], dtype="double")
-    
-    # 3D model points.
-    model_points = np.array([
-                                (1, 1, 0.0),                            
-                            ])
-    
-    
-    # Camera internals
-    
-    focal_length = size[1]
-    center = (size[1]/2, size[0]/2)
-    camera_matrix = np.array(
-                            [[676.9254872329606, 0.0, 303.89220514146695],
-                            [0.0, 677.9589084754188, 226.64049249597682],
-                            [0, 0, 1]], dtype = "double"
-                            )
-    
-    print('Camera Matrix :\n {0}',format(camera_matrix))
-    
-    dist_coeffs = [0.16171387685839064, -0.9962959377099949, -4.1461568670164935e-05, 0.0015151549452291568, 1.2305006106358898]
-    (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.CV_ITERATIVE)
-    print(dist_coeffs)
-    print('Rotation Vector:\n {0}', format(rotation_vector))
-    print ('Translation Vector:\n {0}', format(translation_vector))
-    
-
-    
-    
-    #(nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
-    
-    for p in image_points:
-        cv2.circle(im, (int(p[0]), int(p[1])), 3, (0,0,255), -1)
-    
-    
-    p1 = ( int(image_points[0][0]), int(image_points[0][1]))
-    p2 = ( int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
-    
-    cv2.line(im, p1, p2, (255,0,0), 2)
-    
-    # Display image
-    cv2.imshow("Output", im)
-    cv2.waitKey(0)
-
-   
-
 # Finds the balls from the masked image and displays them on original stream + network tables
 def findPowerCell(frame, mask):
     # Finds contours
-    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     # Take each frame
     # Gets the shape of video
     screenHeight, screenWidth, _ = frame.shape
@@ -782,14 +680,13 @@ def draw_circle(event,x,y,flags,param):
 
     if event == cv2.EVENT_LBUTTONDOWN:
         green = np.uint8([[[img[y, x, 0], img[y, x, 1], img[y, x, 2]]]])
-        print(x, y, img[y, x, 2], img[y, x, 1], img[y, x, 0], cv2.cvtColor(green,cv2.COLOR_BGR2HSV))
+        print(img[y, x, 2], img[y, x, 1], img[y, x, 0], cv2.cvtColor(green,cv2.COLOR_BGR2HSV))
 
 
 Driver = False
 Tape = False
-PowerCell = False
+PowerCell = True
 ControlPanel = False
-OuterTarget = True
 
 
 img = images[0]
@@ -824,145 +721,21 @@ while True:
                 # cv2.putText(frame, "Find Cargo", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, (255, 255, 255))
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)
                 processed = findControlPanel(frame, threshold)
-            elif OuterTarget:
-                threshold = threshold_video(lower_green, upper_green, frame)
-                processed = findOuterTarget(frame, threshold)
 
-
-    cv2.imshow("raw", im)
-    cv2.imshow("threshold", threshold)
+    cv2.imshow("raw", img)
     cv2.imshow("processed", processed)
     cv2.setMouseCallback('raw', draw_circle)
 
     key = cv2.waitKey(0)
     print(key) 
 
-    if key == 27: # <ESC> user wants to exit
+    if key == 27:
         break
-    elif key == 112: # 'p' previous image
-        if currentImg - 1 < 0:
-            currentImg = imgLength - 1
-        else:
-            currentImg = currentImg - 1
-    elif key == 110: # 'n' next image
-        if currentImg + 1 > imgLength - 1:
-            currentImg = 0
-        else:
-            currentImg = currentImg + 1
 
-    elif key == 104: # 'h' decrease lower hue
-        if (lower_color[0] > 0):
-            lower_color[0] = lower_color[0] - 1;
-        print()
-        print('Lower hue: ', lower_color[0])
-    elif key == 72: # 'H' increase lower hue
-        if (lower_color[0] < upper_color[0]):
-            lower_color[0] = lower_color[0] + 1;
-        print()
-        print('Lower hue: ', lower_color[0])
-    elif key == 106: # 'j' decrease upper hue
-        if (upper_color[0] > lower_color[0]):
-            upper_color[0] = upper_color[0] - 1;
-        print()
-        print('Upper hue: ', upper_color[0])
-    elif key == 74: # 'J' increase upper hue
-        if (upper_color[0] < 255):
-            upper_color[0] = upper_color[0] + 1;
-        print()
-        print('Upper hue: ', upper_color[0])
-
-
-    elif key == 115: # 's' decrease lower saturation
-        if (lower_color[1] > 0):
-            lower_color[1] = lower_color[1] - 1;
-        print()
-        print('Lower saturation: ', lower_color[1])
-    elif key == 83: # 'S' increase lower saturation
-        if (lower_color[1] < upper_color[1]):
-            lower_color[1] = lower_color[1] + 1;
-        print()
-        print('Lower saturation: ', lower_color[1])
-    elif key == 100: # 'd' decrease upper saturation
-        if (upper_color[1] > lower_color[1]):
-            upper_color[1] = upper_color[1] - 1;
-        print()
-        print('Upper saturation: ', upper_color[1])
-    elif key == 68: # 'D' increase upper saturation
-        if (upper_color[1] < 255):
-            upper_color[1] = upper_color[1] + 1;
-        print()
-        print('Upper saturation: ', upper_color[1])
-
-
-    elif key == 118: # 'v' decrease lower hue value
-        if (lower_color[2] > 0):
-            lower_color[2] = lower_color[2] - 1;
-        print()
-        print('Lower value: ', lower_color[2])
-    elif key == 86: # 'V' increase lower hue value
-        if (lower_color[2] < upper_color[2]):
-            lower_color[2] = lower_color[2] + 1;
-        print()
-        print('Lower value: ', lower_color[2])
-    elif key == 98: # 'b' decrease upper hue value
-        if (upper_color[2] > lower_color[2]):
-            upper_color[2] = upper_color[2] - 1;
-        print()
-        print('Upper value: ', upper_color[2])
-    elif key == 66: # 'B' increase upper hue value
-        if (upper_color[2] < 255):
-            upper_color[2] = upper_color[2] + 1
-        print()
-        print('Upper value: ', upper_color[2])
-
-    elif key == 109: # 'm' print hue, saturation, value bounds for mask
-        print()
-        print('Color bounds for ')
-        if color_is_yellow == True:
-            print('YELLOW:')
-        else:
-            print('GREEN:')
-        print('Hue:        [', lower_color[0], ',', upper_color[1], ']')
-        print('Saturation: [', lower_color[1], ',', upper_color[1], ']')
-        print('Value:      [', lower_color[2], ',', upper_color[2], ']')
-
-    elif key == 99: # 'c' toogle between yellow and green
-        color_is_yellow = not(color_is_yellow)
-        if color_is_yellow == True: # yellow
-            lower_color = lower_yellow
-            upper_color = upper_yellow
-        else: # green
-            lower_color = lower_green
-            upper_color = upper_green
-        print()
-        print('color_is_yellow: ', color_is_yellow)
-
-
-    elif key == 107: # 'k'
-        #intMaskMethod = 1
-        print()
-        print('To be implemented')
-    elif key == 109: # 'm'
-        #intMaskMethod = 2
-        print()
-        print('To be implemented')
-    elif key == 32: # space
-        print()
-        print('...repeat...')
-    else:
-        print ("Unrecognized key: ", key)
-
+    currentImg += 1
+    print(imgLength)
 
     if (currentImg == imgLength):
          currentImg = 0
 
-    #currentImg += 1
-    #print(imgLength)
-
-    #if (currentImg == imgLength-1 ):
-    #     currentImg = 0
-
     img = images[currentImg]
-
-
-
