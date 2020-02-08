@@ -789,15 +789,15 @@ def get_four_points(cnt):
         point = tuple(cnt[i][0])
         if (point == topmost):
             topmost_index = i
-            print("Found topmost:", topmost, " at index ", i)
+            #print("Found topmost:", topmost, " at index ", i)
         if (point == leftmost):
-            print("Found leftmost:", leftmost, " at index ", i)
+            #print("Found leftmost:", leftmost, " at index ", i)
             leftmost_index = i
         if (point == bottommost):
-            print("Found bottommost:", bottommost, " at index ", i)
+            #print("Found bottommost:", bottommost, " at index ", i)
             bottommost_index = i
         if (point == rightmost):
-            print("Found rightmost:", rightmost, " at index ", i)
+            #print("Found rightmost:", rightmost, " at index ", i)
             rightmost_index = i
 
     if ((topmost_index == -1)   or (leftmost_index == -1) or 
