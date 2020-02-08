@@ -25,6 +25,9 @@ from networktables import NetworkTables
 from networktables.util import ntproperty
 import math
 
+#
+print('OpenCV version is', cv2.__version__)
+
 ########### SET RESOLUTION TO 256x144 !!!! ############
 
 # import the necessary packages
@@ -206,8 +209,8 @@ orange_blur = 27
 yellow_blur = 3
 
 # define range of green of retroreflective tape in HSV
-lower_green = np.array([40, 75, 75])
-upper_green = np.array([96, 255, 255])
+lower_green = np.array([55, 55, 55])
+upper_green = np.array([100, 255, 255])
 
 #lower_yellow = np.array([15, 205, 100])
 #upper_yellow = np.array([27, 255, 255])
@@ -215,9 +218,57 @@ upper_green = np.array([96, 255, 255])
 lower_yellow = np.array([14, 150, 100])
 upper_yellow = np.array([30, 255, 255])
 
-
-
 switch = 1
+
+# These are the full dimensions around both strips
+TARGET_STRIP_LENGTH = 19.625    # inches
+TARGET_HEIGHT = 17.0            # inches@!
+TARGET_TOP_WIDTH = 39.25        # inches
+TARGET_BOTTOM_WIDTH = TARGET_TOP_WIDTH - 2*TARGET_STRIP_LENGTH*math.cos(math.radians(60))
+
+#This is the X position difference between the upper target length and corner point
+TARGET_BOTTOM_CORNER_WIDTH = math.sqrt(math.pow(TARGET_STRIP_LENGTH,2) - math.pow(TARGET_HEIGHT,2))
+
+# [0, 0] is center of the quadrilateral drawn around the high goal target
+# [top_left, bottom_left, bottom_right, top_right]
+# real_world_coordinates = np.array([
+#     [-TARGET_TOP_WIDTH / 2, TARGET_HEIGHT / 2, 0.0],
+#     [-TARGET_BOTTOM_WIDTH / 2, -TARGET_HEIGHT / 2, 0.0],
+#     [TARGET_BOTTOM_WIDTH / 2, -TARGET_HEIGHT / 2, 0.0],
+#     [TARGET_TOP_WIDTH / 2, TARGET_HEIGHT / 2, 0.0]
+# ])
+
+
+# real_world_coordinates = np.array([
+#     [-TARGET_TOP_WIDTH / 2, TARGET_HEIGHT / 2, 0.0],
+#     [-TARGET_BOTTOM_WIDTH / 2, -TARGET_HEIGHT / 2, 0.0],
+#     [TARGET_BOTTOM_WIDTH / 2, -TARGET_HEIGHT / 2, 0.0],
+#     [TARGET_TOP_WIDTH / 2, TARGET_HEIGHT / 2, 0.0]
+# ])
+
+#top_left, top_right, bottom_left, bottom_right
+real_world_coordinates = np.array([
+        [0.0, 0.0, 0.0],             # Top Left point
+        [TARGET_TOP_WIDTH, 0.0, 0.0],           # Top Right Point
+        [TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0],            # Bottom Left point
+        [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]          # Bottom Right point
+    ])
+
+real_world_coordinates_left = np.array([
+        [0.0, 0.0, 0.0],             # Top Left point
+        [TARGET_TOP_WIDTH, 0.0, 0.0],           # Top Right Point
+        [TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0],         # Bottom Left point
+        [TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]          # Bottom Left point
+    ])
+
+real_world_coordinates_right = np.array([
+        [0.0, 0.0, 0.0],             # Top Left point
+        [TARGET_TOP_WIDTH, 0.0, 0.0],           # Top Right Point
+        [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0],    # Bottom Left point
+        [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]     # Bottom Right point
+    ])    
+
+
 
 
 # Flip image if camera mounted upside down
@@ -459,197 +510,185 @@ def findBall(contours, image, centerX, centerY):
 
 
 
+def order_points(pts):
+    # initialize a list of coordinates that will be ordered
+    # such that the first entry in the list is the top-left,
+    # the second entry is the top-right, the third is the
+    # bottom-right, and the fourth is the bottom-left
+    rect = np.zeros((4, 2), dtype="float32")
+ 
+    # the top-left point will have the smallest sum, whereas
+    # the bottom-right point will have the largest sum
+    s = pts.sum(axis=1)
+    rect[0] = pts[np.argmin(s)]
+    rect[3] = pts[np.argmax(s)]
+ 
+    # now, compute the difference between the points, the
+    # top-right point will have the smallest difference,
+    # whereas the bottom-left will have the largest difference
+    diff = np.diff(pts, axis=1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[2] = pts[np.argmax(diff)]
+ 
+    # return the ordered coordinates
+    return rect
+
+ #3D Rotation estimation
+def findTvecRvec(image, outer_corners, real_world_coordinates):
+    # Read Image
+    size = image.shape
+ 
+    # Camera internals
+ 
+    focal_length = size[1]
+    center = (size[1]/2, size[0]/2)
+    # camera_matrix = np.array(
+    #                      [[H_FOCAL_LENGTH, 0, center[0]],
+    #                      [0, V_FOCAL_LENGTH, center[1]],
+    #                      [0, 0, 1]], dtype = "double"
+    #                      )
+
+
+    dist_coeffs = np.array([[0.16171335604097975, -0.9962921370737408, -4.145368586842373e-05, 
+                             0.0015152030328047668, 1.230483016701437]])
+
+    camera_matrix = np.array([[676.9254672222575, 0.0, 303.8922263320326], 
+                              [0.0, 677.958895098853, 226.64055316186037], 
+                              [0.0, 0.0, 1.0]], dtype = "double")
+
+    print("Camera Matrix :\n {0}".format(camera_matrix))                           
+ 
+    #dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
+    (success, rotation_vector, translation_vector) = cv2.solvePnP(real_world_coordinates, outer_corners, camera_matrix, dist_coeffs)
+ 
+    #print ("Rotation Vector:\n {0}".format(rotation_vector))
+    #print ("Translation Vector:\n {0}".format(translation_vector))
+    return success, rotation_vector, translation_vector
+
+
+#Computer the final output values, 
+#angle 1 is the Yaw to the target
+#distance is the distance to the target
+#angle 2 is the Yaw of the Robot to the target
+def compute_output_values(rvec, tvec):
+    '''Compute the necessary output distance and angles'''
+
+    # The tilt angle only affects the distance and angle1 calcs
+    # This is a major impact on calculations
+    tilt_angle = math.radians(35)
+
+    x = tvec[0][0]
+    z = math.sin(tilt_angle) * tvec[1][0] + math.cos(tilt_angle) * tvec[2][0]
+
+    # distance in the horizontal plane between camera and target
+    distance = math.sqrt(x**2 + z**2)
+
+    # horizontal angle between camera center line and target
+    angleInRad = math.atan2(x, z)
+    angle1 = math.degrees(angleInRad)
+
+    rot, _ = cv2.Rodrigues(rvec)
+    rot_inv = rot.transpose()
+    pzero_world = np.matmul(rot_inv, -tvec)
+    angle2 = math.atan2(pzero_world[0][0], pzero_world[2][0])
+
+    return distance, angle1, angle2
+
+
+# Draws Contours and finds center and yaw of vision targets
+# centerX is center x coordinate of image
+# centerY is center y coordinate of image
 # Draws Contours and finds center and yaw of vision targets
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
 def findTape(contours, image, centerX, centerY):
+
+    #global warped
     screenHeight, screenWidth, channels = image.shape
     # Seen vision targets (correct angle, adjacent to each other)
     targets = []
 
-    if len(contours) >= 2:
+    if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
-
-        cntHeight = 0
-
-        biggestCnts = []
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
+       
         for cnt in cntsSorted:
-            # Get moments of contour; mainly for centroid
-            M = cv2.moments(cnt)
-            # Get convex hull (bounding polygon on contour)
+            x, y, w, h = cv2.boundingRect(cnt)
+            cv2.rectangle(image,(x,y),(x+w,y+h),(0,255,0),2)
+
+            # rotated rectangle
+            rect = cv2.minAreaRect(cnt)
+            #print('rotated rectangle = ',rect)
+            (x,y),(width,height),angleofrotation = rect
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            cv2.drawContours(image,[box],0,(255,0,0),2)
+            #print("box points: " + str(box))
+
             hull = cv2.convexHull(cnt)
-            # Calculate Contour area
-            cntArea = cv2.contourArea(cnt)
-            # calculate area of convex hull
-            hullArea = cv2.contourArea(hull)
+            #print('hull', hull)
+            print('hull contour length = ', len(hull))
+            #cv2.drawContours(image, [hull], -1, (0,0,255), cv2.FILLED)
+            #cv2.imshow('hull over yellow mask', imgContours)
+            hull_area = cv2.contourArea(hull)
+            #print('solidity from convex hull', float(area)/hull_area)
 
+            # extreme points
+            leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
+            rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
+            topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
+            bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
 
-
-            x, y, w, cntHeight = cv2.boundingRect(cnt)
-
-
-
-            pts, dim, a = cv2.minAreaRect(cnt)
-
-            x = pts[0]
-            y = pts[1]
-
-            if dim[0] > dim[1]:
-                cntHeight = dim[0]
-            else:
-                cntHeight = dim[1]
-
-
-
-
-            #print("The contour height is, ", cntHeight)
-            # Filters contours based off of size
-            if (checkContours(cntArea, hullArea)):
-                ### MOSTLY DRAWING CODE, BUT CALCULATES IMPORTANT INFO ###
-                # Gets the centeroids of contour
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                    theCX = cx
-                    theCY = cy
-                else:
-                    cx, cy = 0, 0
-                if (len(biggestCnts) < 13):
-                    #### CALCULATES ROTATION OF CONTOUR BY FITTING ELLIPSE ##########
-                    rotation = getEllipseRotation(image, cnt)
-
-                    # Calculates yaw of contour (horizontal position in degrees)
-                    yaw = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
-                    # Calculates yaw of contour (horizontal position in degrees)
-                    pitch = calculatePitch(cy, centerY, V_FOCAL_LENGTH)
-                    # Calculates Distance
-                    dist = calculateDistance(1, 2, pitch);
-
-                    ##### DRAWS CONTOUR######
-                    # Gets rotated bounding rectangle of contour
-                    rect = cv2.minAreaRect(cnt)
-                    # Creates box around that rectangle
-                    box = cv2.boxPoints(rect)
-                    # Not exactly sure
-                    box = np.int0(box)
-                    # Draws rotated rectangle
-
-                    cv2.drawContours(image, [box], 0, (23, 184, 80), 3)
-
-                    # Calculates yaw of contour (horizontal position in degrees)
-                    yaw = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
-                    # Calculates yaw of contour (horizontal position in degrees)
-                    pitch = calculatePitch(cy, centerY, V_FOCAL_LENGTH)
-                    # Calculates Distance
-                    dist = calculateDistance(1, 2, pitch);
-
-                    # Draws a vertical white line passing through center of contour
-                    cv2.line(image, (cx, screenHeight), (cx, 0), (255, 255, 255))
-                    # Draws a white circle at center of contour
-                    cv2.circle(image, (cx, cy), 6, (255, 255, 255))
-
-                    # Draws the contours
-                    cv2.drawContours(image, [cnt], 0, (23, 184, 80), 1)
-
-                    # Gets the (x, y) and radius of the enclosing circle of contour
-                    (x, y), radius = cv2.minEnclosingCircle(cnt)
-                    # Rounds center of enclosing circle
-                    center = (int(x), int(y))
-                    # Rounds radius of enclosning circle
-                    radius = int(radius)
-                    # Makes bounding rectangle of contour
-                    rx, ry, rw, rh = cv2.boundingRect(cnt)
-                    boundingRect = cv2.boundingRect(cnt)
-                    # Draws countour of bounding rectangle and enclosing circle in green
-                    cv2.rectangle(image, (rx, ry), (rx + rw, ry + rh), (23, 184, 80), 1)
-
-                    cv2.circle(image, center, radius, (23, 184, 80), 1)
-
-                    # Appends important info to array
-                    if [cx, cy, rotation, cnt, cntHeight] not in biggestCnts:
-                        biggestCnts.append([cx, cy, rotation, cnt, cntHeight])
-
-        # Sorts array based on coordinates (leftmost to rightmost) to make sure contours are adjacent
-        biggestCnts = sorted(biggestCnts, key=lambda x: x[0])
-        # Target Checking
-        for i in range(len(biggestCnts) - 1):
-            # Rotation of two adjacent contours
-            tilt1 = biggestCnts[i][2]
-            tilt2 = biggestCnts[i + 1][2]
-
-            # x coords of contours
-            cx1 = biggestCnts[i][0]
-            cx2 = biggestCnts[i + 1][0]
-
-            cy1 = biggestCnts[i][1]
-            cy2 = biggestCnts[i + 1][1]
-            # If contour angles are opposite
-            if (np.sign(tilt1) != np.sign(tilt2)):
-                centerOfTarget = math.floor((cx1 + cx2) / 2)
-                # ellipse negative tilt means rotated to right
-                # Note: if using rotated rect (min area rectangle)
-                #      negative tilt means rotated to left
-                # If left contour rotation is tilted to the left then skip iteration
-                if (tilt1 > 0):
-                    if (cx1 < cx2):
-                        continue
-                # If left contour rotation is tilted to the left then skip iteration
-                if (tilt2 > 0):
-                    if (cx2 < cx1):
-                        continue
-                # Angle from center of camera to target (what you should pass into gyro)
-                yawToTarget = calculateYaw(centerOfTarget, centerX, H_FOCAL_LENGTH)
-                pitchToTarget = calculatePitch(theCY, centerY, H_FOCAL_LENGTH)
-                # distToTarget = calculateDistance(1, 2, pitchToTarget)
-                distToTarget = calculateDistWPILib(biggestCnts[i][4])
-                # Make sure no duplicates, then append
-                if [centerOfTarget, yawToTarget, distToTarget] not in targets:
-                    targets.append([centerOfTarget, yawToTarget, distToTarget])
-    # Check if there are targets seen
-    if (len(targets) > 0):
-        # pushes that it sees vision target to network tables
-        global fps
-        networkTable.putBoolean("tapeDetected", True)
-        # Sorts targets based on x coords to break any angle tie
-        targets.sort(key=lambda x: math.fabs(x[0]))
-        finalTarget = min(targets, key=lambda x: math.fabs(x[1]))
-        # Puts the yaw on screen
-        # Draws yaw of target + line where center of target is
-        cv2.putText(image, "Yaw: " + str(finalTarget[1]), (40, 40), cv2.FONT_HERSHEY_COMPLEX, .5,
-                    (255, 255, 255))
-        cv2.putText(image, "Dist: " + str(finalTarget[2]), (40, 90), cv2.FONT_HERSHEY_COMPLEX, .5,
-                    (255, 255, 255))
-        cv2.putText(image, "Time: " + str(fps.elapsed()), (40, 140), cv2.FONT_HERSHEY_COMPLEX, .5,
-                    (255, 255, 255))
-        cv2.line(image, (finalTarget[0], screenHeight), (finalTarget[0], 0), (255, 0, 0), 2)
-
-        currentAngleError = finalTarget[1]
-        # pushes vision target angle to network tables
-        networkTable.putNumber("tapeYaw", currentAngleError)
-        if finalTarget[2] < 6 and finalTarget[2] > 3:
-            if currentAngleError > -(10 - finalTarget[2]) and currentAngleError < (10 - finalTarget[2]):
-
-                networkTable.putBoolean("Aligned", True)
+            bottomIsLeft = True
+            #check if bottommost is closest to right or left
+            if (abs(bottommost[0]-leftmost[0]) > abs(bottommost[0]-rightmost[0])):
+                print("bottom most is right")
+                bottomIsLeft = False
 
             else:
+                 print("bottom most is left")
 
-                networkTable.putBoolean("Aligned", False)
-        else:
-            networkTable.putBoolean("Aligned", False)
+            # draw extreme points
+            # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
+            cv2.circle(image, leftmost, 6, (0,255,0), -1)
+            cv2.circle(image, rightmost, 6, (0,0,255), -1)
+            cv2.circle(image, topmost, 6, (255,255,255), -1)
+            cv2.circle(image, bottommost, 6, (255,0,0), -1)
+            #print('extreme points', leftmost,rightmost,topmost,bottommost)
 
+    
+            #Set up the 3 points to map to the real world coordinates
+            outer_corners = np.array([leftmost, rightmost, bottommost, bottommost], dtype="double")
+            print("points: " + str(outer_corners))
 
-        # pushes distance to network table
-        networkTable.putNumber("distance", finalTarget[2])
+           #sorted_corners = order_points(outer_corners)
+            #print("sorted corners: " + str(sorted_corners))
 
-        vectorCameraToTarget = ntproperty('/PathFinder/vectorCameraToTarget',[currentAngleError,finalTarget[2]])
-        # networkTable.putNumber("vectorCameraToTarget",[currentAngleError,finalTarget[2]])
-    else:
-        # pushes that it deosn't see vision target to network tables
-        networkTable.putBoolean("tapeDetected", False)
+            if (bottomIsLeft):
+                success, rvec, tvec = findTvecRvec(image, outer_corners, real_world_coordinates_left) 
+            else:
+                success, rvec, tvec = findTvecRvec(image, outer_corners, real_world_coordinates_right) 
 
-    cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), (255, 255, 255), 2)
+            #Calculate the Yaw
+            M = cv2.moments(cnt)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+            else:
+                cx, cy = 0, 0
 
+            YawToTarget = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
+            
+            # If success then print values to screen                               
+            if success:
+                distance, angle1, angle2 = compute_output_values(rvec, tvec)
+                cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
+                cv2.putText(image, "Distance: " + str(distance/12), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
+                #cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
+                cv2.line(image, (cx, screenHeight), (cx, 0), (255, 0, 0), 2)
+                cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), (255, 255, 255), 2)
+
+    #     # pushes vision target angle to network table
     return image
 
 # Finds the balls from the masked image and displays them on original stream + network tables
