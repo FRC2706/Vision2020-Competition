@@ -844,9 +844,9 @@ def get_four_points(cnt):
         #print("num_points_to_collect=", num_points_to_collect)
         line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
 
-    x1 = [line1_points[i][0][0] for i in range(len(line1_points))]
-    y1 = [line1_points[i][0][1] for i in range(len(line1_points))]
-    m1, b1, r_value1, p_value1, std_err1 = stats.linregress(x1,y1)
+    #x1 = [line1_points[i][0][0] for i in range(len(line1_points))]
+    #y1 = [line1_points[i][0][1] for i in range(len(line1_points))]
+    #m1, b1, r_value1, p_value1, std_err1 = stats.linregress(x1,y1)
     #print("m1=", m1, " b1=", b1)
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
@@ -856,9 +856,9 @@ def get_four_points(cnt):
     b1 = y01 - m1*x01
     #print("From fitline: m1=", m1, " b1=", b1)
 
-    x2 = [line2_points[i][0][0] for i in range(len(line2_points))]
-    y2 = [line2_points[i][0][1] for i in range(len(line2_points))]
-    m2, b2, r_value2, p_value2, std_err2 = stats.linregress(x2,y2)
+    #x2 = [line2_points[i][0][0] for i in range(len(line2_points))]
+    #y2 = [line2_points[i][0][1] for i in range(len(line2_points))]
+    #m2, b2, r_value2, p_value2, std_err2 = stats.linregress(x2,y2)
     #print("m2=", m2, " b2=", b2)
     [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
     m2 = v22/v12
@@ -867,6 +867,11 @@ def get_four_points(cnt):
         v12 = 0.1
     b2 = y02 - m2*x02
     #print("From fitline: m2=", m2, " b2=", b2)
+
+    xint = (b2-b1)/(m1-m2)
+    yint = m1*xint+b1
+    #print("xint=", xint, " yint=", yint)
+    int_point = tuple([int(xint), int(yint)])
 
     if bottommost_is_left == True:
         four_points = np.array([
@@ -1153,7 +1158,7 @@ while True:
                 upper_color = upper_green
                 boxBlur = blurImg(frame, green_blur)
                 threshold = threshold_video(lower_green, upper_green, boxBlur)
-                processed = findOuterTarget2(frame, threshold)
+                processed = findOuterTarget(frame, threshold)
 
     cv2.imshow("raw", img)
     cv2.imshow("threshold", threshold)
