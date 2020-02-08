@@ -25,8 +25,27 @@ import math
 
 import os
 
-########### SET RESOLUTION TO 256x144 !!!! ############
+# from https://www.pyimagesearch.com/2015/08/10/checking-your-opencv-version-using-python/
+def is_cv3():
+    # if we are using OpenCV 3.X, then our cv2.__version__ will start
+    # with '3.'
+    return check_opencv_version("3.")
+ 
+def is_cv4():
+    # if we are using OpenCV 4.X, then our cv2.__version__ will start
+    # with '4.'
+    return check_opencv_version("4.")
 
+def check_opencv_version(major, lib=None):
+    # if the supplied library is None, import OpenCV
+    if lib is None:
+        import cv2 as lib
+    # return whether or not the current OpenCV version matches the
+    # major version number
+    return lib.__version__.startswith(major) 
+
+
+########### SET RESOLUTION TO 640x480 !!!! ############
 # import the necessary packages
 import datetime
 
@@ -56,16 +75,19 @@ def load_images_from_folder(folder):
             images.append(img)
     return images
 
-#images = load_images_from_folder("./OuterTargetImages")
-images = load_images_from_folder("C:\\VSCodeMain\Vision2019\Vision2020\Vision2020-Competition\OuterTargetHalfScale")
-#images = load_images_from_folder("./OuterTargetSketchup")
+# Power Cell Images
 #images = load_images_from_folder("./PowerCell25Scale")
 #images = load_images_from_folder("./PowerCellImages")
 #images = load_images_from_folder("./PowerCellFullScale")
 #images = load_images_from_folder("./PowerCellFullMystery")
 #images = load_images_from_folder("./PowerCellSketchup")
-#images = load_images_from_folder("./PowerCellSketchup")
 #images = load_images_from_folder("./LifeCamPhotos")
+
+# Outer Target Images
+#images = load_images_from_folder("./OuterTargetImages")
+images = load_images_from_folder("./OuterTargetHalfScale")
+#images = load_images_from_folder("./OuterTargetHalfDistance")
+#images = load_images_from_folder("./OuterTargetSketchup")
 
 
 # finds height/width of camera frame (eg. 640 width, 480 height)
@@ -96,8 +118,9 @@ orange_blur = 27
 yellow_blur = 3
 
 # define range of green of retroreflective tape in HSV
-lower_green = np.array([23, 50, 35])
-upper_green = np.array([85, 255, 255])
+lower_green = np.array([55, 55, 55])
+upper_green = np.array([100, 255, 255])
+
 
 lower_yellow = np.array([20, 35, 100])
 upper_yellow = np.array([60, 255, 255])
@@ -186,10 +209,12 @@ def threshold_video(lower_color, upper_color, blur):
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):
 
-
     # Finds contours
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    #contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    if is_cv3():
+        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    else:
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+
 
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
@@ -211,7 +236,11 @@ def findTargets(frame, mask):
 # Finds the balls from the masked image and displays them on original stream + network tables
 def findPowerCell(frame, mask):
     # Finds contours
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    if is_cv3():
+        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    else:
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+
     # Take each frame
     # Gets the shape of video
     screenHeight, screenWidth, _ = frame.shape
@@ -580,9 +609,13 @@ def findTape(contours, image, centerX, centerY):
     # Seen vision targets (correct angle, adjacent to each other)
     targets = []
 
-    if len(contours) >= 2:
+    if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
+
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:2]
+
+        cntHeight = 0
+
 
        
         for cnt in cntsSorted:
@@ -832,7 +865,10 @@ def findTape(contours, image, centerX, centerY):
 # Finds the balls from the masked image and displays them on original stream + network tables
 def findControlPanel(frame, mask):
     # Finds contours
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    if is_cv3:
+        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    else:
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     # Take each frame
     # Gets the shape of video
     screenHeight, screenWidth, _ = frame.shape
