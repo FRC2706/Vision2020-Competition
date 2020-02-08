@@ -215,7 +215,7 @@ upper_green = np.array([100, 255, 255])
 #lower_yellow = np.array([15, 205, 100])
 #upper_yellow = np.array([27, 255, 255])
 
-lower_yellow = np.array([14, 150, 100])
+lower_yellow = np.array([14, 210, 100])
 upper_yellow = np.array([30, 255, 255])
 
 

@@ -85,7 +85,7 @@ def load_images_from_folder(folder):
 
 # Outer Target Images
 #images = load_images_from_folder("./OuterTargetImages")
-images = load_images_from_folder("./OuterTargetHalfScale")
+images = load_images_from_folder("C:\\VSCodeMain\Vision2019\Vision2020\Vision2020-Competition\OuterTargetHalfScale")
 #images = load_images_from_folder("./OuterTargetHalfDistance")
 #images = load_images_from_folder("./OuterTargetSketchup")
 
@@ -121,9 +121,8 @@ yellow_blur = 3
 lower_green = np.array([55, 55, 55])
 upper_green = np.array([100, 255, 255])
 
-
-lower_yellow = np.array([20, 35, 100])
-upper_yellow = np.array([60, 255, 255])
+lower_yellow = np.array([14, 210, 100])
+upper_yellow = np.array([30, 255, 255])
 
 switch = 1
 
