@@ -17,7 +17,6 @@ import sys
 from threading import Thread
 import random
 
-
 import cv2
 import numpy as np
 
@@ -121,6 +120,14 @@ green_blur = 1
 orange_blur = 27
 yellow_blur = 1
 
+# define colors
+purple = (165, 0, 120)
+blue = (255, 0, 0)
+green = (0, 255, 0)
+red = (0, 0, 255)
+cyan = (252, 252, 3)
+white = (255, 255, 255)
+
 # define range of green of retroreflective tape in HSV
 lower_green = np.array([55, 55, 33])
 upper_green = np.array([100, 255, 255])
@@ -169,17 +176,18 @@ real_world_coordinates = np.array([
 
 real_world_coordinates_left = np.array([
         [0.0, 0.0, 0.0],             # Top Left point
+        [0.0, 0.0, 0.0],             # Top Left point
         [TARGET_TOP_WIDTH, 0.0, 0.0],           # Top Right Point
         [TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0],         # Bottom Left point
-        [TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]          # Bottom Left point
-    ])
+        
+    ])    
 
 real_world_coordinates_right = np.array([
         [0.0, 0.0, 0.0],             # Top Left point
         [TARGET_TOP_WIDTH, 0.0, 0.0],           # Top Right Point
-        [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0],    # Bottom Left point
+        [TARGET_TOP_WIDTH, 0.0, 0.0],           # Top Right Point,    
         [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]     # Bottom Right point
-    ])    
+    ])        
 
 
 
@@ -325,15 +333,15 @@ def findBall(contours, image, centerX, centerY):
                     #cv2.drawContours(image, [box], 0, (23, 184, 80), 3)
 
                     # Draws a vertical white line passing through center of contour
-                    cv2.line(image, (cx, screenHeight), (cx, 0), (255, 255, 255))
+                    cv2.line(image, (cx, screenHeight), (cx, 0), white)
                     # Draws a white circle at center of contour
-                    cv2.circle(image, (cx, cy), 6, (255, 255, 255))
+                    cv2.circle(image, (cx, cy), 6, white)
 
                     # Draws the contours
                     cv2.drawContours(image, [cnt], 0, (23, 184, 80), 1)
 
                     # Draws contour of bounding rectangle in red
-                    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 1)
+                    cv2.rectangle(image, (x, y), (x + w, y + h), red, 1)
                    
                     # Appends important info to array
                     if [cx, cy, cnt, cntHeight] not in biggestPowerCell:
@@ -359,10 +367,10 @@ def findBall(contours, image, centerX, centerY):
 
             # draw extreme points
             # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
-            cv2.circle(image, leftmost, 6, (0,255,0), -1)
-            cv2.circle(image, rightmost, 6, (0,0,255), -1)
-            cv2.circle(image, topmost, 6, (255,255,255), -1)
-            cv2.circle(image, bottommost, 6, (255,0,0), -1)
+            cv2.circle(image, leftmost, 6, green, -1)
+            cv2.circle(image, rightmost, 6, red, -1)
+            cv2.circle(image, topmost, 6, white, -1)
+            cv2.circle(image, bottommost, 6, blue, -1)
             #print('extreme points', leftmost,rightmost,topmost,bottommost)
 
             print("topmost: " + str(topmost[0]))
@@ -389,21 +397,186 @@ def findBall(contours, image, centerX, centerY):
             # Draws yaw of target + line where center of target is
             finalYaw = round(finalTarget[1]*1000)/1000
             cv2.putText(image, "Yaw: " + str(finalTarget[0]), (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6,
-                        (255, 255, 255))
+                        white)
             cv2.putText(image, "Dist: " + str(finalYaw), (40, 100), cv2.FONT_HERSHEY_COMPLEX, .6,
-                        (255, 255, 255))
-            cv2.line(image, (xCoord, screenHeight), (xCoord, 0), (255, 0, 0), 2)
+                        white)
+            cv2.line(image, (xCoord, screenHeight), (xCoord, 0), blue, 2)
 
             currentAngleError = finalTarget[0]
             # pushes cargo angle to network tables
 
 
 
-        cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), (255, 255, 255), 2)
+        cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
         return image
 
 
+def get_four_points(cnt):
+    # Get the left, right, and bottom points
+    # extreme points
+    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
+    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
+    topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
+    bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+    #print('extreme points', leftmost,rightmost,topmost,bottommost)
+
+    # Calculate centroid
+    M = cv2.moments(cnt)
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    #print('centroid = ',cx,cy)
+    #cv2.line(image,(cx-10,cy-10),(cx+10,cy+10),red,2)
+    #cv2.line(image,(cx-10,cy+10),(cx+10,cy-10),red,2)
+
+    # Determine if bottom point is to the left or right of target based on centroid
+    bottommost_is_left = False
+    if bottommost[0] < cx:
+        bottommost_is_left = True
+        #print("bottommost is on the left")
+    else:
+        bottommost_is_left = False
+        #print("bottommost is on the right") 
+
+    # Order of points in contour appears to be top, left, bottom, right
+
+    # Run through all points in the contour, collecting points to build lines whose
+    # intersection gives the fourth point.
+    topmost_index = leftmost_index = bottommost_index = rightmost_index = -1
+    for i in range(len(cnt)):
+        point = tuple(cnt[i][0])
+        if (point == topmost):
+            topmost_index = i
+            print("Found topmost:", topmost, " at index ", i)
+        if (point == leftmost):
+            print("Found leftmost:", leftmost, " at index ", i)
+            leftmost_index = i
+        if (point == bottommost):
+            print("Found bottommost:", bottommost, " at index ", i)
+            bottommost_index = i
+        if (point == rightmost):
+            print("Found rightmost:", rightmost, " at index ", i)
+            rightmost_index = i
+
+    if ((topmost_index == -1)   or (leftmost_index == -1) or 
+        (rightmost_index == -1) or (bottommost_index == -1)    ):
+        print ("Critical point(s) not found in contour")
+        return image
+
+    # In some cases, topmost and rightmost pixel will be the same so that index of
+    # rightmost pixel in contour will be zero (instead of near the end of the contour)
+    # To handle this case correctly and keep the code simple, set index of rightmost
+    # pixel to be the final one in the contour. (The corresponding point and the actual
+    # rightmost pixel will be very close.) 
+    if rightmost_index == 0:
+        rightmost_index = len(cnt-1)
+
+    if bottommost_is_left == True:
+        # Get set of points after bottommost
+        num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
+        #print("num_points_to_collect=", num_points_to_collect)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
+        line1_points = cnt[bottommost_index:bottommost_index+num_points_to_collect+1]
+        # Get set of points before rightmost
+        num_points_to_collect = max(int(0.25*(bottommost_index-leftmost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
+        #print("num_points_to_collect=", num_points_to_collect)
+        line2_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
+    else:
+        # Get set of points after leftmost
+        num_points_to_collect = max(int(0.25*(rightmost_index-bottommost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
+        #print("num_points_to_collect=", num_points_to_collect)
+        line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
+        # Get set of point before bottommost
+        num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
+        #print("num_points_to_collect=", num_points_to_collect)
+        line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
+
+    #x1 = [line1_points[i][0][0] for i in range(len(line1_points))]
+    #y1 = [line1_points[i][0][1] for i in range(len(line1_points))]
+    #m1, b1, r_value1, p_value1, std_err1 = stats.linregress(x1,y1)
+    #print("m1=", m1, " b1=", b1)
+    [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
+    if (v11==0):
+        print("Warning v11=0")
+        v11 = 0.1
+    m1 = v21/v11
+    b1 = y01 - m1*x01
+    #print("From fitline: m1=", m1, " b1=", b1)
+
+    #x2 = [line2_points[i][0][0] for i in range(len(line2_points))]
+    #y2 = [line2_points[i][0][1] for i in range(len(line2_points))]
+    #m2, b2, r_value2, p_value2, std_err2 = stats.linregress(x2,y2)
+    #print("m2=", m2, " b2=", b2)
+    [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
+    m2 = v22/v12
+    if (v12==0):
+        print("Warning v11=0")
+        v12 = 0.1
+    b2 = y02 - m2*x02
+    #print("From fitline: m2=", m2, " b2=", b2)
+
+    xint = (b2-b1)/(m1-m2)
+    yint = m1*xint+b1
+    #print("xint=", xint, " yint=", yint)
+    int_point = tuple([int(xint), int(yint)])
+
+    if bottommost_is_left == True:
+        four_points = np.array([
+                                 leftmost,
+                                 rightmost,
+                                 bottommost,
+                                 int_point
+                                ], dtype="double")
+    else:
+        four_points = np.array([
+                                 leftmost,
+                                 rightmost,
+                                 int_point,
+                                 bottommost
+                                ], dtype="double")
+
+    return four_points
+
+# Simple method which uses 3 Extreme points to Map the real world image
+def get_four_points_with3(cnt):
+
+    # Get extreme points
+    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
+    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
+    bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+
+    #Set up the 3 points to map to the real world coordinates
+    #print("outer left image points: " + str(outer_corners_left))
+    #print("outer left world points: " + str(real_world_coordinates_left2))
+    #print("outer right image points: " + str(outer_corners_right))
+    #print("outer right world points: " + str(real_world_coordinates_right2))
+
+    bottomIsLeft = True
+    
+    #outer corners for left side
+    outer_corners = np.array([leftmost, leftmost, rightmost, bottommost], dtype="double")
+
+    #check if bottommost is closest to right or left
+    if (abs(bottommost[0]-leftmost[0]) > abs(bottommost[0]-rightmost[0])):
+        #print("bottom most is right")
+        bottomIsLeft = False
+        outer_corners = np.array([leftmost, rightmost, rightmost, bottommost], dtype="double")
+        return outer_corners, real_world_coordinates_right
+
+    return outer_corners, real_world_coordinates_left
+
+# Simple method to order points from left to right
 def order_points(pts):
     # initialize a list of coordinates that will be ordered
     # such that the first entry in the list is the top-left,
@@ -442,7 +615,6 @@ def findTvecRvec(image, outer_corners, real_world_coordinates):
     #                      [0, 0, 1]], dtype = "double"
     #                      )
 
-
     dist_coeffs = np.array([[0.16171335604097975, -0.9962921370737408, -4.145368586842373e-05, 
                              0.0015152030328047668, 1.230483016701437]])
 
@@ -450,7 +622,7 @@ def findTvecRvec(image, outer_corners, real_world_coordinates):
                               [0.0, 677.958895098853, 226.64055316186037], 
                               [0.0, 0.0, 1.0]], dtype = "double")
 
-    print("Camera Matrix :\n {0}".format(camera_matrix))                           
+    #print("Camera Matrix :\n {0}".format(camera_matrix))                           
  
     #dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
     (success, rotation_vector, translation_vector) = cv2.solvePnP(real_world_coordinates, outer_corners, camera_matrix, dist_coeffs)
@@ -488,6 +660,16 @@ def compute_output_values(rvec, tvec):
 
     return distance, angle1, angle2
 
+#Simple function that displays 4 corners on an image
+#A np.array() is expected as the input argument
+def displaycorners(image, outer_corners):
+    # draw extreme points
+    # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
+    cv2.circle(image, (int(outer_corners[0,0]),int(outer_corners[0,1])), 6, green, -1)
+    cv2.circle(image, (int(outer_corners[1,0]),int(outer_corners[1,1])), 6, red, -1)
+    cv2.circle(image, (int(outer_corners[2,0]),int(outer_corners[2,1])), 6, white,-1)
+    cv2.circle(image, (int(outer_corners[3,0]),int(outer_corners[3,1])), 6, blue, -1)
+    #print('extreme points', leftmost,rightmost,topmost,bottommost)
 
 # Draws Contours and finds center and yaw of vision targets
 # centerX is center x coordinate of image
@@ -508,79 +690,46 @@ def findTape(contours, image, centerX, centerY):
        
         for cnt in cntsSorted:
             x, y, w, h = cv2.boundingRect(cnt)
-            cv2.rectangle(image,(x,y),(x+w,y+h),(0,255,0),2)
 
-            # rotated rectangle
-            rect = cv2.minAreaRect(cnt)
-            #print('rotated rectangle = ',rect)
-            (x,y),(width,height),angleofrotation = rect
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
-            cv2.drawContours(image,[box],0,(255,0,0),2)
-            #print("box points: " + str(box))
+            cntHeight = h
+            aspect_ratio = float(w) / h
+           
+            # Calculate Contour area
+            cntArea = cv2.contourArea(cnt)
+            # Filters contours based off of hulled area and 
+            if (checkTargetSize(cntArea, aspect_ratio)):
 
-            hull = cv2.convexHull(cnt)
-            #print('hull', hull)
-            print('hull contour length = ', len(hull))
-            #cv2.drawContours(image, [hull], -1, (0,0,255), cv2.FILLED)
-            #cv2.imshow('hull over yellow mask', imgContours)
-            hull_area = cv2.contourArea(hull)
-            #print('solidity from convex hull', float(area)/hull_area)
+                rw_coordinates = real_world_coordinates
 
-            # extreme points
-            leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
-            rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
-            topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
-            bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+                #Pick which Corner solving method to use
+                if (CornerMethod == 1):
+                    outer_corners, rw_coordinates = get_four_points_with3(cnt)
 
-            bottomIsLeft = True
-            #check if bottommost is closest to right or left
-            if (abs(bottommost[0]-leftmost[0]) > abs(bottommost[0]-rightmost[0])):
-                print("bottom most is right")
-                bottomIsLeft = False
+                if (CornerMethod == 2):
+                    outer_corners = get_four_points(cnt)
 
-            else:
-                 print("bottom most is left")
+                displaycorners(image, outer_corners)
 
-            # draw extreme points
-            # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
-            cv2.circle(image, leftmost, 6, (0,255,0), -1)
-            cv2.circle(image, rightmost, 6, (0,0,255), -1)
-            cv2.circle(image, topmost, 6, (255,255,255), -1)
-            cv2.circle(image, bottommost, 6, (255,0,0), -1)
-            #print('extreme points', leftmost,rightmost,topmost,bottommost)
+                success, rvec, tvec = findTvecRvec(image, outer_corners, rw_coordinates) 
 
-    
-            #Set up the 3 points to map to the real world coordinates
-            outer_corners = np.array([leftmost, rightmost, bottommost, bottommost], dtype="double")
-            print("points: " + str(outer_corners))
+                #Calculate the Yaw
+                M = cv2.moments(cnt)
+                if M["m00"] != 0:
+                    cx = int(M["m10"] / M["m00"])
+                    cy = int(M["m01"] / M["m00"])
+                else:
+                    cx, cy = 0, 0
 
-           #sorted_corners = order_points(outer_corners)
-            #print("sorted corners: " + str(sorted_corners))
-
-            if (bottomIsLeft):
-                success, rvec, tvec = findTvecRvec(image, outer_corners, real_world_coordinates_left) 
-            else:
-                success, rvec, tvec = findTvecRvec(image, outer_corners, real_world_coordinates_right) 
-
-            #Calculate the Yaw
-            M = cv2.moments(cnt)
-            if M["m00"] != 0:
-                cx = int(M["m10"] / M["m00"])
-                cy = int(M["m01"] / M["m00"])
-            else:
-                cx, cy = 0, 0
-
-            YawToTarget = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
-            
-            # If success then print values to screen                               
-            if success:
-                distance, angle1, angle2 = compute_output_values(rvec, tvec)
-                cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
-                cv2.putText(image, "Distance: " + str(distance/12), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
-                #cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
-                cv2.line(image, (cx, screenHeight), (cx, 0), (255, 0, 0), 2)
-                cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), (255, 255, 255), 2)
+                YawToTarget = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
+                
+                # If success then print values to screen                               
+                if success:
+                    distance, angle1, angle2 = compute_output_values(rvec, tvec)
+                    cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                    cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                    cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                    cv2.line(image, (cx, screenHeight), (cx, 0), blue, 2)
+                    cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
     #     # pushes vision target angle to network table
     return image
@@ -614,20 +763,21 @@ def findControlPanelColour(contours, image, centerX, centerY):
     #ToDo, Add code to publish wheel colour
     return image
 
-# Checks if tape contours are worthy based off of contour area and (not currently) hull area
-def checkContours(cntSize, hullSize):
-    print(cntSize, image_width / 7)
-    return cntSize > (image_width / 7)
+# Checks if the target contours are worthy 
+def checkTargetSize(cntArea, cntAspectRatio):
+    print("cntArea: " + str(cntArea))
+    print("aspect ratio: " + str(cntAspectRatio))
+    return (cntArea > (image_width/3)) and (cntAspectRatio > 1.0)
 
 
 # Checks if ball contours are worthy based off of contour area and (not currently) hull area
-def checkBall(cntSize, cntAspectRatio):
+def checkBall(cntArea, cntAspectRatio):
     #this checks that the area of the contour is greater than the image width divide by 2
     #And that the aspect ratio of the bounding rectangle (width / height) is close to 1 which 
     #is basically a circle however this would filter out 'tadpoles'
     
    # return (cntSize > (image_width / 2)) and (round(cntAspectRatio) > 1)
-    return (cntSize > (image_width / 2)) and (cntAspectRatio > 0.75)
+    return (cntArea > (image_width / 2)) and (cntAspectRatio > 0.75)
 
 
 # Forgot how exactly it works, but it works!
@@ -778,6 +928,10 @@ Tape = True
 PowerCell = False
 ControlPanel = False
 
+#Corner method 1 is find tape with 3 points (John and Jeremy)
+#Corner method 2 is find tape with 4 ponts (Robert, Rachel and Rebecca)
+#Corner method 3 is find tape with 4 points (Brian)
+CornerMethod = 2
 
 img = images[0]
 filename = imagename[0]
@@ -797,7 +951,6 @@ while True:
     else:
 
         if Tape:
-
             threshold = threshold_video(lower_green, upper_green, frame)
             processed = findTargets(frame, threshold)
 
@@ -809,7 +962,7 @@ while True:
             elif ControlPanel:
 
                 boxBlur = blurImg(frame, yellow_blur)
-                # cv2.putText(frame, "Find Cargo", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, (255, 255, 255))
+                # cv2.putText(frame, "Find Cargo", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, white)
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)
                 processed = findControlPanel(frame, threshold)
 

@@ -24,9 +24,10 @@ import numpy as np
 from networktables import NetworkTables
 from networktables.util import ntproperty
 import math
+#from scipy import stats
 
 #
-print('OpenCV version is', cv2.__version__)
+##print('OpenCV version is', cv2.__version__)
 
 ########### SET RESOLUTION TO 256x144 !!!! ############
 
@@ -104,8 +105,8 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
-        self.webcam.setExposureManual(39)
-        self.webcam.setExposureAuto()
+        self.webcam.setExposureManual(20)
+        #self.webcam.setExposureAuto()
 
         # Some booleans so that we don't keep setting exposure over and over to the same value
 
@@ -141,22 +142,22 @@ class WebcamVideoStream:
 
             if switch == 1: #driver mode
                 self.autoExpose = True
-                #print("Driver mode")
+                ##print("Driver mode")
                 if self.autoExpose != self.prevValue:
-                    self.webcam.setExposureManual(60)
+                    #self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(50)
                     self.webcam.setExposureAuto()
-                    #print("Driver mode")
+                    ##print("Driver mode")
                     self.prevValue = self.autoExpose
             elif switch != 1: #not driver mode
                 self.autoExpose = False
-                #print("Not driver mode")
+                ##print("Not driver mode")
                 if self.autoExpose != self.prevValue:
 
                     self.webcam.setExposureManual(50)
                     self.webcam.setExposureManual(35)
                     self.webcam.setExposureAuto()
-                    #print("Not driver mode")
+                    ##print("Not driver mode")
                     self.prevValue = self.autoExpose
 
             # gets the image and timestamp from cameraserver
@@ -267,8 +268,6 @@ real_world_coordinates_right = np.array([
         [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0],    # Bottom Left point
         [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]     # Bottom Right point
     ])    
-
-
 
 
 # Flip image if camera mounted upside down
@@ -383,10 +382,10 @@ def findBall(contours, image, centerX, centerY):
         for cnt in cntsSorted:
             x, y, w, h = cv2.boundingRect(cnt)
 
-            #print("bounding rec x: " + str(y))
-            #print("bounding rec y: " + str(x))
-            #print("bounding rec height: " + str(h))
-            #print("bounding rec width: " + str(w))
+            ##print("bounding rec x: " + str(y))
+            ##print("bounding rec y: " + str(x))
+            ##print("bounding rec height: " + str(h))
+            ##print("bounding rec width: " + str(w))
         
             cntHeight = h
             aspect_ratio = float(w) / h
@@ -470,10 +469,10 @@ def findBall(contours, image, centerX, centerY):
             cv2.circle(image, rightmost, 8, (0,0,255), -1)
             cv2.circle(image, topmost, 8, (255,255,255), -1)
             cv2.circle(image, bottommost, 8, (255,0,0), -1)
-            #print('extreme points', leftmost,rightmost,topmost,bottommost)
+            ##print('extreme points', leftmost,rightmost,topmost,bottommost)
 
-            #print("topmost: " + str(topmost[0]))
-            #print("bottommost: " + str(bottommost[0]))
+            ##print("topmost: " + str(topmost[0]))
+            ##print("bottommost: " + str(bottommost[0]))
             #xCoord of the closest ball will be the x position differences between the topmost and 
             #bottom most points
             if (topmost[0] > bottommost[0]):
@@ -481,7 +480,7 @@ def findBall(contours, image, centerX, centerY):
             else: 
                 xCoord = int(round((bottommost[0]-topmost[0])/2)+topmost[0])
 
-            print(xCoord)
+            ##print(xCoord)
             #If aspect ratio is greater than 0.8 and less than 1.2, treat it as a single ball
             #and simply use the center x value (cx)
             if (closestPowerCell[4] > 0.9 and closestPowerCell[4] < 1.2):
@@ -508,6 +507,141 @@ def findBall(contours, image, centerX, centerY):
 
         return image
 
+def get_four_points(cnt):
+    # Get the left, right, and bottom points
+    # extreme points
+    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
+    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
+    topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
+    bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+    #print('extreme points', leftmost,rightmost,topmost,bottommost)
+
+    # Calculate centroid
+    M = cv2.moments(cnt)
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    #print('centroid = ',cx,cy)
+    #cv2.line(image,(cx-10,cy-10),(cx+10,cy+10),red,2)
+    #cv2.line(image,(cx-10,cy+10),(cx+10,cy-10),red,2)
+
+    # Determine if bottom point is to the left or right of target based on centroid
+    bottommost_is_left = False
+    if bottommost[0] < cx:
+        bottommost_is_left = True
+        #print("bottommost is on the left")
+    else:
+        bottommost_is_left = False
+        #print("bottommost is on the right") 
+
+    # Order of points in contour appears to be top, left, bottom, right
+
+    # Run through all points in the contour, collecting points to build lines whose
+    # intersection gives the fourth point.
+    topmost_index = leftmost_index = bottommost_index = rightmost_index = -1
+    for i in range(len(cnt)):
+        point = tuple(cnt[i][0])
+        if (point == topmost):
+            topmost_index = i
+            print("Found topmost:", topmost, " at index ", i)
+        if (point == leftmost):
+            print("Found leftmost:", leftmost, " at index ", i)
+            leftmost_index = i
+        if (point == bottommost):
+            print("Found bottommost:", bottommost, " at index ", i)
+            bottommost_index = i
+        if (point == rightmost):
+            print("Found rightmost:", rightmost, " at index ", i)
+            rightmost_index = i
+
+    if ((topmost_index == -1)   or (leftmost_index == -1) or 
+        (rightmost_index == -1) or (bottommost_index == -1)    ):
+        print ("Critical point(s) not found in contour")
+        return image
+
+    # In some cases, topmost and rightmost pixel will be the same so that index of
+    # rightmost pixel in contour will be zero (instead of near the end of the contour)
+    # To handle this case correctly and keep the code simple, set index of rightmost
+    # pixel to be the final one in the contour. (The corresponding point and the actual
+    # rightmost pixel will be very close.) 
+    if rightmost_index == 0:
+        rightmost_index = len(cnt-1)
+
+    if bottommost_is_left == True:
+        # Get set of points after bottommost
+        num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
+        #print("num_points_to_collect=", num_points_to_collect)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
+        line1_points = cnt[bottommost_index:bottommost_index+num_points_to_collect+1]
+        # Get set of points before rightmost
+        num_points_to_collect = max(int(0.25*(bottommost_index-leftmost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
+        #print("num_points_to_collect=", num_points_to_collect)
+        line2_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
+    else:
+        # Get set of points after leftmost
+        num_points_to_collect = max(int(0.25*(rightmost_index-bottommost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
+        #print("num_points_to_collect=", num_points_to_collect)
+        line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
+        # Get set of point before bottommost
+        num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
+        if num_points_to_collect == 0:
+            print ("num_points_to_collect=0, exiting")
+            return image
+        #print("num_points_to_collect=", num_points_to_collect)
+        line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
+
+    #x1 = [line1_points[i][0][0] for i in range(len(line1_points))]
+    #y1 = [line1_points[i][0][1] for i in range(len(line1_points))]
+    #m1, b1, r_value1, p_value1, std_err1 = stats.linregress(x1,y1)
+    #print("m1=", m1, " b1=", b1)
+    [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
+    if (v11==0):
+        print("Warning v11=0")
+        v11 = 0.1
+    m1 = v21/v11
+    b1 = y01 - m1*x01
+    #print("From fitline: m1=", m1, " b1=", b1)
+
+    #x2 = [line2_points[i][0][0] for i in range(len(line2_points))]
+    #y2 = [line2_points[i][0][1] for i in range(len(line2_points))]
+    #m2, b2, r_value2, p_value2, std_err2 = stats.linregress(x2,y2)
+    #print("m2=", m2, " b2=", b2)
+    [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
+    m2 = v22/v12
+    if (v12==0):
+        print("Warning v11=0")
+        v12 = 0.1
+    b2 = y02 - m2*x02
+    #print("From fitline: m2=", m2, " b2=", b2)
+
+    xint = (b2-b1)/(m1-m2)
+    yint = m1*xint+b1
+    #print("xint=", xint, " yint=", yint)
+    int_point = tuple([int(xint), int(yint)])
+
+    if bottommost_is_left == True:
+        four_points = np.array([
+                                 leftmost,
+                                 rightmost,
+                                 bottommost,
+                                 int_point
+                                ], dtype="double")
+    else:
+        four_points = np.array([
+                                 leftmost,
+                                 rightmost,
+                                 int_point,
+                                 bottommost
+                                ], dtype="double")
+
+    return four_points
 
 
 def order_points(pts):
@@ -556,13 +690,13 @@ def findTvecRvec(image, outer_corners, real_world_coordinates):
                               [0.0, 677.958895098853, 226.64055316186037], 
                               [0.0, 0.0, 1.0]], dtype = "double")
 
-    print("Camera Matrix :\n {0}".format(camera_matrix))                           
+    ##print("Camera Matrix :\n {0}".format(camera_matrix))                           
  
     #dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
     (success, rotation_vector, translation_vector) = cv2.solvePnP(real_world_coordinates, outer_corners, camera_matrix, dist_coeffs)
  
-    #print ("Rotation Vector:\n {0}".format(rotation_vector))
-    #print ("Translation Vector:\n {0}".format(translation_vector))
+    ##print ("Rotation Vector:\n {0}".format(rotation_vector))
+    ##print ("Translation Vector:\n {0}".format(translation_vector))
     return success, rotation_vector, translation_vector
 
 
@@ -575,7 +709,7 @@ def compute_output_values(rvec, tvec):
 
     # The tilt angle only affects the distance and angle1 calcs
     # This is a major impact on calculations
-    tilt_angle = math.radians(35)
+    tilt_angle = math.radians(23)
 
     x = tvec[0][0]
     z = math.sin(tilt_angle) * tvec[1][0] + math.cos(tilt_angle) * tvec[2][0]
@@ -618,21 +752,22 @@ def findTape(contours, image, centerX, centerY):
 
             # rotated rectangle
             rect = cv2.minAreaRect(cnt)
-            #print('rotated rectangle = ',rect)
+            ##print('rotated rectangle = ',rect)
             (x,y),(width,height),angleofrotation = rect
             box = cv2.boxPoints(rect)
             box = np.int0(box)
             cv2.drawContours(image,[box],0,(255,0,0),2)
-            #print("box points: " + str(box))
+            ##print("box points: " + str(box))
 
             hull = cv2.convexHull(cnt)
-            #print('hull', hull)
-            print('hull contour length = ', len(hull))
+            ##print('hull', hull)
+            #print('hull contour length = ', len(hull))
             #cv2.drawContours(image, [hull], -1, (0,0,255), cv2.FILLED)
             #cv2.imshow('hull over yellow mask', imgContours)
             hull_area = cv2.contourArea(hull)
-            #print('solidity from convex hull', float(area)/hull_area)
+            ##print('solidity from convex hull', float(area)/hull_area)
 
+            fourImagePoints = get_four_points(cnt)
             # extreme points
             leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
             rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
@@ -642,32 +777,34 @@ def findTape(contours, image, centerX, centerY):
             bottomIsLeft = True
             #check if bottommost is closest to right or left
             if (abs(bottommost[0]-leftmost[0]) > abs(bottommost[0]-rightmost[0])):
-                print("bottom most is right")
+                #print("bottom most is right")
                 bottomIsLeft = False
 
-            else:
-                 print("bottom most is left")
+                #print("bottom most is left")
 
             # draw extreme points
             # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
             cv2.circle(image, leftmost, 6, (0,255,0), -1)
             cv2.circle(image, rightmost, 6, (0,0,255), -1)
-            cv2.circle(image, topmost, 6, (255,255,255), -1)
+            #cv2.circle(image, topmost, 6, (255,255,255), -1)
             cv2.circle(image, bottommost, 6, (255,0,0), -1)
-            #print('extreme points', leftmost,rightmost,topmost,bottommost)
+            ##print('extreme points', leftmost,rightmost,topmost,bottommost)
 
     
             #Set up the 3 points to map to the real world coordinates
             outer_corners = np.array([leftmost, rightmost, bottommost, bottommost], dtype="double")
-            print("points: " + str(outer_corners))
+            #print("points: " + str(outer_corners))
 
            #sorted_corners = order_points(outer_corners)
-            #print("sorted corners: " + str(sorted_corners))
+            ##print("sorted corners: " + str(sorted_corners))
 
-            if (bottomIsLeft):
-                success, rvec, tvec = findTvecRvec(image, outer_corners, real_world_coordinates_left) 
-            else:
-                success, rvec, tvec = findTvecRvec(image, outer_corners, real_world_coordinates_right) 
+        #fourImagePoints
+            success, rvec, tvec = findTvecRvec(image, fourImagePoints, real_world_coordinates) 
+
+           # if (bottomIsLeft):
+           #     success, rvec, tvec = findTvecRvec(image, outer_corners, real_world_coordinates_left) 
+           # else:
+           #     success, rvec, tvec = findTvecRvec(image, outer_corners, real_world_coordinates_right) 
 
             #Calculate the Yaw
             M = cv2.moments(cnt)
@@ -679,16 +816,20 @@ def findTape(contours, image, centerX, centerY):
 
             YawToTarget = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
             
-            # If success then print values to screen                               
+            # If success then #print values to screen                               
             if success:
                 distance, angle1, angle2 = compute_output_values(rvec, tvec)
                 cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
-                cv2.putText(image, "Distance: " + str(distance/12), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
+                cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
                 #cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,(255, 255, 255))
                 cv2.line(image, (cx, screenHeight), (cx, 0), (255, 0, 0), 2)
                 cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), (255, 255, 255), 2)
 
-    #     # pushes vision target angle to network table
+            # pushes vision target angle to network table
+            # pushes powerCell angle to network tables
+            networkTable.putNumber("YawToTarget", YawToTarget)
+            networkTable.putNumber("DistanceToTarget", round(distance/12,2))
+
     return image
 
 # Finds the balls from the masked image and displays them on original stream + network tables
@@ -782,11 +923,11 @@ def calculateDistWPILib(cntHeight):
 
     PIX_HEIGHT = PIX_HEIGHT / len(avg)
 
-    print (PIX_HEIGHT)
+    #print (PIX_HEIGHT)
 
 
 
-    print(PIX_HEIGHT, avg)  # print("The contour height is: ", cntHeight)
+    #print(PIX_HEIGHT, avg)  # #print("The contour height is: ", cntHeight)
 
     #TARGET_HEIGHT is actual height (for balls 7/12 7 inches)   
     TARGET_HEIGHT = 0.583
@@ -799,7 +940,7 @@ def calculateDistWPILib(cntHeight):
     KNOWN_OBJECT_DISTANCE = 6
     VIEWANGLE = math.atan((TARGET_HEIGHT * image_height) / (2 * KNOWN_OBJECT_PIXEL_HEIGHT * KNOWN_OBJECT_DISTANCE))
 
-    # print("after 2: ", VIEWANGLE)
+    # #print("after 2: ", VIEWANGLE)
     # VIEWANGLE = math.radians(68.5)
     distance = ((TARGET_HEIGHT * image_height) / (2 * PIX_HEIGHT * math.tan(VIEWANGLE)))
     # distance = ((0.02) * distance ** 2) + ((69/ 100) * distance) + (47 / 50)
@@ -875,7 +1016,7 @@ def parseError(str):
     print("config error in '" + configFile + "': " + str, file=sys.stderr)
 
 
-"""Read single camera configuration."""
+    #Read single camera configuration.
 
 
 def readCameraConfig(config):
@@ -913,7 +1054,7 @@ def readConfig():
         with open(configFile, "rt") as f:
             j = json.load(f)
     except OSError as err:
-        print("could not open '{}': {}".format(configFile, err), file=sys.stderr)
+        #print("could not open '{}': {}".format(configFile, err), file=sys.stderr)
         return False
 
     # top level must be an object
@@ -955,7 +1096,7 @@ def readConfig():
 
 
 def startCamera(config):
-    print("Starting camera '{}' on {}".format(config.name, config.path))
+    #print("Starting camera '{}' on {}".format(config.name, config.path))
     cs = CameraServer.getInstance()
     camera = cs.startAutomaticCapture(name=config.name, path=config.path)
 
@@ -999,10 +1140,10 @@ if __name__ == "__main__":
     networkTableTime = NetworkTables.getTable("SmartDashboard")
 
     if server:
-        print("Setting up NetworkTables server")
+        #print("Setting up NetworkTables server")
         ntinst.startServer()
     else:
-        print("Setting up NetworkTables client for team {}".format(team))
+        #print("Setting up NetworkTables client for team {}".format(team))
         ntinst.startClientTeam(team)
 
     # start cameras
@@ -1092,8 +1233,8 @@ if __name__ == "__main__":
         switch = 0
 
         if (networkTable.getBoolean("Tape", True)):
-            if switch != 2:
-                print("finding tape")
+            #if switch != 2:
+                #print("finding tape")
             switch = 2
             # Lowers exposure to 0
             #cap.autoExpose = False
@@ -1108,8 +1249,8 @@ if __name__ == "__main__":
             if (networkTable.getBoolean("PowerCell", True)):
                 # Checks if you just want camera for Cargo processing, by dent of everything else being false, true by default
                 #if (networkTable.getBoolean("Cargo", True)):
-                if switch != 3:
-                    print("find Power Cell")
+                #if switch != 3:
+                    ##print("find Power Cell")
                 switch = 3
                 #cap.autoExpose = True
                 boxBlur = blurImg(frame, yellow_blur)
@@ -1119,8 +1260,8 @@ if __name__ == "__main__":
             elif (networkTable.getBoolean("ControlPanel", True)):
                 # Checks if you just want camera for Control Panel, by dent of everything else being false, true by default
                 #if (networkTable.getBoolean("Cargo", True)):
-                if switch != 4:
-                    print("find Control Panel Colour")
+                #if switch != 4:
+                    ##print("find Control Panel Colour")
                 switch = 4
                 #cap.autoExpose = True
                 boxBlur = blurImg(frame, yellow_blur)
@@ -1130,8 +1271,6 @@ if __name__ == "__main__":
 
         # Puts timestamp of camera on netowrk tables
         networkTable.putNumber("VideoTimestamp", timestamp)
-
-
 
         if (networkTable.getBoolean("WriteImages", True)):
             frameStop = frameStop + 1
@@ -1153,6 +1292,6 @@ if __name__ == "__main__":
         ntinst.flush()
     # Doesn't do anything at the moment. You can easily get this working by indenting these three lines
     # and setting while loop to: while fps._numFrames < TOTAL_FRAMES
-    fps.stop()
-    print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
-    print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+##fps.stop()
+##print(str("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+##print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
