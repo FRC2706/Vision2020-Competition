@@ -75,14 +75,15 @@ ImageCounter = 0
 
 def load_images_from_folder(folder):
     images = []
-    for filename in os.listdir(folder):
+    filenames = os.listdir(folder)
+    for filename in filenames:
         img = cv2.imread(os.path.join(folder,filename))
         if img is not None:
             images.append(img)
-    return images
+    return images, filenames
 
-#images = load_images_from_folder("./OuterTargetImages")
-images = load_images_from_folder("./OuterTargetHalfScale_0deg")
+#images, filenames = load_images_from_folder("./OuterTargetImages")
+images, filenames = load_images_from_folder("./OuterTargetHalfScale")
 #images = load_images_from_folder("./PowerCell25Scale")
 #images = load_images_from_folder("./PowerCellImages")
 #images = load_images_from_folder("./PowerCellFullScale")
@@ -739,8 +740,8 @@ def findOuterTarget2(frame, mask):
     print("image points:", image_points)
  
     dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
-    (success, rvec, tvec) = cv2.solvePnP(real_world_coordinates, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_P3P)
- 
+    (success, rvec, tvec) = cv2.solvePnP(real_world_coordinates, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_P3P)        
+
     print ("Rotation Vector:\n", rvec)
     print ("Translation Vector:\n", tvec)
 
@@ -749,7 +750,7 @@ def findOuterTarget2(frame, mask):
     x = tvec[0][0]
     z = tvec[1][0]*math.sin(tilt_rad) + tvec[2][0]*math.cos(tilt_rad)
     distance = math.sqrt(z**2 + x**2)
-    print("distance=", distance)
+    print("distance [ft]=", distance/12.0)
 
     # Shows the contours overlayed on the original video
     return image
@@ -844,10 +845,17 @@ def get_four_points(cnt):
         #print("num_points_to_collect=", num_points_to_collect)
         line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
 
+
+    min_points_for_line_fit = 5
+
     #x1 = [line1_points[i][0][0] for i in range(len(line1_points))]
     #y1 = [line1_points[i][0][1] for i in range(len(line1_points))]
     #m1, b1, r_value1, p_value1, std_err1 = stats.linregress(x1,y1)
     #print("m1=", m1, " b1=", b1)
+
+    if len(line1_points) < min_points_for_line_fit:
+        return False, np.zeros(4,1) 
+
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
         print("Warning v11=0")
@@ -860,6 +868,10 @@ def get_four_points(cnt):
     #y2 = [line2_points[i][0][1] for i in range(len(line2_points))]
     #m2, b2, r_value2, p_value2, std_err2 = stats.linregress(x2,y2)
     #print("m2=", m2, " b2=", b2)
+
+    if len(line2_points) < min_points_for_line_fit:
+        return False, np.zeros(4,1) 
+
     [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
     m2 = v22/v12
     if (v12==0):
@@ -868,6 +880,8 @@ def get_four_points(cnt):
     b2 = y02 - m2*x02
     #print("From fitline: m2=", m2, " b2=", b2)
 
+    if (m1 == m2):
+        return False, np.zeros(4,1) 
     xint = (b2-b1)/(m1-m2)
     yint = m1*xint+b1
     #print("xint=", xint, " yint=", yint)
@@ -936,6 +950,10 @@ def findOuterTarget(frame, mask):
     dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
     (success, rvec, tvec) = cv2.solvePnP(real_world_coordinates, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_P3P)
  
+    if ((success == False) or (len(tvec) < 3)):
+        print ("solvePnp() failed")
+        return image;
+
     print ("Rotation Vector:\n", rvec)
     print ("Translation Vector:\n", tvec)
 
@@ -944,7 +962,7 @@ def findOuterTarget(frame, mask):
     x = tvec[0][0]
     z = tvec[1][0]*math.sin(tilt_rad) + tvec[2][0]*math.cos(tilt_rad)
     distance = math.sqrt(z**2 + x**2)
-    print("distance=", distance)
+    print("distance [ft]=", distance/12.0)
 
     # Shows the contours overlayed on the original video
     return image
@@ -1160,9 +1178,9 @@ while True:
                 threshold = threshold_video(lower_green, upper_green, boxBlur)
                 processed = findOuterTarget(frame, threshold)
 
-    cv2.imshow("raw", img)
-    cv2.imshow("threshold", threshold)
-    cv2.imshow("processed", processed)
+    cv2.imshow(filenames[currentImg] + " raw", img)
+    cv2.imshow(filenames[currentImg] + " threshold", threshold)
+    cv2.imshow(filenames[currentImg] + " processed", processed)
     cv2.setMouseCallback('raw', draw_circle)
 
     key = cv2.waitKey(0)
@@ -1284,13 +1302,12 @@ while True:
 
 
 
-    #currentImg += 1
-    #print(imgLength)
-
     if (currentImg == imgLength):
          currentImg = 0
 
     img = images[currentImg]
+
+    cv2.destroyAllWindows()
 
 
 
