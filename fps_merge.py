@@ -32,12 +32,17 @@ orange = (3, 64, 252)
 
 # select folder of interest
 posCodePath = Path(__file__).absolute()
-strVisionRoot = posCodePath.parent.parent
-strImageFolder = str(strVisionRoot / 'PyImageSearch')
-#strImageInput = strImageFolder + '/' + 'outer+07f+10d.jpg'
-#strImageInput = strImageFolder + '/' + 'outer+25f+30d.jpg'
-#strImageInput = strImageFolder + '/' + 'outer+00f+00d.jpg'
-strImageInput = strImageFolder + '/' + 'outer+100f+295d.jpg'
+strVisionRoot = posCodePath.parent
+
+#strImageFolder = str(strVisionRoot / 'OuterTargetHalfDistance')
+#strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
+#strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
+#strImageFolder = str(strVisionRoot / 'OuterTargetImages')
+#strImageFolder = str(strVisionRoot / 'OuterTargetLiger')
+#strImageFolder = str(strVisionRoot / 'OuterTargetFullDistance')
+strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
+
+strImageInput = strImageFolder + '/' + 'outer+120f+295d.jpg'
 
 if booThreaded:
     # created a *threaded* video stream, allow the camera sensor to warmup,
