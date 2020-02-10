@@ -59,7 +59,7 @@ def get_four(width, height, contour):
         # https://www.pyimagesearch.com/2015/04/20/sorting-contours-using-python-and-opencv/
         boundingBoxes = [cv2.boundingRect(c) for c in sortedContours]
         (sortedContours, boundingBoxes) = zip(*sorted(zip(sortedContours, boundingBoxes),
-            key=lambda b:b[1][0], reverse=True))
+            key=lambda b:b[1][0], reverse=False))
 
         # approximate four corners of both
         leftHalf = sortedContours[0]
@@ -75,6 +75,8 @@ def get_four(width, height, contour):
         cv2.drawContours(two_bottoms, [rightApprox], -1, purple, 5)
         if booWrite: cv2.imwrite('06-largest_two.jpg', two_bottoms)
 
+        print ('lA',leftApprox)
+
         #if booWrite: img456visual4 = np.hstack([hull_mask, bitwise_bottoms, two_bottoms])
 
         # draw points of approx on top of contours
@@ -85,25 +87,33 @@ def get_four(width, height, contour):
 
         # left contour, sort by Y axis first to get lower points, then sort lower points by X
         # https://stackoverflow.com/questions/41284421/sort-a-numpy-array-according-to-2nd-column-only-if-values-in-1st-column-are-same
-        [leftApprox] = leftApprox[np.lexsort(leftApprox[:,::-1].T)] # sort y axis then x axis
-        leftApprox = leftApprox[-2:] # filter to lowest pair of coordintes, x descending
-        [leftApprox] = leftApprox[np.lexsort(leftApprox[:,::1].T)] # sort x axis (1st is x) ascending
+        [leftApprox0] = leftApprox[np.lexsort(leftApprox[:,::-1].T)] # sort y axis then x axis
+        print('la-1',leftApprox0)
+        leftApprox1 = leftApprox0[-2:] # filter to lowest pair of coordintes, x descending
+        print('la-2',leftApprox1)
+        [leftApprox2] = leftApprox1[np.lexsort(leftApprox1[:,::1])] # sort x axis (1st is x) ascending
+        print('la-3',leftApprox2)
+
+        print ('rA',rightApprox)
 
         # right contour, sort by Y axis first to get lower points, then sort lower points by X
         #https://stackoverflow.com/questions/41284421/sort-a-numpy-array-according-to-2nd-column-only-if-values-in-1st-column-are-same
-        [rightApprox] = rightApprox[np.lexsort(rightApprox[:,::-1].T)] # sort y axis then x axis
-        rightApprox = rightApprox[-2:] # filter to lowest pair of coordintes, x descending
-        [rightApprox] = rightApprox[np.lexsort(rightApprox[:,::-1].T)] # sort x axis (1st is x) ascending
+        [rightApprox0] = rightApprox[np.lexsort(rightApprox[:,::-1].T)] # sort y axis then x axis
+        print('ra-1',rightApprox0)
+        rightApprox1 = rightApprox0[-2:] # filter to lowest pair of coordintes, x descending
+        print('ra-2',rightApprox1)
+        [rightApprox2] = rightApprox1[np.lexsort(rightApprox1[:,::1])] # sort x axis (1st is x) ascending
+        print('ra-3',rightApprox2)
 
         # potential fifth point, average of inner points, from split, maybe
-        [[lx5, ly5]] = leftApprox[1]
-        [[rx5, ry5]] = rightApprox[0]
+        [[lx5, ly5]] = leftApprox2[1]
+        [[rx5, ry5]] = rightApprox2[0]
         fifth = (int((lx5+rx5)/2),int((ly5+ry5)/2))
 
         # first left is leftmost lower x, second right is rightmost lower x 
-        [arrayLeft] = leftApprox[0]
+        [arrayLeft] = leftApprox2[0]
         bottomcenter = fifth
-        [arrayRight] = rightApprox[1]
+        [arrayRight] = rightApprox2[1]
 
         # extract out desired bottom corners
         [blx, bly] = arrayLeft
