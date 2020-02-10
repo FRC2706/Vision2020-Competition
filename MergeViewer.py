@@ -127,6 +127,7 @@ green = (0, 255, 0)
 red = (0, 0, 255)
 cyan = (252, 252, 3)
 white = (255, 255, 255)
+yellow = (0, 255, 255)
 
 # define range of green of retroreflective tape in HSV
 lower_green = np.array([55, 55, 33])
@@ -728,7 +729,14 @@ def findTape(contours, image, centerX, centerY):
                     cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                     cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                     cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                    cv2.line(image, (cx, screenHeight), (cx, 0), blue, 2)
+                    if (YawToTarget >= -2 and YawToTarget <= 2):
+                        colour = green
+                    if ((YawToTarget >= -5 and YawToTarget < -2) or (YawToTarget > 2 and YawToTarget <= 5)):  
+                        colour = yellow
+                    if ((YawToTarget < -5 or YawToTarget > 5)):  
+                        colour = red
+
+                    cv2.line(image, (cx, screenHeight), (cx, 0), colour, 2)
                     cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
     #     # pushes vision target angle to network table
