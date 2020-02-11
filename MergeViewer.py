@@ -87,7 +87,8 @@ def load_images_from_folder(folder):
 
 # Outer Target Images
 #images, imagename = load_images_from_folder("./OuterTargetImages")
-images, imagename = load_images_from_folder("./OuterTargetHalfScale")
+#images, imagename = load_images_from_folder("./OuterTargetHalfScale")
+images, imagename = load_images_from_folder("./OuterTargetRingTest")
 #images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
 #images, imagename = load_images_from_folder("./OuterTargetSketchup")
 #images, imagename = load_images_from_folder("./OuterTargetLiger")
@@ -642,7 +643,7 @@ def compute_output_values(rvec, tvec):
 
     # The tilt angle only affects the distance and angle1 calcs
     # This is a major impact on calculations
-    tilt_angle = math.radians(35)
+    tilt_angle = math.radians(23)
 
     x = tvec[0][0]
     z = math.sin(tilt_angle) * tvec[1][0] + math.cos(tilt_angle) * tvec[2][0]
