@@ -88,7 +88,8 @@ def load_images_from_folder(folder):
 # Outer Target Images
 #images, imagename = load_images_from_folder("./OuterTargetImages")
 #images, imagename = load_images_from_folder("./OuterTargetHalfScale")
-images, imagename = load_images_from_folder("./OuterTargetRingTest")
+#images, imagename = load_images_from_folder("./OuterTargetRingTest")
+images, imagename = load_images_from_folder("./OuterTargetFullDistance")
 #images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
 #images, imagename = load_images_from_folder("./OuterTargetSketchup")
 #images, imagename = load_images_from_folder("./OuterTargetLiger")
@@ -131,7 +132,7 @@ white = (255, 255, 255)
 yellow = (0, 255, 255)
 
 # define range of green of retroreflective tape in HSV
-lower_green = np.array([55, 55, 33])
+lower_green = np.array([55, 120, 100])
 upper_green = np.array([100, 255, 255])
 
 # define range of green of retroreflective tape in HSV
@@ -449,15 +450,15 @@ def get_four_points(cnt):
         point = tuple(cnt[i][0])
         if (point == topmost):
             topmost_index = i
-            print("Found topmost:", topmost, " at index ", i)
+            #print("Found topmost:", topmost, " at index ", i)
         if (point == leftmost):
-            print("Found leftmost:", leftmost, " at index ", i)
+            #print("Found leftmost:", leftmost, " at index ", i)
             leftmost_index = i
         if (point == bottommost):
-            print("Found bottommost:", bottommost, " at index ", i)
+            #print("Found bottommost:", bottommost, " at index ", i)
             bottommost_index = i
         if (point == rightmost):
-            print("Found rightmost:", rightmost, " at index ", i)
+            #print("Found rightmost:", rightmost, " at index ", i)
             rightmost_index = i
 
     if ((topmost_index == -1)   or (leftmost_index == -1) or 
@@ -504,10 +505,17 @@ def get_four_points(cnt):
         #print("num_points_to_collect=", num_points_to_collect)
         line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
 
+
+    min_points_for_line_fit = 5
+
     #x1 = [line1_points[i][0][0] for i in range(len(line1_points))]
     #y1 = [line1_points[i][0][1] for i in range(len(line1_points))]
     #m1, b1, r_value1, p_value1, std_err1 = stats.linregress(x1,y1)
     #print("m1=", m1, " b1=", b1)
+
+    if len(line1_points) < min_points_for_line_fit:
+        return False, np.zeros(4,1) 
+
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
         print("Warning v11=0")
@@ -520,6 +528,10 @@ def get_four_points(cnt):
     #y2 = [line2_points[i][0][1] for i in range(len(line2_points))]
     #m2, b2, r_value2, p_value2, std_err2 = stats.linregress(x2,y2)
     #print("m2=", m2, " b2=", b2)
+
+    if len(line2_points) < min_points_for_line_fit:
+        return False, np.zeros(4,1) 
+
     [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
     m2 = v22/v12
     if (v12==0):
@@ -528,6 +540,8 @@ def get_four_points(cnt):
     b2 = y02 - m2*x02
     #print("From fitline: m2=", m2, " b2=", b2)
 
+    if (m1 == m2):
+        return False, np.zeros(4,1) 
     xint = (b2-b1)/(m1-m2)
     yint = m1*xint+b1
     #print("xint=", xint, " yint=", yint)
@@ -643,7 +657,7 @@ def compute_output_values(rvec, tvec):
 
     # The tilt angle only affects the distance and angle1 calcs
     # This is a major impact on calculations
-    tilt_angle = math.radians(23)
+    tilt_angle = math.radians(27)
 
     x = tvec[0][0]
     z = math.sin(tilt_angle) * tvec[1][0] + math.cos(tilt_angle) * tvec[2][0]
