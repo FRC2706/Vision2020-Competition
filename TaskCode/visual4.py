@@ -75,8 +75,6 @@ def get_four(width, height, contour):
         cv2.drawContours(two_bottoms, [rightApprox], -1, purple, 5)
         if booWrite: cv2.imwrite('06-largest_two.jpg', two_bottoms)
 
-        print ('lA',leftApprox)
-
         #if booWrite: img456visual4 = np.hstack([hull_mask, bitwise_bottoms, two_bottoms])
 
         # draw points of approx on top of contours
@@ -85,27 +83,31 @@ def get_four(width, height, contour):
         cv2.drawContours(approx_points, rightApprox, -1, red, thickness)
         if booWrite: cv2.imwrite('07-approx_points.jpg',approx_points)
 
-        # left contour, sort by Y axis first to get lower points, then sort lower points by X
-        # https://stackoverflow.com/questions/41284421/sort-a-numpy-array-according-to-2nd-column-only-if-values-in-1st-column-are-same
-        [leftApprox0] = leftApprox[np.lexsort(leftApprox[:,::-1].T)] # sort y axis then x axis
-        print('la-1',leftApprox0)
-        leftApprox1 = leftApprox0[-2:] # filter to lowest pair of coordintes, x descending
-        print('la-2',leftApprox1)
-        [leftApprox2] = leftApprox1[np.lexsort(leftApprox1[:,::1])] # sort x axis (1st is x) ascending
-        print('la-3',leftApprox2)
+        # not np.sort, not np.argsort,
 
-        print ('rA',rightApprox)
+        # left contour, sort by Y axis first to get lower points, then sort lower points by X
+        # https://docs.scipy.org/doc/numpy/reference/generated/numpy.sort.html#numpy.sort
+        leftApprox0 = leftApprox[leftApprox[:,2].argsort()] # sort y axis ascending
+        leftApprox1 = leftApprox0[-2:] # filter to lowest pair of coordintes
+        leftApprox2 = leftApprox1[leftApprox1[:1].argsort()] # sort x axis ascending
+
+        print('la',leftApprox)
+        print('la0',leftApprox0)
+        print('la1',leftApprox1)
+        print('la2',leftApprox2)
 
         # right contour, sort by Y axis first to get lower points, then sort lower points by X
-        #https://stackoverflow.com/questions/41284421/sort-a-numpy-array-according-to-2nd-column-only-if-values-in-1st-column-are-same
-        [rightApprox0] = rightApprox[np.lexsort(rightApprox[:,::-1].T)] # sort y axis then x axis
-        print('ra-1',rightApprox0)
-        rightApprox1 = rightApprox0[-2:] # filter to lowest pair of coordintes, x descending
-        print('ra-2',rightApprox1)
-        [rightApprox2] = rightApprox1[np.lexsort(rightApprox1[:,::1])] # sort x axis (1st is x) ascending
-        print('ra-3',rightApprox2)
+        # https://docs.scipy.org/doc/numpy/reference/generated/numpy.sort.html#numpy.sort
+        rightApprox0 = np.argsort(rightApprox, axis=-1) # sort y axis ascending
+        rightApprox1 = rightApprox0[:2] # filter to lowest pair of coordintes
+        rightApprox2 = np.argsort(rightApprox1, axis=0) # sort x axis ascending
 
-        # potential fifth point, average of inner points, from split, maybe
+        print('ra',rightApprox)
+        print('ra0',rightApprox0)
+        print('ra1',rightApprox1)
+        print('ra2',rightApprox2)
+
+        # potential fifth point, average of inner points, from split
         [[lx5, ly5]] = leftApprox2[1]
         [[rx5, ry5]] = rightApprox2[0]
         fifth = (int((lx5+rx5)/2),int((ly5+ry5)/2))
