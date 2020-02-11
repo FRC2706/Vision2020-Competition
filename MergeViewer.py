@@ -902,7 +902,7 @@ def get_four_points(cnt):
                                  bottommost
                                 ], dtype="double")
 
-    return four_points
+    return True, four_points
 
 # Finds the balls from the masked image and displays them on original stream + network tables
 def findOuterTarget(frame, mask):
@@ -927,7 +927,10 @@ def findOuterTarget(frame, mask):
     print("Number of points in contour: ", len(cnt))
     cv2.drawContours(image, [cnt], -1, purple, 3)
 
-    image_points = get_four_points(cnt)
+    success, image_points = get_four_points(cnt)
+
+    if success == False:
+        return image
 
     size = [screenHeight, screenWidth]
     focal_length = size[1]
@@ -1308,8 +1311,3 @@ while True:
     img = images[currentImg]
 
     cv2.destroyAllWindows()
-
-
-
-
-
