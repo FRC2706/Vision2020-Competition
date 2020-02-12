@@ -18,9 +18,13 @@
 import numpy as np
 import cv2
 import sys
-from pathlib import Path
 import os
 import math
+
+from adrian_pyimage import FPS
+from adrian_pyimage import WebcamVideoStream
+from pathlib import Path
+from visual4 import get_four
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
@@ -53,11 +57,13 @@ def get_adjacent(hyp, theta):
 # select folder of interest
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
+#strImageFolder = str(strVisionRoot / 'OuterTargetFullDistance')
 strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
 #strImageFolder = str(strVisionRoot / 'OuterTargetLiger')
+#strImageFolder = str(strVisionRoot / 'OuterTargetRingTest')
 
 print (strImageFolder)
 booBlankUpper = False
@@ -90,7 +96,7 @@ while (True):
 
     ## read file
     imgImageInput = cv2.imread(strImageInput)
-    intBinaryHeight, intBinaryWidth = imgImageInput.shape[:2]
+    intImageHeight, intImageWidth = imgImageInput.shape[:2]
 
     if booBlankUpper:
         ## blank upper portion from Task K
@@ -162,44 +168,44 @@ while (True):
         print('convexity is', cv2.isContourConvex(cnt))
 
         # straight bounding rectangle
-        x,y,w,h = cv2.boundingRect(cnt)
-        print('straight bounding rectangle = ', (x,y) ,w,h)
-        #cv2.rectangle(imgContours,(x,y),(x+w,y+h),green,2)
-        print('bounding rectangle aspect = ', float(w)/float(h))
-        print('bounding rectangle extend = ', float(area)/(float(w)*float(h)))
+        xb,yb,wb,hb = cv2.boundingRect(cnt)
+        print('straight bounding rectangle = ', (xb,yb) ,wb,hb)
+        #cv2.rectangle(imgContours,(xb,yb),(xb+wb,yb+hb),green,2)
+        print('bounding rectangle aspect = ', float(wb)/float(hb))
+        print('bounding rectangle extend = ', float(area)/(float(wb)*float(hb)))
 
         # rotated rectangle
         rect = cv2.minAreaRect(cnt)
         print('rotated rectangle = ',rect)
-        (x,y),(width,height),angleofrotation = rect
+        (xr,yr),(wr,hr),ar = rect
         #### more research https://stackoverflow.com/questions/15956124/minarearect-angles-unsure-about-the-angle-returned
-        if height > width:
-            angleofrotation = angleofrotation + 90
-            width, height = [height, width]
+        if hr > wr:
+            ar = ar + 90
+            wr, hr = [hr, wr]
         else:
-            angleofrotation = angleofrotation + 180
-        if angleofrotation == 180:
-            angleofrotation = 0
+            ar = ar + 180
+        if ar == 180:
+            ar = 0
 
         box = cv2.boxPoints(rect)
         box = np.int0(box)
         cv2.drawContours(imgContours,[box],0,blue,2)
-        print('minimum area rectangle aspect = ', float(width)/height)
-        print('minimum area rectangle extent = ', float(area)/(width*height))
+        print('minimum area rectangle aspect = ', float(wr)/hr)
+        print('minimum area rectangle extent = ', float(area)/(wr*hr))
 
         # Moment and Centroid
         M = cv2.moments(cnt)
         cx = int(M['m10']/M['m00'])
         cy = int(M['m01']/M['m00'])
         print('centroid = ',cx,cy)
-        ct = int(height/12)
+        ct = int(hr/12)
         cv2.line(imgContours,(cx-ct,cy-ct),(cx+ct,cy+ct),red,2)
         cv2.line(imgContours,(cx-ct,cy+ct),(cx+ct,cy-ct),red,2)
 
         # minimum enclosing circle
-        (x,y),radius = cv2.minEnclosingCircle(cnt)
-        print('minimum enclosing circle = ', (x,y),radius)
-        center = (int(x),int(y))
+        (xc,yc),radius = cv2.minEnclosingCircle(cnt)
+        print('minimum enclosing circle = ', (xc,yc),radius)
+        center = (int(xc),int(yc))
         radius = int(radius)
         cv2.circle(imgContours,center,radius,green,2)
         #equi_diameter = np.sqrt(4*area/np.pi)
@@ -210,8 +216,8 @@ while (True):
             ellipse = cv2.fitEllipse(cnt)
             #print(ellipse)
             # search ellipse to find it return a rotated rectangle in which the ellipse fits
-            (x,y),(majAxis,minAxis),angleofrotation = ellipse
-            print('ellipse center, maj axis, min axis, rotation = ', (x,y) ,(majAxis, minAxis), angleofrotation)
+            (xe,ye),(majAxis,minAxis),ae = ellipse
+            print('ellipse center, maj axis, min axis, rotation = ', (xe,ye) ,(majAxis, minAxis), ae)
             # search major and minor axis from ellipse
             # https://namkeenman.wordpress.com/2015/12/21/opencv-determine-orientation-of-ellipserotatedrect-in-fitellipse/
             cv2.ellipse(imgContours,ellipse,orange,2)
@@ -219,14 +225,14 @@ while (True):
 
         # fitting a line
         rows,cols = binary_mask.shape[:2]
-        #[vx,vy,x,y] = cv.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01) #errors in VS Code, search online and found fix
-        [vx,vy,x,y] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
-        lefty = int((-x*vy/vx) + y)
-        righty = int(((cols-x)*vy/vx)+y)
-        #cv2.line(imgContours,(cols-1,righty),(0,lefty),green,2)
+        #[vx,vy,xl,yl] = cv.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01) #errors in VS Code, search online and found fix
+        [vx,vy,xl,yl] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
+        lefty = int((-xl*vy/vx) + yl)
+        righty = int(((cols-xl)*vy/vx)+yl)
+        cv2.line(imgContours,(cols-1,righty),(0,lefty),green,2)
         # http://ottonello.gitlab.io/selfdriving/nanodegree/python/line%20detection/2016/12/18/extrapolating_lines.html
         slope = vy / vx
-        intercept = y - (slope * x)
+        intercept = yl - (slope * xl)
         print('fitLine y = ', slope, '* x + ', intercept)
 
         # aspect ratio
@@ -267,15 +273,57 @@ while (True):
         leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
         rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
         #topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
-        bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+        #bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
         # draw extreme points
         # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
         cv2.circle(imgContours, leftmost, 12, green, -1)
         cv2.circle(imgContours, rightmost, 12, red, -1)
         #cv2.circle(imgContours, topmost, 12, white, -1)
-        cv2.circle(imgContours, bottommost, 12, blue, -1)
+        #cv2.circle(imgContours, bottommost, 12, blue, -1)
         #print('extreme points = left',leftmost,'right',rightmost,'top',topmost,'bottom',bottommost)
         print('extreme points = left',leftmost,'right',rightmost)
+
+        # send chosen contour to 4 point finder
+        ROI_mask = binary_mask[yb:yb+hb, xb:xb+wb]
+        intROMHeight, intROMWidth = ROI_mask.shape[:2]
+        imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
+        
+        # send chosen contour to 4 point finder, get back found points
+        try_get_four = get_four(intROMWidth, intROMHeight, ROISortedContours[0])
+
+        if try_get_four is None:
+            pass
+
+        else:
+            rul, rbl, rbc, rbr, rur = try_get_four
+
+            rulx, ruly = rul
+            ulx = rulx + xb
+            uly = ruly + yb
+
+            rblx, rbly = rbl
+            blx = rblx + xb
+            bly = rbly + yb
+
+            rbcx, rbcy = rbc
+            bcx = rbcx + xb
+            bcy = rbcy + yb
+
+            rbrx, rbry = rbr
+            brx = rbrx + xb
+            bry = rbry + yb
+
+            rurx, rury = rur
+            urx = rurx + xb
+            ury = rury + yb
+
+            cv2.circle(imgContours, (ulx,uly), 10, green, -1)
+            cv2.circle(imgContours, (blx,bly), 10, blue, -1)
+            cv2.circle(imgContours, (bcx,bcy), 10, blue, -1)
+            cv2.circle(imgContours, (brx,bry), 10, blue, -1)
+            cv2.circle(imgContours, (urx,ury), 10, red, -1)
+
 
     # Display the contours and maths generated
     cv2.imshow('contours and math over green mask', imgContours)
