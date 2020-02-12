@@ -132,7 +132,7 @@ white = (255, 255, 255)
 yellow = (0, 255, 255)
 
 # define range of green of retroreflective tape in HSV
-lower_green = np.array([55, 120, 100])
+lower_green = np.array([55, 55, 55])
 upper_green = np.array([100, 255, 255])
 
 # define range of green of retroreflective tape in HSV
@@ -192,7 +192,7 @@ real_world_coordinates_right = np.array([
         [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]     # Bottom Right point
     ])        
 
-MAXIMUM_TARGET_AREA = 4000
+MAXIMUM_TARGET_AREA = 4400
 
 
 # Flip image if camera mounted upside down
@@ -525,7 +525,8 @@ def get_four_points(cnt):
     #print("m1=", m1, " b1=", b1)
 
     if len(line1_points) < min_points_for_line_fit:
-        return False, np.zeros(4,1) 
+        #return False, np.zeros(4,1) 
+        return False, 
 
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
@@ -541,7 +542,8 @@ def get_four_points(cnt):
     #print("m2=", m2, " b2=", b2)
 
     if len(line2_points) < min_points_for_line_fit:
-        return False, np.zeros(4,1) 
+        #return False, np.zeros(4,2) 
+        return False, None
 
     [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
     m2 = v22/v12
@@ -552,7 +554,8 @@ def get_four_points(cnt):
     #print("From fitline: m2=", m2, " b2=", b2)
 
     if (m1 == m2):
-        return False, np.zeros(4,1) 
+        #return False, np.zeros(4,1) 
+        return False, None
     xint = (b2-b1)/(m1-m2)
     yint = m1*xint+b1
     #print("xint=", xint, " yint=", yint)
@@ -573,7 +576,7 @@ def get_four_points(cnt):
                                  bottommost
                                 ], dtype="double")
 
-    return four_points
+    return True, four_points
 
 # Simple method which uses 3 Extreme points to Map the real world image
 def get_four_points_with3(cnt):
@@ -733,41 +736,43 @@ def findTape(contours, image, centerX, centerY):
                 rw_coordinates = real_world_coordinates
 
                 #Pick which Corner solving method to use
+                foundCorners = False
                 if (CornerMethod == 1):
                     outer_corners, rw_coordinates = get_four_points_with3(cnt)
+                    foundCorners = True
 
                 if (CornerMethod == 2):
-                    outer_corners = get_four_points(cnt)
+                    foundCorners, outer_corners = get_four_points(cnt)
 
-                displaycorners(image, outer_corners)
+                if (foundCorners):
+                    displaycorners(image, outer_corners)
+                    success, rvec, tvec = findTvecRvec(image, outer_corners, rw_coordinates) 
 
-                success, rvec, tvec = findTvecRvec(image, outer_corners, rw_coordinates) 
+                    #Calculate the Yaw
+                    M = cv2.moments(cnt)
+                    if M["m00"] != 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                    else:
+                        cx, cy = 0, 0
 
-                #Calculate the Yaw
-                M = cv2.moments(cnt)
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                else:
-                    cx, cy = 0, 0
+                    YawToTarget = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
+                    
+                    # If success then print values to screen                               
+                    if success:
+                        distance, angle1, angle2 = compute_output_values(rvec, tvec)
+                        cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        if (YawToTarget >= -2 and YawToTarget <= 2):
+                            colour = green
+                        if ((YawToTarget >= -5 and YawToTarget < -2) or (YawToTarget > 2 and YawToTarget <= 5)):  
+                            colour = yellow
+                        if ((YawToTarget < -5 or YawToTarget > 5)):  
+                            colour = red
 
-                YawToTarget = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
-                
-                # If success then print values to screen                               
-                if success:
-                    distance, angle1, angle2 = compute_output_values(rvec, tvec)
-                    cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                    cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                    cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                    if (YawToTarget >= -2 and YawToTarget <= 2):
-                        colour = green
-                    if ((YawToTarget >= -5 and YawToTarget < -2) or (YawToTarget > 2 and YawToTarget <= 5)):  
-                        colour = yellow
-                    if ((YawToTarget < -5 or YawToTarget > 5)):  
-                        colour = red
-
-                    cv2.line(image, (cx, screenHeight), (cx, 0), colour, 2)
-                    cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
+                        cv2.line(image, (cx, screenHeight), (cx, 0), colour, 2)
+                        cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
     #     # pushes vision target angle to network table
     return image
