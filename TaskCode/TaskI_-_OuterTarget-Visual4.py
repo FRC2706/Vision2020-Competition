@@ -57,7 +57,7 @@ def get_adjacent(hyp, theta):
 # select folder of interest
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
-strImageFolder = str(strVisionRoot / 'OuterTargetFullDistance')
+#strImageFolder = str(strVisionRoot / 'OuterTargetFullDistance')
 strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
@@ -273,13 +273,13 @@ while (True):
         leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
         rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
         #topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
-        bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+        #bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
         # draw extreme points
         # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
         cv2.circle(imgContours, leftmost, 12, green, -1)
         cv2.circle(imgContours, rightmost, 12, red, -1)
         #cv2.circle(imgContours, topmost, 12, white, -1)
-        cv2.circle(imgContours, bottommost, 12, blue, -1)
+        #cv2.circle(imgContours, bottommost, 12, blue, -1)
         #print('extreme points = left',leftmost,'right',rightmost,'top',topmost,'bottom',bottommost)
         print('extreme points = left',leftmost,'right',rightmost)
 
@@ -318,11 +318,11 @@ while (True):
             urx = rurx + xb
             ury = rury + yb
 
-            cv2.circle(imgContours, (ulx,uly), 12, green, -1)
-            cv2.circle(imgContours, (blx,bly), 12, blue, -1)
-            cv2.circle(imgContours, (bcx,bcy), 12, blue, -1)
-            cv2.circle(imgContours, (brx,bry), 12, blue, -1)
-            cv2.circle(imgContours, (urx,ury), 12, red, -1)
+            cv2.circle(imgContours, (ulx,uly), 10, green, -1)
+            cv2.circle(imgContours, (blx,bly), 10, blue, -1)
+            cv2.circle(imgContours, (bcx,bcy), 10, blue, -1)
+            cv2.circle(imgContours, (brx,bry), 10, blue, -1)
+            cv2.circle(imgContours, (urx,ury), 10, red, -1)
 
 
     # Display the contours and maths generated

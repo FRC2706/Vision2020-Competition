@@ -32,7 +32,7 @@ orange = (3, 64, 252)
 
 # select folder of interest
 posCodePath = Path(__file__).absolute()
-strVisionRoot = posCodePath.parent
+strVisionRoot = posCodePath.parent.parent
 
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfDistance')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
@@ -44,15 +44,18 @@ strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 
 strImageInput = strImageFolder + '/' + 'outer+120f+295d.jpg'
 
-if booThreaded:
-    # created a *threaded* video stream, allow the camera sensor to warmup,
-    # and start the FPS counter
-    print('[INFO] sampling', num_frames,'THREADED frames from webcam...')
-    vs = WebcamVideoStream(src=0).start()
+if booWebCam:
+    if booThreaded:
+        # created a *threaded* video stream, allow the camera sensor to warmup,
+        # and start the FPS counter
+        print('[INFO] sampling', num_frames,'THREADED frames from webcam...')
+        vs = WebcamVideoStream(src=0).start()
+    else:
+        # grab a pointer to the video stream and initialize the FPS counter
+        print('[INFO] sampling', num_frames,'frames from file somewhere...')
+        stream = cv2.VideoCapture(0)
 else:
-    # grab a pointer to the video stream and initialize the FPS counter
-    print('[INFO] sampling', num_frames,'frames from somewhere...')
-    stream = cv2.VideoCapture(0)
+    print('[INFO] sampling', num_frames,'THREADED frames from file...')
 
 fps = FPS().start()
 
@@ -223,9 +226,12 @@ if not booWebCam:
     key = cv2.waitKey(0) & 0xFF
 
 # do a bit of cleanup
-if booThreaded:
-    vs.stop()
+if booWebCam:
+    if booThreaded:
+        vs.stop()
+    else:
+        stream.release()
 else:
-    stream.release()
+    pass
 
 cv2.destroyAllWindows()

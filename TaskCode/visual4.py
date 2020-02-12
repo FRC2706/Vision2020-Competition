@@ -8,7 +8,43 @@ purple = (165, 0, 120)
 green = (0, 255, 0)
 red = (0, 0, 255)
 blue = (255, 0, 0)
-booWrite = True
+booWrite = False
+
+def outer_bottoms(apprx, left):
+    # can't find sort for approx array output, so re-create as simple list
+    # pull each row and remove layer of []
+    [row0] = apprx[0]
+    [row1] = apprx[1]
+    [row2] = apprx[2]
+    [row3] = apprx[3]
+
+    # create normal list and append points into it
+    lst = []
+    lst.append(row0)
+    lst.append(row1)
+    lst.append(row2)
+    lst.append(row3)
+    
+    # sort list by second column or y axis ascending
+    lst.sort(key=lambda elem: elem[1])
+    # keep only bottom two in new list
+    ylst = lst[-2:]
+
+    # sort list by first column or x axis
+    ylst.sort(key=lambda elem: elem[0])
+
+    # create list to return with outside corners first, inside second
+    xlst = []
+    if left:
+        xlst.append(ylst[0])
+        xlst.append(ylst[1])
+    else:
+        xlst.append(ylst[1])
+        xlst.append(ylst[0])
+
+    # return list in desired form
+    return xlst
+
 
 def get_four(width, height, contour):
     """
@@ -61,7 +97,7 @@ def get_four(width, height, contour):
         (sortedContours, boundingBoxes) = zip(*sorted(zip(sortedContours, boundingBoxes),
             key=lambda b:b[1][0], reverse=False))
 
-        # approximate four corners of both
+        # approximate four corners of both, 0.035 by trial and error to deliver 4 points
         leftHalf = sortedContours[0]
         epsilon = 0.035*cv2.arcLength(leftHalf,True)
         leftApprox = cv2.approxPolyDP(leftHalf,epsilon,True)
@@ -69,59 +105,39 @@ def get_four(width, height, contour):
         epsilon = 0.035*cv2.arcLength(rightHalf,True)
         rightApprox = cv2.approxPolyDP(rightHalf,epsilon,True)
 
-        # draw approximated contour
-        two_bottoms = cv2.cvtColor(bitwise_bottoms,cv2.COLOR_GRAY2RGB)
-        cv2.drawContours(two_bottoms, [leftApprox], -1, purple, 5)
-        cv2.drawContours(two_bottoms, [rightApprox], -1, purple, 5)
-        if booWrite: cv2.imwrite('06-largest_two.jpg', two_bottoms)
+        # draw approximated contours on colourized mask
+        two_contours = cv2.cvtColor(bitwise_bottoms,cv2.COLOR_GRAY2RGB)
+        cv2.drawContours(two_contours, [leftApprox], -1, purple, 5)
+        cv2.drawContours(two_contours, [rightApprox], -1, purple, 5)
+        if booWrite: cv2.imwrite('06-two_contours.jpg', two_contours)
 
         #if booWrite: img456visual4 = np.hstack([hull_mask, bitwise_bottoms, two_bottoms])
 
-        # draw points of approx on top of contours
+        # draw points of approx on top of contours 
         approx_points = cv2.cvtColor(bitwise_bottoms,cv2.COLOR_GRAY2RGB)
         cv2.drawContours(approx_points, leftApprox, -1, green, thickness)
         cv2.drawContours(approx_points, rightApprox, -1, red, thickness)
         if booWrite: cv2.imwrite('07-approx_points.jpg',approx_points)
 
-        # not np.sort, not np.argsort,
+        # seems it is dificult to sort output of approx function, use custom sort
+        leftBottoms = outer_bottoms(leftApprox, True)
+        rightBottoms = outer_bottoms(rightApprox, False)
 
-        # left contour, sort by Y axis first to get lower points, then sort lower points by X
-        # https://docs.scipy.org/doc/numpy/reference/generated/numpy.sort.html#numpy.sort
-        leftApprox0 = leftApprox[leftApprox[:,2].argsort()] # sort y axis ascending
-        leftApprox1 = leftApprox0[-2:] # filter to lowest pair of coordintes
-        leftApprox2 = leftApprox1[leftApprox1[:1].argsort()] # sort x axis ascending
-
-        print('la',leftApprox)
-        print('la0',leftApprox0)
-        print('la1',leftApprox1)
-        print('la2',leftApprox2)
-
-        # right contour, sort by Y axis first to get lower points, then sort lower points by X
-        # https://docs.scipy.org/doc/numpy/reference/generated/numpy.sort.html#numpy.sort
-        rightApprox0 = np.argsort(rightApprox, axis=-1) # sort y axis ascending
-        rightApprox1 = rightApprox0[:2] # filter to lowest pair of coordintes
-        rightApprox2 = np.argsort(rightApprox1, axis=0) # sort x axis ascending
-
-        print('ra',rightApprox)
-        print('ra0',rightApprox0)
-        print('ra1',rightApprox1)
-        print('ra2',rightApprox2)
-
-        # potential fifth point, average of inner points, from split
-        [[lx5, ly5]] = leftApprox2[1]
-        [[rx5, ry5]] = rightApprox2[0]
-        fifth = (int((lx5+rx5)/2),int((ly5+ry5)/2))
-
-        # first left is leftmost lower x, second right is rightmost lower x 
-        [arrayLeft] = leftApprox2[0]
-        bottomcenter = fifth
-        [arrayRight] = rightApprox2[1]
+        # first entries are outer points
+        arrayLeft = leftBottoms[0]
+        arrayRight = rightBottoms[0]
 
         # extract out desired bottom corners
         [blx, bly] = arrayLeft
         [brx, bry] = arrayRight
         bottomleft = (blx, bly)
         bottomright = (brx, bry)
+
+        # potential fifth point, average of inner points, from split of hull
+        [lx5, ly5] = leftBottoms[1]
+        [rx5, ry5] = rightBottoms[1]
+        fifth = (int((lx5+rx5)/2),int((ly5+ry5)/2))
+        bottomcenter = fifth
 
         # draw found corners
         color_bottoms = cv2.cvtColor(bitwise_bottoms, cv2.COLOR_GRAY2RGB)
