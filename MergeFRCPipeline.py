@@ -277,6 +277,8 @@ real_world_coordinates_right = np.array([
         [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]     # Bottom Right point
     ])    
 
+#This is the maximum area of the Target
+MAXIMUM_TARGET_AREA = 4000
 
 # Flip image if camera mounted upside down
 def flipImage(frame):
@@ -890,7 +892,7 @@ def checkBall(cntSize, cntAspectRatio):
 def checkTargetSize(cntArea, cntAspectRatio):
     #print("cntArea: " + str(cntArea))
     #print("aspect ratio: " + str(cntAspectRatio))
-    return (cntArea > (image_width/3)) and (cntAspectRatio > 1.0)
+    return (cntArea > image_width/3 and cntArea < MAXIMUM_TARGET_AREA and cntAspectRatio > 1.0)
 
 # Forgot how exactly it works, but it works!
 def translateRotation(rotation, width, height):

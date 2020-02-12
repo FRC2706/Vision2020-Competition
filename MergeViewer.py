@@ -192,7 +192,7 @@ real_world_coordinates_right = np.array([
         [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]     # Bottom Right point
     ])        
 
-
+MAXIMUM_TARGET_AREA = 4000
 
 
 # Flip image if camera mounted upside down
@@ -240,6 +240,17 @@ def threshold_video(lower_color, upper_color, blur):
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):
 
+    # Taking a matrix of size 5 as the kernel 
+    #kernel = np.ones((3,3), np.uint8) 
+  
+    # The first parameter is the original image, 
+    # kernel is the matrix with which image is  
+    # convolved and third parameter is the number  
+    # of iterations, which will determine how much  
+    # you want to erode/dilate a given image.  
+    #img_erosion = cv2.erode(mask, kernel, iterations=1) 
+    #mask = cv2.dilate(img_erosion, kernel, iterations=1) 
+    #cv2.imshow("mask2", mask)
     # Finds contours
     if is_cv3():
         _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
@@ -587,10 +598,14 @@ def get_four_points_with3(cnt):
     if (abs(bottommost[0]-leftmost[0]) > abs(bottommost[0]-rightmost[0])):
         #print("bottom most is right")
         bottomIsLeft = False
-        outer_corners = np.array([leftmost, rightmost, rightmost, bottommost], dtype="double")
-        return outer_corners, real_world_coordinates_right
 
-    return outer_corners, real_world_coordinates_left
+    if (bottomIsLeft):
+        return outer_corners, real_world_coordinates_left
+
+    outer_corners = np.array([leftmost, rightmost, rightmost, bottommost], dtype="double")
+    return outer_corners, real_world_coordinates_right
+
+    
 
 # Simple method to order points from left to right
 def order_points(pts):
@@ -702,7 +717,7 @@ def findTape(contours, image, centerX, centerY):
 
     if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:3]
        
         for cnt in cntsSorted:
             x, y, w, h = cv2.boundingRect(cnt)
@@ -790,7 +805,7 @@ def findControlPanelColour(contours, image, centerX, centerY):
 def checkTargetSize(cntArea, cntAspectRatio):
     print("cntArea: " + str(cntArea))
     print("aspect ratio: " + str(cntAspectRatio))
-    return (cntArea > (image_width/3)) and (cntAspectRatio > 1.0)
+    return (cntArea > image_width/3 and cntArea < MAXIMUM_TARGET_AREA and cntAspectRatio > 1.0)
 
 
 # Checks if ball contours are worthy based off of contour area and (not currently) hull area
@@ -928,9 +943,6 @@ def getEllipseRotation(image, cnt):
         # Maps rotation to (-90 to 90). Makes it easier to tell direction of slant
         rotation = translateRotation(rotation, width, height)
         return rotation
-
-
-
 
 team = 2706
 server = False
