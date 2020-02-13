@@ -57,12 +57,12 @@ def load_images_from_folder(folder):
     return images
 
 #images = load_images_from_folder("./OuterTargetImages")
-#images = load_images_from_folder("./OuterTargetHalfScale")
+images = load_images_from_folder("./OuterTargetHalfScale")
 #images = load_images_from_folder("./PowerCell25Scale")
 #images = load_images_from_folder("./PowerCellImages")
 #images = load_images_from_folder("./PowerCellFullScale")
 #images = load_images_from_folder("./PowerCellFullMystery")
-images = load_images_from_folder("./PowerCellSketchup")
+#images = load_images_from_folder("./PowerCellSketchup")
 #images = load_images_from_folder("./LifeCamPhotos")
 
 # finds height/width of camera frame (eg. 640 width, 480 height)
@@ -155,9 +155,8 @@ def findTargets(frame, mask):
 
 
     # Finds contours
-    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-
-    contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+    # _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    #contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
     # Take each frame
     # Gets the shape of video
@@ -168,11 +167,49 @@ def findTargets(frame, mask):
     # Copies frame and stores it in image
     image = frame.copy()
     # Processes the contours, takes in (contours, output_image, (centerOfImage)
-    if len(contours) != 0:
-        #image = findTape(contours, image, centerX, centerY)
-        image = findOuterTarget(contours, image, centerX, centerY)
+    #if len(contours) == 0:
+        #return image 
+
+    #cnt = contours[0]
+    
+    
+    #gray = cv2.cvtColor(mask,cv2.COLOR_BGR2GRAY)
+    corners = cv2.goodFeaturesToTrack(mask,5,0.01,10)
+    corners = np.int0(corners)
+    for corner in corners:
+        x,y = corner.ravel()
+        cv2.circle(image,(x,y),3,255,-1)
+    print("Rebecca corners: ", corners)
+
+#Pnp Code
+    #Read Image
+    size = img.shape
+
+    #2D image points. If you change the image, you need to change vector
+    image_points = np. array([
+        (359, 391), #Nose tip
+        (399, 561), #Chin
+        (337, 297), #Left eye left corner
+        (513, 301), #Right eye right corner
+        (345, 465), #Left Mouth corner
+        (453, 469), #Right mouth corner
+    ], dtype="double")
+
+    #3D model points.
+    model_points=np.array([
+        (0.0, 0.0, 0.0),
+        (0.0, -330.0, -65.0),
+        (-225.0, 170.0, -135.0),
+        (225.0, 170.0, -135.0),
+        (-150.0, -150.0, -125.0),
+        (150.0, -150.0, -125.0)
+
+    ])
+
+
     # Shows the contours overlayed on the original video
-    return image
+    return img
+
 
 
 # Finds the balls from the masked image and displays them on original stream + network tables
@@ -716,7 +753,7 @@ while True:
 
         if Tape:
 
-            threshold = threshold_videho(lower_green, upper_green, frame)
+            threshold = threshold_video(lower_green, upper_green, frame)
             processed = findTargets(frame, threshold)
 
         else:
@@ -732,7 +769,7 @@ while True:
             
             elif OuterTarget:
                 threshold = threshold_video(lower_green, upper_green, frame)
-                findTargets(frame, threshold)
+                processed = findTargets(frame, threshold)
 
     cv2.imshow("raw", img)
     cv2.imshow("threshold", threshold)
