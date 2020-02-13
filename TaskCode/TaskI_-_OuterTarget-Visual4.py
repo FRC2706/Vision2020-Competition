@@ -170,6 +170,7 @@ while (True):
         # straight bounding rectangle
         xb,yb,wb,hb = cv2.boundingRect(cnt)
         print('straight bounding rectangle = ', (xb,yb) ,wb,hb)
+        brect = (xb,yb,wb,hb)
         #cv2.rectangle(imgContours,(xb,yb),(xb+wb,yb+hb),green,2)
         print('bounding rectangle aspect = ', float(wb)/float(hb))
         print('bounding rectangle extend = ', float(area)/(float(wb)*float(hb)))
@@ -283,47 +284,28 @@ while (True):
         #print('extreme points = left',leftmost,'right',rightmost,'top',topmost,'bottom',bottommost)
         print('extreme points = left',leftmost,'right',rightmost)
 
-        # send chosen contour to 4 point finder
+        # Start of visual4
+        # prepare chosen contour for 4 point finder as ROI
         ROI_mask = binary_mask[yb:yb+hb, xb:xb+wb]
         intROMHeight, intROMWidth = ROI_mask.shape[:2]
         imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
         
-        # send chosen contour to 4 point finder, get back found points
-        try_get_four = get_four(intROMWidth, intROMHeight, ROISortedContours[0])
+        # send chosen contour to 4 point finder, get back found points or None
+        try_get_four = get_four(brect, intROMWidth, intROMHeight, ROISortedContours[0])
 
         if try_get_four is None:
             pass
 
         else:
-            rul, rbl, rbc, rbr, rur = try_get_four
-
-            rulx, ruly = rul
-            ulx = rulx + xb
-            uly = ruly + yb
-
-            rblx, rbly = rbl
-            blx = rblx + xb
-            bly = rbly + yb
-
-            rbcx, rbcy = rbc
-            bcx = rbcx + xb
-            bcy = rbcy + yb
-
-            rbrx, rbry = rbr
-            brx = rbrx + xb
-            bry = rbry + yb
-
-            rurx, rury = rur
-            urx = rurx + xb
-            ury = rury + yb
+            [(ulx,uly), (blx,bly), (bcx,bcy), (brx,bry), (urx,ury)]  = try_get_four
 
             cv2.circle(imgContours, (ulx,uly), 10, green, -1)
             cv2.circle(imgContours, (blx,bly), 10, blue, -1)
             cv2.circle(imgContours, (bcx,bcy), 10, blue, -1)
             cv2.circle(imgContours, (brx,bry), 10, blue, -1)
             cv2.circle(imgContours, (urx,ury), 10, red, -1)
-
+        # End of visual4
 
     # Display the contours and maths generated
     cv2.imshow('contours and math over green mask', imgContours)
