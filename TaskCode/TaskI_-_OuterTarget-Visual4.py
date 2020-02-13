@@ -103,7 +103,7 @@ while (True):
 
     if booBlankUpper:
         ## blank upper portion from Task K
-        cv2.rectangle(imgImageInput, (0,0), (intBinaryWidth, int(intBinaryHeight/2-10)), black, -1)
+        cv2.rectangle(imgImageInput, (0,0), (intImageWidth, int(intImageHeight/2-10)), black, -1)
 
     #cv2.imshow('imgImageInput', imgImageInput)
     #cv2.moveWindow('imgImageInput',300,350)
