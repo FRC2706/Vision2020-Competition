@@ -64,6 +64,7 @@ strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
 #strImageFolder = str(strVisionRoot / 'OuterTargetLiger')
 #strImageFolder = str(strVisionRoot / 'OuterTargetRingTest')
+#strImageFolder = str(strVisionRoot / 'OuterTargetProblems')
 
 print (strImageFolder)
 booBlankUpper = False
@@ -82,7 +83,7 @@ else:
 print (photos)
 
 # set index of files
-i = 0
+i = 1
 intLastFile = len(photos) -1
 
 # begin main loop indent 1

@@ -14,15 +14,20 @@
 import json
 import time
 import sys
-from threading import Thread
 import random
-
 import cv2
+import math
+import os
+import sys
+
 import numpy as np
 
-import math
+from threading import Thread
+from TaskCode.visual4 import get_four
 
-import os
+print("Using python version {0}".format(sys.version))
+print('OpenCV Version = ', cv2.__version__)
+print()
 
 # from https://www.pyimagesearch.com/2015/08/10/checking-your-opencv-version-using-python/
 def is_cv3():
@@ -70,7 +75,7 @@ ImageCounter = 0
 def load_images_from_folder(folder):
     images = []
     imagename = []
-    for filename in os.listdir(folder):
+    for filename in sorted(os.listdir(folder)):
         img = cv2.imread(os.path.join(folder,filename))
         if img is not None:
             images.append(img)
