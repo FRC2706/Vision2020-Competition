@@ -42,6 +42,8 @@ black = (0, 0, 0)
 white = (252, 252, 252)
 orange = (3, 64, 252) 
 
+minAreaContour = 200
+
 # from https://stackoverflow.com/questions/41462419/python-slope-given-two-points-find-the-slope-answer-works-doesnt-work/41462583
 def get_slope(x1, y1, x2, y2):
     return (y2-y1)/(x2-x1) 
@@ -64,7 +66,7 @@ strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
 #strImageFolder = str(strVisionRoot / 'OuterTargetLiger')
 #strImageFolder = str(strVisionRoot / 'OuterTargetRingTest')
-#strImageFolder = str(strVisionRoot / 'OuterTargetProblems')
+strImageFolder = str(strVisionRoot / 'OuterTargetProblems')
 
 print (strImageFolder)
 booBlankUpper = False
@@ -83,7 +85,7 @@ else:
 print (photos)
 
 # set index of files
-i = 1
+i = 4
 intLastFile = len(photos) -1
 
 # begin main loop indent 1
@@ -134,23 +136,73 @@ while (True):
     imgFindContourReturn, contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     imgContours = green_mask.copy()
 
-    cv2.drawContours(imgContours, contours, -1, yellow, 1)
+    # sort contours by area descending
+    initialSortedContours = sorted(contours, key = cv2.contourArea, reverse = True)[:15]
+
+    cv2.drawContours(imgContours, initialSortedContours, -1, yellow, 1)
     print('Found ', len(contours), 'contours in image')
     #print (contours)
 
-    # sort contours by area descending
-    initialSortedContours = sorted(contours, key = cv2.contourArea, reverse = True)[:3]
+    initialFilteredContours = []
 
     if initialSortedContours:
 
-        cnt = initialSortedContours[0]
+        for (j, indiv) in enumerate(initialSortedContours):
+
+            print('indiv', j)
+
+            # Area
+            area = cv2.contourArea(indiv)
+            print('area = ', area)
+            if area < minAreaContour: continue
+
+            # rotated rectangle
+            rect = cv2.minAreaRect(indiv)
+            print('rotated rectangle = ',rect)
+            (xr,yr),(wr,hr),ar = rect
+            #### more research https://stackoverflow.com/questions/15956124/minarearect-angles-unsure-about-the-angle-returned
+            if hr > wr:
+                ar = ar + 90
+                wr, hr = [hr, wr]
+            else:
+                ar = ar + 180
+            if ar == 180:
+                ar = 0
+
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            cv2.drawContours(imgContours,[box],0,blue,2)
+            minAAspect = float(wr)/hr
+            minAextent = float(area)/(wr*hr) 
+            print('minimum area rectangle aspect = ', minAAspect)
+            print('minimum area rectangle extent = ', minAextent)
+
+            if (minAextent < 0.16 or minAextent > 0.26): continue
+            if (minAAspect < 2.0 or minAAspect > 3.0): continue
+
+            # Hull
+            hull = cv2.convexHull(indiv)
+            #cv2.drawContours(imgContours, [hull], -1, orange, 5)
+            #cv2.imshow('hull over green mask', imgContours)
+            hull_area = cv2.contourArea(hull)
+            print('area of convex hull',hull_area)
+            solidity = float(area)/hull_area
+            print('solidity from convex hull', float(area)/hull_area)
+
+            if (solidity < 0.22 or solidity > 0.30): continue
+
+            initialFilteredContours.append(indiv)
+
+    if initialFilteredContours:
+
+        cnt = initialFilteredContours[0]
         print('original contour length = ', len(cnt))
         cv2.drawContours(imgContours, [cnt], -1, purple, 3)
 
         # Area
         area = cv2.contourArea(cnt)
         print('area = ', area)
-
+        
         # Perimeter
         perimeter = cv2.arcLength(cnt,True)
         print('perimeter = ', perimeter)
@@ -174,7 +226,7 @@ while (True):
         brect = (xb,yb,wb,hb)
         #cv2.rectangle(imgContours,(xb,yb),(xb+wb,yb+hb),green,2)
         print('bounding rectangle aspect = ', float(wb)/float(hb))
-        print('bounding rectangle extend = ', float(area)/(float(wb)*float(hb)))
+        print('bounding rectangle extent = ', float(area)/(float(wb)*float(hb)))
 
         # rotated rectangle
         rect = cv2.minAreaRect(cnt)
