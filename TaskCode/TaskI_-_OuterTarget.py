@@ -53,7 +53,7 @@ def get_adjacent(hyp, theta):
 # select folder of interest
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
-strImageFolder = str(strVisionRoot / 'OuterTargetHalfDistance')
+strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')

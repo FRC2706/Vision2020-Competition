@@ -16,15 +16,21 @@ import datetime
 import json
 import time
 import sys
-from threading import Thread
 import random
-
 import cv2
+import math
+import os
+import sys
+
 import numpy as np
 
-import math
+from threading import Thread
+from TaskCode.visual4 import get_four
+from TaskCode.adrian_pyimage import FPS
 
-import os
+print("Using python version {0}".format(sys.version))
+print('OpenCV Version = ', cv2.__version__)
+print()
 
 # Imports EVERYTHING from these files
 from FindBall import *
@@ -45,7 +51,7 @@ ImageCounter = 0
 def load_images_from_folder(folder):
     images = []
     imagename = []
-    for filename in os.listdir(folder):
+    for filename in sorted(os.listdir(folder)):
         img = cv2.imread(os.path.join(folder,filename))
         if img is not None:
             images.append(img)
@@ -93,6 +99,10 @@ print("Hello Vision Team!")
 
 while True:
     frame = img
+
+    # start
+    #fps = FPS().start()
+
     if Driver:
         processed = frame
     else:
@@ -109,6 +119,8 @@ while True:
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)
                 processed = findControlPanel(frame, threshold)
+
+    cv2.putText(processed, 'FPS: 3.1415', (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
     cv2.imshow("raw", img)
     cv2.imshow(filename, processed)
