@@ -24,6 +24,7 @@ import numpy as np
 
 from threading import Thread
 from TaskCode.visual4 import get_four
+from TaskCode.adrian_pyimage import FPS
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
@@ -989,6 +990,9 @@ while True:
 
     frame = img
 
+    # start
+    #fps = FPS().start()
+
     if Driver:
 
         processed = frame
@@ -1010,6 +1014,8 @@ while True:
                 # cv2.putText(frame, "Find Cargo", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, white)
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)
                 processed = findControlPanel(frame, threshold)
+
+    cv2.putText(processed, 'FPS: 3.1415', (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
     cv2.imshow("raw", img)
     cv2.imshow(filename, processed)
