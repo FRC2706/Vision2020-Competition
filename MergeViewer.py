@@ -789,7 +789,7 @@ def get_four_points2(cnt, image):
     if ((topmost_index == -1)   or (leftmost_index == -1) or 
         (rightmost_index == -1) or (bottommost_index == -1)    ):
         print ("Critical point(s) not found in contour")
-        return image, None
+        return False, None
 
     # In some cases, topmost and rightmost pixel will be the same so that index of
     # rightmost pixel in contour will be zero (instead of near the end of the contour)
@@ -804,7 +804,7 @@ def get_four_points2(cnt, image):
     print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
         print ("num_points_to_collect=0, exiting")
-        return image, None
+        return False, None
     line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
 
     # Get set of points around the middle of the bottom line
@@ -812,7 +812,7 @@ def get_four_points2(cnt, image):
     print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
         print ("num_points_to_collect=0, exiting")
-        return image, None
+        return False, None
     approx_center_of_bottom = leftmost_index + int((rightmost_index - leftmost_index)/2)
     z =  int(num_points_to_collect/2)
     line2_points = cnt[approx_center_of_bottom-z:approx_center_of_bottom+z]
@@ -821,7 +821,7 @@ def get_four_points2(cnt, image):
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
         print ("num_points_to_collect=0, exiting")
-        return image
+        return False, None
     print("num_points_to_collect=", num_points_to_collect)
     line3_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
 
@@ -931,7 +931,7 @@ def get_four_points2(cnt, image):
                             int_point_right2
                            ], dtype="double")
 
-    return four_points
+    return True, four_points
 
 
 # Finds the balls from the masked image and displays them on original stream + network tables
@@ -958,7 +958,7 @@ def findOuterTarget(frame, mask):
     #cv2.drawContours(image, [cnt], -1, purple, 3)
 
     #image_points, bottommost_is_left = get_four_points(cnt, image)
-    image_points = get_four_points2(cnt, image)
+    success, image_points = get_four_points2(cnt, image)
 
     """
     cv2.circle(image, tuple([int(image_points[0][0]), int(image_points[0][1])]), 2, blue, -1)
