@@ -440,7 +440,6 @@ def findTape(contours, image, centerX, centerY):
                 cnt = cntsFiltered[0]
 
                 # Filters contours based off of hulled area and 
-                #if (checkTargetSize(cntArea, cntAspectRatio)):
 
                 rw_coordinates = real_world_coordinates
 
