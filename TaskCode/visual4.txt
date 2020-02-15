@@ -1,0 +1,18 @@
+to use this function you need to pass it the Region of Interest dimensions which is expected to be the bounding box of the single contour of interest.
+
+Example code
+
+indiv = contour selected for four point request, filtered out of find contours
+
+# straight bounding rectangle
+        xb,yb,wb,hb = cv2.boundingRect(indiv)
+        cv2.rectangle(imgContours,(xb,yb),(xb+wb,yb+hb),green,2)
+
+# send chosen contour to 4 point finder
+ROI_mask = binary_mask[yb:yb+hb, xb:xb+wb]
+intROMHeight, intROMWidth = ROI_mask.shape[:2]
+
+imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
+
+finish...
