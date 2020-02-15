@@ -77,7 +77,7 @@ images, imagename = load_images_from_folder("./OuterTargetFullDistance")
 #images, imagename = load_images_from_folder("./OuterTargetLiger")
 
 # Inner Target Images
-#images, imagename = load_images_from_folder("./InnerTargetExpore")
+images, imagename = load_images_from_folder("./InnerTargetExplore")
 
 # finds height/width of camera frame (eg. 640 width, 480 height)
 image_height, image_width = images[0].shape[:2]
