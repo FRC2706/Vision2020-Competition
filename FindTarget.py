@@ -489,15 +489,15 @@ def get_four_points2(cnt, image):
         point = tuple(cnt[i][0])
         if (point == topmost):
             topmost_index = i
-            print("Found topmost:", topmost, " at index ", i)
+            #print("Found topmost:", topmost, " at index ", i)
         if (point == leftmost):
-            print("Found leftmost:", leftmost, " at index ", i)
+            #print("Found leftmost:", leftmost, " at index ", i)
             leftmost_index = i
         if (point == bottommost):
-            print("Found bottommost:", bottommost, " at index ", i)
+            #print("Found bottommost:", bottommost, " at index ", i)
             bottommost_index = i
         if (point == rightmost):
-            print("Found rightmost:", rightmost, " at index ", i)
+            #print("Found rightmost:", rightmost, " at index ", i)
             rightmost_index = i
 
     if ((topmost_index == -1)   or (leftmost_index == -1) or 
@@ -515,7 +515,7 @@ def get_four_points2(cnt, image):
 
     # Get set of points after leftmost
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
-    print("num_points_to_collect=", num_points_to_collect)
+    #print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
         print ("num_points_to_collect=0, exiting")
         return False, None
@@ -523,7 +523,7 @@ def get_four_points2(cnt, image):
 
     # Get set of points around the middle of the bottom line
     num_points_to_collect = max(int(0.2*(rightmost_index-leftmost_index)), 4)
-    print("num_points_to_collect=", num_points_to_collect)
+    #print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
         print ("num_points_to_collect=0, exiting")
         return False, None
@@ -534,9 +534,9 @@ def get_four_points2(cnt, image):
     # Get set of points before rightmost
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
-        print ("num_points_to_collect=0, exiting")
+        #print ("num_points_to_collect=0, exiting")
         return False, None
-    print("num_points_to_collect=", num_points_to_collect)
+    #print("num_points_to_collect=", num_points_to_collect)
     line3_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
 
     for pt in line1_points:
@@ -592,7 +592,7 @@ def get_four_points2(cnt, image):
     #print("xint_left=", xint_left, " yint_left=", yint_left)
     int_point_left = tuple([int(xint_left), int(yint_left)])
     #cv2.circle(image, int_point, 4, fuschia, -1)
-    print("int_point_right=", int_point_left)
+    #print("int_point_left=", int_point_left)
 
     # Right bottom point is intersection of line2 and line3
     if (m2 == m3):
@@ -603,7 +603,7 @@ def get_four_points2(cnt, image):
     #print("xint_right=", xint_right, " yint_right=", yint_right)
     int_point_right = tuple([int(xint_right), int(yint_right)])
     #cv2.circle(image, int_point_right, 4, fuschia, -1)
-    print("int_point_right=", int_point_right)
+    #print("int_point_right=", int_point_right)
 
     # Find points on contour closest to intersection points (they may already be on the contour)
     lower_index = leftmost_index
@@ -620,7 +620,7 @@ def get_four_points2(cnt, image):
             if dist_squared == 0:
                 break
     int_point_left2 = tuple(cnt[min_dist_squared_index][0])
-    print("int_point_left2=", int_point_left2)
+    #print("int_point_left2=", int_point_left2)
 
     lower_index = leftmost_index
     upper_index = rightmost_index
@@ -636,7 +636,7 @@ def get_four_points2(cnt, image):
             if dist_squared == 0:
                 break
     int_point_right2 = tuple(cnt[min_dist_squared_index][0])
-    print("int_point_right2=", int_point_right2)
+    #print("int_point_right2=", int_point_right2)
 
     four_points = np.array([
                             leftmost,
