@@ -60,7 +60,7 @@ def get_adjacent(hyp, theta):
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
 #strImageFolder = str(strVisionRoot / 'OuterTargetFullDistance')
-strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
+#strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
@@ -374,7 +374,7 @@ while (True):
         if k == 27:
             booReqToExit = True # user wants to exit
             break
-        elif k == 82: # user wants to move down list
+        elif k == 82 or k == 122: # user wants to move down list (z)
             if i - 1 < 0:
                 i = intLastFile
             else:
