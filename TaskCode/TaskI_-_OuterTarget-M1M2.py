@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 import os
 import math
+from matplotlib import pyplot as plt
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
@@ -50,13 +51,15 @@ def get_opposit(hyp, theta):
 def get_adjacent(hyp, theta):
     return abs(hyp*math.cos(math.radians(theta)))
 
+print('it working')
 # select folder of interest
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
-strImageFolder = str(strVisionRoot / 'OuterTargetHalfDistance')
+#strImageFolder = str(strVisionRoot / 'OuterTargetHalfDistance')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
-#strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
+strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
+
 
 print (strImageFolder)
 booBlankUpper = False
@@ -72,7 +75,7 @@ else:
     print ('Directory', strImageFolder, 'does not exist, exiting ...')
     print
     sys.exit
-print (photos)
+print ('photos =', photos)
 
 # set index of files
 i = 0
@@ -116,6 +119,7 @@ while (True):
     # display the masked images to screen
     cv2.imshow('hsvImageInput', hsvImageInput)
     cv2.moveWindow('hsvImageInput',300,50)
+    cv2.imshow('binary mask', binary_mask)
 
     #cv2.imshow('binary_mask',binary_mask)
     cv2.imshow('green_masked',green_mask)
@@ -284,6 +288,17 @@ while (True):
     ## loop for user input to close - loop indent 2
     booReqToExit = False # true when user wants to exit
 
+    #shi tomasi corner finding
+    gray = cv2.cvtColor(imgImageInput,cv2.COLOR_BGR2GRAY) #imgImageInput can be swapped for mask
+    corners = cv2.goodFeaturesToTrack(gray,5,0.05,30)
+    print('corners', str(corners))
+    corners = np.int0(corners)
+
+    for corner in corners: #corner subbed in for i cause it was the same as the photos array
+        x,y = corner.ravel()
+        cv2.circle(green_mask,(x,y),3,255,-1)
+    cv2.imshow('corners', green_mask)
+
     while (True):
 
     ## wait for user to press key
@@ -291,36 +306,32 @@ while (True):
         if k == 27:
             booReqToExit = True # user wants to exit
             break
-        elif k == 82: # user wants to move down list
+        elif k == 97: # user wants previous a
             if i - 1 < 0:
                 i = intLastFile
             else:
                 i = i - 1
             break
-        elif k == 84: # user wants to move up list
+        elif k == 122: # user wants next z
             if i + 1 > intLastFile:
                 i = 0
             else:
                 i = i + 1
             break
-        elif k == 115:
+        elif k == 115: #s
             intMaskMethod = 0
             print()
             print('Mask Method s = Simple In-Range')
             break
-        elif k == 107:
+        elif k == 107: #k
             intMaskMethod = 1
             print()
             print('Mask Method k = Knoxville Method')
             break
-        elif k == 109:
+        elif k == 109: #m
             intMaskMethod = 2
             print()
             print('Mask Method m = Merge Mystery Method')
-            break
-        elif k == 32:
-            print()
-            print('...repeat...')
             break
         else:
             #print (k)
