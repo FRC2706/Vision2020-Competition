@@ -5,6 +5,11 @@ from VisionMasking import *
 from VisionUtilities import *
 from DistanceFunctions import *
 
+try:
+    from PrintPublisher import *
+except ImportError:
+    from NetworkTablePublisher import *
+
 
 # real world dimensions of the goal target
 # These are the full dimensions around both strips
@@ -395,7 +400,7 @@ def findTape(contours, image, centerX, centerY):
 
     if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:15]
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
        
         for cnt in cntsSorted:
             x, y, w, h = cv2.boundingRect(cnt)
@@ -441,7 +446,7 @@ def findTape(contours, image, centerX, centerY):
                         distance, angle1, angle2 = compute_output_values(rvec, tvec)
                         cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                        cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        #cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         if (YawToTarget >= -2 and YawToTarget <= 2):
                             colour = green
                         if ((YawToTarget >= -5 and YawToTarget < -2) or (YawToTarget > 2 and YawToTarget <= 5)):  
@@ -453,6 +458,8 @@ def findTape(contours, image, centerX, centerY):
                         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
                         #publishResults(name,value)
+                        publishNumber("YawToTarget", YawToTarget)
+                        publishNumber("DistanceToTarget", round(distance/12,2))
 
     #     # pushes vision target angle to network table
 

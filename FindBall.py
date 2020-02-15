@@ -5,6 +5,12 @@ from VisionUtilities import *
 from VisionConstants import *
 from DistanceFunctions import *
 
+try:
+    from PrintPublisher import *
+except ImportError:
+    from NetworkTablePublisher import *
+
+
 # Draws Contours and finds center and yaw of orange ball
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
@@ -125,8 +131,8 @@ def findBall(contours, image, centerX, centerY):
 
             currentAngleError = finalTarget[0]
             # pushes cargo angle to network tables
-
-
+            publishNumber("YawToPowerCell", finalTarget[0])
+            publishNumber("DistanceToPowerCell", finalYaw)
 
         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
