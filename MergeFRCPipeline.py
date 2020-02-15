@@ -398,6 +398,7 @@ def findBall(contours, image, centerX, centerY):
             cntArea = cv2.contourArea(cnt)
             # Filters contours based off of size
             if (checkBall(cntArea, aspect_ratio)):
+                print('cntArea is: ', cntArea)
                 ### MOSTLY DRAWING CODE, BUT CALCULATES IMPORTANT INFO ###
                 # Gets the centeroids of contour
                 if M["m00"] != 0:
@@ -724,10 +725,7 @@ def checkContours(cntSize, hullSize):
 
 # Checks if ball contours are worthy based off of contour area and (not currently) hull area
 def checkBall(cntSize, cntAspectRatio):
-    return (cntSize > (image_width / 2)) and (round(cntAspectRatio) == 1)
-
-def checkHatch(cntSize, cntAspectRatio):
-    return (cntSize > (image_width / 2)) and (round(cntAspectRatio) == 1)
+    return (cntSize > (image_width)) and (round(cntAspectRatio) == 1) #and (cntSize < ())
 
 
 # Forgot how exactly it works, but it works!
