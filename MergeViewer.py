@@ -891,7 +891,7 @@ def get_four_points2(cnt, image):
     # Find points on contour closest to intersection points (they may already be on the contour)
     min_dist_squared = 100000000000
     min_dist_squared_index = leftmost_index
-    for i in range(leftmost_index, approx_center_of_bottom_index+1):
+    for i in range(leftmost_index, approx_center_of_bottom_index):
         xdiff = int_point_left[0] - cnt[i][0][0]
         ydiff = int_point_left[1] - cnt[i][0][1]
         dist_squared = xdiff**2 + ydiff**2
