@@ -65,8 +65,8 @@ def load_images_from_folder(folder):
             images.append(img)
     return images
 
-images = load_images_from_folder("./OuterTargetImages")
-#images = load_images_from_folder("./OuterTargetHalfScale")
+#images = load_images_from_folder("./OuterTargetImages")
+images = load_images_from_folder("./OuterTargetHalfScale")
 #images = load_images_from_folder("./PowerCell25Scale")
 #images = load_images_from_folder("./PowerCellImages")
 #images = load_images_from_folder("./PowerCellFullScale")
@@ -417,6 +417,17 @@ def findTape(contours, image, centerX, centerY):
                     # Calculates Distance
                     dist = calculateDistance(1, 2, pitch);
 
+                    print ('Distance: ' + str(dist))
+                    print ('YAW: ' + str(yaw))
+
+                    yawToTarget = calculateYaw(centerOfTarget, centerX, H_FOCAL_LENGTH)
+                    pitchToTarget = calculatePitch(theCY, centerY, H_FOCAL_LENGTH)
+                    # distToTarget = calculateDistance(1, 2, pitchToTarget)
+                    distToTarget = calculateDistWPILib(biggestCnts[i][4])
+
+                    print('Distance 2: ' + str(distToTarget))
+                    print('Yaw 2: ' + str(yawToTarget))
+
                     # Draws a vertical white line passing through center of contour
                     #cv2.line(image, (cx, screenHeight), (cx, 0), Red, 2)
                     # Draws a white circle at center of contour
@@ -464,6 +475,7 @@ def findTape(contours, image, centerX, centerY):
                 # Note: if using rotated rect (min area rectangle)
                 #      negative tilt means rotated to left
                 # If left contour rotation is tilted to the left then skip iteration
+
                 if (tilt1 > 0):
                     if (cx1 < cx2):
                         continue
@@ -476,9 +488,13 @@ def findTape(contours, image, centerX, centerY):
                 pitchToTarget = calculatePitch(theCY, centerY, H_FOCAL_LENGTH)
                 # distToTarget = calculateDistance(1, 2, pitchToTarget)
                 distToTarget = calculateDistWPILib(biggestCnts[i][4])
+
+                print('Distance 2: ' + str(distToTarget))
+                print('Yaw 2: ' + str(yawToTarget))
                 # Make sure no duplicates, then append
                 if [centerOfTarget, yawToTarget, distToTarget] not in targets:
                     targets.append([centerOfTarget, yawToTarget, distToTarget])
+                
     # Check if there are targets seen
     if (len(targets) > 0):
         # pushes that it sees vision target to network tables
@@ -699,8 +715,6 @@ img = images[0]
 
 imgLength = len(images)
 
-print("Hello Vision Team!")
-
 while True:
 
     frame = img
@@ -732,10 +746,10 @@ while True:
     cv2.imshow("processed", processed)
     cv2.setMouseCallback('raw', draw_circle)
 
-    key = cv2.waitKey(0)
-    print(key) 
+    k = cv2.waitKey(0)
+    print(k) 
 
-    if key == 27:
+    if k == 27:
         break
 
     currentImg += 1

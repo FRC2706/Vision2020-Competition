@@ -1,26 +1,10 @@
-# This is a pseudo code file for Merge Robotics, 2020, Infinite Recharge
-# This is task I - > OpenCV "Contours Continued."  Not sure if it is clear by now, 
-# but OpenCV can do a lot of things, we need to understand what it offers to complete 
-# our vision code.  For a given single contour, (meaning it was imaged and masked and 
-# converted to a coordinate array), you need to be able to use a number of OpenCV functions.
-# Please experiment with the following, easiest is to simply draw them back to a blank image
-# or on top of original.
-
-# - contour perimeter, contour approximation, bounding rectangles, 
-# minimum enclosing circle, fitting elipse, fitting line, aspect ratio
-# extent, solidity, equivalent diameter, orientation, points, min/max
-# mean color, extreme points
-
-# useful links
-# https://docs.opencv.org/3.4.7/dd/d49/tutorial_py_contour_features.html
-# https://docs.opencv.org/3.4.7/d1/d32/tutorial_py_contour_properties.html
-
 import numpy as np
 import cv2
 import sys
 from pathlib import Path
 import os
 import math
+from matplotlib import pyplot as plt
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
@@ -50,6 +34,7 @@ def get_opposit(hyp, theta):
 def get_adjacent(hyp, theta):
     return abs(hyp*math.cos(math.radians(theta)))
 
+print('it working')
 # select folder of interest
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
@@ -57,7 +42,7 @@ strImageFolder = str(strVisionRoot / 'OuterTargetHalfDistance')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
-#strImageFolder = str(strVisionRoot / 'OuterTargetLiger')
+
 
 print (strImageFolder)
 booBlankUpper = False
@@ -73,7 +58,7 @@ else:
     print ('Directory', strImageFolder, 'does not exist, exiting ...')
     print
     sys.exit
-print (photos)
+print ('photos =', photos)
 
 # set index of files
 i = 0
@@ -86,15 +71,11 @@ while (True):
     strImageInput = strImageFolder + '/' + photos[i]
     ##print (i, ' ', strImageInput)
     print ()
-    
+    print (photos[i])
 
     ## read file
     imgImageInput = cv2.imread(strImageInput)
     intBinaryHeight, intBinaryWidth = imgImageInput.shape[:2]
-
-    if booBlankUpper:
-        ## blank upper portion from Task K
-        cv2.rectangle(imgImageInput, (0,0), (intBinaryWidth, int(intBinaryHeight/2-10)), black, -1)
 
     #cv2.imshow('imgImageInput', imgImageInput)
     #cv2.moveWindow('imgImageInput',300,350)
@@ -103,20 +84,25 @@ while (True):
     hsvImageInput = cv2.cvtColor(imgImageInput, cv2.COLOR_BGR2HSV)
 
     # define range of green color in HSV
-    lower_color = np.array([55,55,55])
+    lower_color = np.array([55,45,40]) #np.array([65,80,40])
     upper_color = np.array([100,255,255])
 
     # Threshold the HSV image to get only green colors
     binary_mask = cv2.inRange(hsvImageInput, lower_color, upper_color)
 
+    # Taking a matrix of size 5 as the kernel 
+    #kernel = np.ones((3,3), np.uint8)
+    #imgDilation = cv2.dilate(binary_mask, kernel, iterations=1)
+    #binary_mask = imgDilation
+
     # mask the image to only show green or green images
     # Bitwise-AND mask and original image
     green_mask = cv2.bitwise_and(imgImageInput, imgImageInput, mask=binary_mask)
-    #cv2.imwrite('green_mask.jpg',green_mask)
 
     # display the masked images to screen
-    #cv2.imshow('hsvImageInput', hsvImageInput)
-    #cv2.moveWindow('hsvImageInput',10,50)
+    cv2.imshow('hsvImageInput', hsvImageInput)
+    cv2.moveWindow('hsvImageInput',300,50)
+    cv2.imshow('binary mask', binary_mask)
 
     #cv2.imshow('binary_mask',binary_mask)
     cv2.imshow('green_masked',green_mask)
@@ -124,10 +110,10 @@ while (True):
     cv2.moveWindow('green_masked',20,50) 
       
     # generate the contours and display
-    contours, _ = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    imgFindContourReturn, contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     imgContours = green_mask.copy()
 
-    cv2.drawContours(imgContours, contours, -1, yellow, 1)
+    cv2.drawContours(imgContours, contours, -1, yellow, 2)
     print('Found ', len(contours), 'contours in image')
     #print (contours)
 
@@ -136,9 +122,10 @@ while (True):
 
     if initialSortedContours:
 
+        # Goind to work with largest area contour only
         cnt = initialSortedContours[0]
         print('original contour length = ', len(cnt))
-        cv2.drawContours(imgContours, [cnt], -1, purple, 3)
+        cv2.drawContours(imgContours, [cnt], -1, purple, 5)
 
         # Area
         area = cv2.contourArea(cnt)
@@ -168,44 +155,38 @@ while (True):
         print('bounding rectangle aspect = ', float(w)/float(h))
         print('bounding rectangle extend = ', float(area)/(float(w)*float(h)))
 
+        # Moment and Centroid
+        M = cv2.moments(cnt)
+        if M['m00'] != 0:
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+            print('centroid = ',cx,cy)
+            ct = int(h/12)
+            cv2.line(imgContours,(cx-ct,cy-ct),(cx+ct,cy+ct),red,2)
+            cv2.line(imgContours,(cx-ct,cy+ct),(cx+ct,cy-ct),red,2)
+
         # rotated rectangle
         rect = cv2.minAreaRect(cnt)
         print('rotated rectangle = ',rect)
         (x,y),(width,height),angleofrotation = rect
-        #### more research https://stackoverflow.com/questions/15956124/minarearect-angles-unsure-about-the-angle-returned
-        if height > width:
-            angleofrotation = angleofrotation + 90
-            width, height = [height, width]
-        else:
-            angleofrotation = angleofrotation + 180
-        if angleofrotation == 180:
-            angleofrotation = 0
-
         box = cv2.boxPoints(rect)
         box = np.int0(box)
-        cv2.drawContours(imgContours,[box],0,blue,2)
-        print('minimum area rectangle aspect = ', float(width)/height)
+        #cv2.drawContours(imgContours,[box],0,blue,2)
+        minARaspect = float(width)/height
+        print('minimum area rectangle aspect = ', minARaspect)
         print('minimum area rectangle extent = ', float(area)/(width*height))
 
-        # Moment and Centroid
-        M = cv2.moments(cnt)
-        cx = int(M['m10']/M['m00'])
-        cy = int(M['m01']/M['m00'])
-        print('centroid = ',cx,cy)
-        ct = int(height/12)
-        cv2.line(imgContours,(cx-ct,cy-ct),(cx+ct,cy+ct),red,2)
-        cv2.line(imgContours,(cx-ct,cy+ct),(cx+ct,cy-ct),red,2)
-
         # minimum enclosing circle
-        (x,y),radius = cv2.minEnclosingCircle(cnt)
-        print('minimum enclosing circle = ', (x,y),radius)
-        center = (int(x),int(y))
+        (xcirc,ycirc),radius = cv2.minEnclosingCircle(cnt)
+        print('minimum enclosing circle = ', (xcirc,ycirc),radius)
+        center = (int(xcirc),int(ycirc))
         radius = int(radius)
         cv2.circle(imgContours,center,radius,green,2)
         #equi_diameter = np.sqrt(4*area/np.pi)
         #cv2.circle(imgContours, (cx,cy), int(equi_diameter/2), purple, 3)
 
         if len(cnt) > 5:
+
             # fitting an elipse
             ellipse = cv2.fitEllipse(cnt)
             #print(ellipse)
@@ -214,7 +195,7 @@ while (True):
             print('ellipse center, maj axis, min axis, rotation = ', (x,y) ,(majAxis, minAxis), angleofrotation)
             # search major and minor axis from ellipse
             # https://namkeenman.wordpress.com/2015/12/21/opencv-determine-orientation-of-ellipserotatedrect-in-fitellipse/
-            cv2.ellipse(imgContours,ellipse,orange,2)
+            #cv2.ellipse(imgContours,ellipse,red,2)
             print('ellipse aspect = ', float(majAxis)/minAxis)
 
         # fitting a line
@@ -267,29 +248,39 @@ while (True):
         leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
         rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
         #topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
-        bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+        #bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
         # draw extreme points
         # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
         cv2.circle(imgContours, leftmost, 12, green, -1)
         cv2.circle(imgContours, rightmost, 12, red, -1)
         #cv2.circle(imgContours, topmost, 12, white, -1)
-        cv2.circle(imgContours, bottommost, 12, blue, -1)
+        #cv2.circle(imgContours, bottommost, 12, blue, -1)
         #print('extreme points = left',leftmost,'right',rightmost,'top',topmost,'bottom',bottommost)
         print('extreme points = left',leftmost,'right',rightmost)
 
+        print('--')
+        print (photos[i])
+        print('minimum area rectangle aspect = ', minARaspect)
+        print('leftmost minus rightmost -> ', int(rightmost[0])-int(leftmost[0]))
+        print('minimum enclosing circle -> center / diameter = ', (xcirc,ycirc), radius*2)
+
     # Display the contours and maths generated
     cv2.imshow('contours and math over green mask', imgContours)
-    cv2.moveWindow('contours and math over green mask',650,50)
+    cv2.moveWindow('contours and math over green mask',720,50)
 
-       
-    
-    distance = math.sqrt( ((leftmost[0]-rightmost[0])**2)+((leftmost[1]-rightmost[1])**2) )
-    print(distance)
-    print("////////////////////////////////////////")
-    print(2*radius)
-    print (photos[i])
     ## loop for user input to close - loop indent 2
     booReqToExit = False # true when user wants to exit
+
+    #shi tomasi corner finding
+    gray = cv2.cvtColor(imgImageInput,cv2.COLOR_BGR2GRAY)
+    corners = cv2.goodFeaturesToTrack(gray,5,0.01,30)
+    print('corners', str(corners))
+    corners = np.int0(corners)
+
+    for corner in corners:
+        x,y = corner.ravel()
+        cv2.circle(green_mask,(x,y),3,255,-1)
+    cv2.imshow('corners', green_mask)
 
     while (True):
 
@@ -298,34 +289,34 @@ while (True):
         if k == 27:
             booReqToExit = True # user wants to exit
             break
-        elif k == 91: # user wants to move down list
+        elif k == 97: # user wants previous a
             if i - 1 < 0:
                 i = intLastFile
             else:
                 i = i - 1
             break
-        elif k == 93: # user wants to move up list
+        elif k == 122: # user wants next z
             if i + 1 > intLastFile:
                 i = 0
             else:
                 i = i + 1
             break
-        elif k == 115:
+        elif k == 115: #s
             intMaskMethod = 0
             print()
             print('Mask Method s = Simple In-Range')
             break
-        elif k == 107:
+        elif k == 107: #k
             intMaskMethod = 1
             print()
             print('Mask Method k = Knoxville Method')
             break
-        elif k == 109:
+        elif k == 109: #m
             intMaskMethod = 2
             print()
             print('Mask Method m = Merge Mystery Method')
             break
-        elif k == 32:
+        elif k == 32: #space
             print()
             print('...repeat...')
             break
