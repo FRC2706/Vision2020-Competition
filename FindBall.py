@@ -5,7 +5,6 @@ from VisionUtilities import *
 from VisionConstants import *
 from DistanceFunctions import *
 
-
 # Draws Contours and finds center and yaw of orange ball
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
