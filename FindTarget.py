@@ -603,7 +603,7 @@ def get_four_points2(cnt, image):
     upper_index = rightmost_index
     min_dist_squared = 100000000000
     min_dist_squared_index = lower_index
-    for i in range(lower_index, upper_index+1):
+    for i in range(lower_index, upper_index):
         xdiff = int_point_left[0] - cnt[i][0][0]
         ydiff = int_point_left[1] - cnt[i][0][1]
         dist_squared = xdiff**2 + ydiff**2
@@ -619,7 +619,7 @@ def get_four_points2(cnt, image):
     upper_index = rightmost_index
     min_dist_squared = 100000000000
     min_dist_squared_index = lower_index
-    for i in range(lower_index, upper_index+1):
+    for i in range(lower_index, upper_index):
         xdiff = int_point_right[0] - cnt[i][0][0]
         ydiff = int_point_right[1] - cnt[i][0][1]
         dist_squared = xdiff**2 + ydiff**2
