@@ -67,6 +67,7 @@ def load_images_from_folder(folder):
 #images, imagename = load_images_from_folder("./LifeCamPhotos")
 
 # Outer Target Images
+#images, imagename = load_images_from_folder("./OuterTargetProblems")
 #images, imagename = load_images_from_folder("./OuterTargetImages")
 #images, imagename = load_images_from_folder("./OuterTargetHalfScale")
 #images, imagename = load_images_from_folder("./OuterTargetRingTest")

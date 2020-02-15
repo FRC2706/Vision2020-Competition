@@ -52,6 +52,7 @@ red = (0, 0, 255)
 cyan = (252, 252, 3)
 white = (255, 255, 255)
 yellow = (0, 255, 255)
+orange = (60, 255, 255)
 
 # define range of green of retroreflective tape in HSV
 lower_green = np.array([55, 55, 55])
