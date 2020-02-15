@@ -182,9 +182,6 @@ def threshold_video(lower_color, upper_color, blur):
     s = threshold_range(s, lower_color[1], upper_color[1])
     v = threshold_range(v, lower_color[2], upper_color[2])
     combined_mask = cv2.bitwise_and(h, cv2.bitwise_and(s, v))
-    
-    #show the mask
-    cv2.imshow("mask", combined_mask)
 
     # hold the HSV image to get only red colors
     # mask = cv2.inRange(combined, lower_color, upper_color)
@@ -808,14 +805,14 @@ def get_four_points2(cnt, image):
     line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
 
     # Get set of points around the middle of the bottom line
-    num_points_to_collect = max(int(0.2*(rightmost_index-leftmost_index)), 4)
+    num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
         print ("num_points_to_collect=0, exiting")
         return False, None
-    approx_center_of_bottom = leftmost_index + int((rightmost_index - leftmost_index)/2)
+    approx_center_of_bottom_index = leftmost_index + int((rightmost_index - leftmost_index)/2)
     z =  int(num_points_to_collect/2)
-    line2_points = cnt[approx_center_of_bottom-z:approx_center_of_bottom+z]
+    line2_points = cnt[approx_center_of_bottom_index-z:approx_center_of_bottom_index+z]
 
     # Get set of points before rightmost
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
@@ -892,11 +889,9 @@ def get_four_points2(cnt, image):
     print("int_point_right=", int_point_right)
 
     # Find points on contour closest to intersection points (they may already be on the contour)
-    lower_index = leftmost_index
-    upper_index = rightmost_index
     min_dist_squared = 100000000000
-    min_dist_squared_index = lower_index
-    for i in range(lower_index, upper_index+1):
+    min_dist_squared_index = leftmost_index
+    for i in range(leftmost_index, approx_center_of_bottom_index+1):
         xdiff = int_point_left[0] - cnt[i][0][0]
         ydiff = int_point_left[1] - cnt[i][0][1]
         dist_squared = xdiff**2 + ydiff**2
@@ -908,11 +903,9 @@ def get_four_points2(cnt, image):
     int_point_left2 = tuple(cnt[min_dist_squared_index][0])
     print("int_point_left2=", int_point_left2)
 
-    lower_index = leftmost_index
-    upper_index = rightmost_index
     min_dist_squared = 100000000000
-    min_dist_squared_index = lower_index
-    for i in range(lower_index, upper_index+1):
+    min_dist_squared_index = approx_center_of_bottom_index
+    for i in range(approx_center_of_bottom_index, rightmost_index+1):
         xdiff = int_point_right[0] - cnt[i][0][0]
         ydiff = int_point_right[1] - cnt[i][0][1]
         dist_squared = xdiff**2 + ydiff**2
