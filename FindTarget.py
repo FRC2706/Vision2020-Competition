@@ -154,7 +154,7 @@ def get_four_points(cnt):
 
     if ((topmost_index == -1)   or (leftmost_index == -1) or 
         (rightmost_index == -1) or (bottommost_index == -1)    ):
-        print ("Critical point(s) not found in contour")
+        #print ("Critical point(s) not found in contour")
         return image
 
     # In some cases, topmost and rightmost pixel will be the same so that index of
@@ -170,13 +170,13 @@ def get_four_points(cnt):
         num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
         #print("num_points_to_collect=", num_points_to_collect)
         if num_points_to_collect == 0:
-            print ("num_points_to_collect=0, exiting")
+            #print ("num_points_to_collect=0, exiting")
             return image
         line1_points = cnt[bottommost_index:bottommost_index+num_points_to_collect+1]
         # Get set of points before rightmost
         num_points_to_collect = max(int(0.25*(bottommost_index-leftmost_index)), 4)
         if num_points_to_collect == 0:
-            print ("num_points_to_collect=0, exiting")
+            #print ("num_points_to_collect=0, exiting")
             return image
         #print("num_points_to_collect=", num_points_to_collect)
         line2_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
@@ -191,7 +191,7 @@ def get_four_points(cnt):
         # Get set of point before bottommost
         num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
         if num_points_to_collect == 0:
-            print ("num_points_to_collect=0, exiting")
+            #print ("num_points_to_collect=0, exiting")
             return image
         #print("num_points_to_collect=", num_points_to_collect)
         line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
@@ -210,7 +210,7 @@ def get_four_points(cnt):
 
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
-        print("Warning v11=0")
+        #print("Warning v11=0")
         v11 = 0.1
     m1 = v21/v11
     b1 = y01 - m1*x01
@@ -467,8 +467,8 @@ def findTape(contours, image, centerX, centerY):
 
 # Checks if the target contours are worthy 
 def checkTargetSize(cntArea, cntAspectRatio):
-    print("cntArea: " + str(cntArea))
-    print("aspect ratio: " + str(cntAspectRatio))
+    #print("cntArea: " + str(cntArea))
+    #print("aspect ratio: " + str(cntAspectRatio))
     return (cntArea > image_width/3 and cntArea < MAXIMUM_TARGET_AREA and cntAspectRatio > 1.0)
 
 def get_four_points2(cnt, image):
@@ -502,7 +502,7 @@ def get_four_points2(cnt, image):
 
     if ((topmost_index == -1)   or (leftmost_index == -1) or 
         (rightmost_index == -1) or (bottommost_index == -1)    ):
-        print ("Critical point(s) not found in contour")
+        #print ("Critical point(s) not found in contour")
         return False, None
 
     # In some cases, topmost and rightmost pixel will be the same so that index of
@@ -517,7 +517,7 @@ def get_four_points2(cnt, image):
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     #print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
-        print ("num_points_to_collect=0, exiting")
+        #print ("num_points_to_collect=0, exiting")
         return False, None
     line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
 
@@ -525,7 +525,7 @@ def get_four_points2(cnt, image):
     num_points_to_collect = max(int(0.2*(rightmost_index-leftmost_index)), 4)
     #print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
-        print ("num_points_to_collect=0, exiting")
+        #print ("num_points_to_collect=0, exiting")
         return False, None
     approx_center_of_bottom = leftmost_index + int((rightmost_index - leftmost_index)/2)
     z =  int(num_points_to_collect/2)
@@ -578,7 +578,7 @@ def get_four_points2(cnt, image):
     [v13,v23,x03,y03] = cv2.fitLine(line3_points, cv2.DIST_L2,0,0.01,0.01)
     m3 = v23/v13
     if (v13==0):
-        print("Warning v13=0")
+        #print("Warning v13=0")
         v13 = 0.1
     b3 = y03 - m3*x03
     #print("From fitline: m3=", m3, " b3=", b3)
