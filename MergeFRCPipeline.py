@@ -384,8 +384,7 @@ if __name__ == "__main__":
 
     # cap.autoExpose=True;
     tape = True
-    fps = FPS().start()
-    # TOTAL_FRAMES = 200;
+
     # loop forever
     networkTable.putBoolean("Driver", False)
     networkTable.putBoolean("Tape", False)
@@ -403,6 +402,9 @@ if __name__ == "__main__":
     CornerMethod = 3
 
     while True:
+
+        # start frames per second
+        fps = FPS().start()
 
         if networkTableTime.getNumber("Match Time", 1) == 0:
             networkTable.putBoolean("WriteImages", False)
@@ -481,7 +483,7 @@ if __name__ == "__main__":
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
                 processed = findControlPanel(frame, threshold)
 
-        # Puts timestamp of camera on netowrk tables
+        # Puts timestamp of camera on network tables
         networkTable.putNumber("VideoTimestamp", timestamp)
 
         if (networkTable.getBoolean("WriteImages", True)):
@@ -496,14 +498,22 @@ if __name__ == "__main__":
                 if (ImageCounter==10000):
                     ImageCounter=0
 
+        # end of cycle so update counter
+        fps.update()
+        # in merge view also end of time we want to measure so stop FPS
+        fps.stop()
+        # because we are timing in this file, have to add the fps to image processed 
+        cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.putText(processed, 'FPS: {:.2f}'.format(fps.fps()), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+
         # networkTable.putBoolean("Driver", True)
         streamViewer.frame = processed
-        # update the FPS counter
-        fps.update()
+
         # Flushes camera values to reduce latency
         ntinst.flush()
-    # Doesn't do anything at the moment. You can easily get this working by indenting these three lines
-    # and setting while loop to: while fps._numFrames < TOTAL_FRAMES
-##fps.stop()
-##print(str("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
-##print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+
+    # end of while true
+
+# end of main
+
+# end of file
