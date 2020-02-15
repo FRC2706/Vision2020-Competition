@@ -1,5 +1,4 @@
 #
-
 import numpy as np
 import cv2
 
@@ -8,6 +7,7 @@ purple = (165, 0, 120)
 green = (0, 255, 0)
 red = (0, 0, 255)
 blue = (255, 0, 0)
+
 booWrite = False
 
 def outer_bottoms(apprx, left):
@@ -45,18 +45,19 @@ def outer_bottoms(apprx, left):
     # return list in desired form
     return xlst
 
-
-def get_four(width, height, contour):
+def get_four(boundr, width, height, contour):
     """
     """
+    # carry coords of bounding box into function 
+    (xb,yb,wb,hb) = boundr
 
-    # ignore small contours in case caller does not have minimum filter
-    if width or height > 10:
+    # ignore small contours in case caller does not have filter
+    if (width > 10) and (height > 10):
 
         #calculate middle, thickness and radius for circles
         middle = int(width/2)
         thickness = int(height/10)
-        divider = int(height/10) #was 7 before fifth
+        divider = int(height/10)
 
         # make mask from blank image and contour
         binary_mask = np.zeros([height,width,1],dtype=np.uint8)
@@ -163,7 +164,29 @@ def get_four(width, height, contour):
             #cv2.imwrite('10-Vision4Steps',imgTraceVisual4)
             cv2.moveWindow('Visual4 Trace Steps',350,760)
 
-        return [leftmost,bottomleft,bottomcenter,bottomright,rightmost]
+        rul, rbl, rbc, rbr, rur = leftmost, bottomleft, bottomcenter, bottomright, rightmost
+
+        rulx, ruly = rul
+        ulx = rulx + xb
+        uly = ruly + yb
+
+        rblx, rbly = rbl
+        blx = rblx + xb
+        bly = rbly + yb
+
+        rbcx, rbcy = rbc
+        bcx = rbcx + xb
+        bcy = rbcy + yb
+
+        rbrx, rbry = rbr
+        brx = rbrx + xb
+        bry = rbry + yb
+
+        rurx, rury = rur
+        urx = rurx + xb
+        ury = rury + yb
+
+        return [(ulx,uly), (blx,bly), (bcx,bcy), (brx,bry), (urx,ury)]
 
     else:
         return None
