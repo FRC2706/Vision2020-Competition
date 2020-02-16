@@ -85,10 +85,10 @@ def findTargets(frame, mask):
     # Finds contours
     if is_cv3():
       #  _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     else:
        # contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
@@ -472,37 +472,26 @@ def checkTargetSize(cntArea, cntAspectRatio):
     return (cntArea > image_width/3 and cntArea < MAXIMUM_TARGET_AREA and cntAspectRatio > 1.0)
 
 def get_four_points2(cnt, image):
+
     # Get the left, right, and bottom points
     # extreme points
     leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
     rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
-    topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
-    bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
-    #print('extreme points', leftmost,rightmost,topmost,bottommost)
 
     # Order of points in contour appears to be top, left, bottom, right
 
     # Run through all points in the contour, collecting points to build lines whose
     # intersection gives the fourth point.
-    topmost_index = leftmost_index = bottommost_index = rightmost_index = -1
+    leftmost_index = rightmost_index = -1
     for i in range(len(cnt)):
         point = tuple(cnt[i][0])
-        if (point == topmost):
-            topmost_index = i
-            #print("Found topmost:", topmost, " at index ", i)
         if (point == leftmost):
-            #print("Found leftmost:", leftmost, " at index ", i)
             leftmost_index = i
-        if (point == bottommost):
-            #print("Found bottommost:", bottommost, " at index ", i)
-            bottommost_index = i
         if (point == rightmost):
-            #print("Found rightmost:", rightmost, " at index ", i)
             rightmost_index = i
 
-    if ((topmost_index == -1)   or (leftmost_index == -1) or 
-        (rightmost_index == -1) or (bottommost_index == -1)    ):
-        #print ("Critical point(s) not found in contour")
+    if ((leftmost_index == -1) or (rightmost_index == -1)):
+        print ("get_four_points2(): Critical point(s) not found in contour")
         return False, None
 
     # In some cases, topmost and rightmost pixel will be the same so that index of
@@ -515,17 +504,15 @@ def get_four_points2(cnt, image):
 
     # Get set of points after leftmost
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
-    #print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("get_four_points2((): line1: num_points_to_collect=0, exiting")
         return False, None
     line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
 
     # Get set of points around the middle of the bottom line
-    num_points_to_collect = max(int(0.2*(rightmost_index-leftmost_index)), 4)
-    #print("num_points_to_collect=", num_points_to_collect)
+    num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("get_four_points2(): line2: num_points_to_collect=0, exiting")
         return False, None
     approx_center_of_bottom = leftmost_index + int((rightmost_index - leftmost_index)/2)
     z =  int(num_points_to_collect/2)
@@ -534,81 +521,75 @@ def get_four_points2(cnt, image):
     # Get set of points before rightmost
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("get_four_points2(): line3: num_points_to_collect=0, exiting")
         return False, None
-    #print("num_points_to_collect=", num_points_to_collect)
     line3_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
 
     for pt in line1_points:
         cv2.circle(image, tuple(pt[0]), 1, orange, -1)
-
     for pt in line2_points:
         cv2.circle(image, tuple(pt[0]), 1, orange, -1)
-
     for pt in line3_points:
         cv2.circle(image, tuple(pt[0]), 1, orange, -1)
 
     min_points_for_line_fit = 5
 
     if len(line1_points) < min_points_for_line_fit:
+        print("get_four_points2(): line1: min_points_for_line_fit=", min_points_for_line_fit, " , exiting")
         return False, None
 
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
-        print("Warning v11=0")
+        print("get_four_points2(): Warning: v11=0")
         v11 = 0.1
     m1 = v21/v11
     b1 = y01 - m1*x01
-    #print("From fitline: m1=", m1, " b1=", b1)
 
     if len(line2_points) < min_points_for_line_fit:
+        print("get_four_points2(): line2: min_points_for_line_fit=", min_points_for_line_fit, " , exiting")
         return False, None
 
     [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
     m2 = v22/v12
     if (v12==0):
-        print("Warning v12=0")
+        print("get_four_points2(): Warning v12=0")
         v12 = 0.1
     b2 = y02 - m2*x02
-    #print("From fitline: m2=", m2, " b2=", b2)
 
     if len(line3_points) < min_points_for_line_fit:
+        print("get_four_points2(): line3: min_points_for_line_fit=", min_points_for_line_fit, " , exiting")
         return False, None
 
     [v13,v23,x03,y03] = cv2.fitLine(line3_points, cv2.DIST_L2,0,0.01,0.01)
     m3 = v23/v13
     if (v13==0):
-        #print("Warning v13=0")
+        print("get_four_points2(): Warning v13=0")
         v13 = 0.1
     b3 = y03 - m3*x03
-    #print("From fitline: m3=", m3, " b3=", b3)
 
     # Left bottom point is intersection of line1 and line2
     if (m1 == m2):
+        print("get_four_points2(): m1=m2=", m1, " , exiting")
         return False, None
 
     xint_left = (b2-b1)/(m1-m2)
     yint_left = m1*xint_left+b1
-    #print("xint_left=", xint_left, " yint_left=", yint_left)
     int_point_left = tuple([int(xint_left), int(yint_left)])
-    #cv2.circle(image, int_point, 4, fuschia, -1)
-    #print("int_point_left=", int_point_left)
 
     # Right bottom point is intersection of line2 and line3
     if (m2 == m3):
+        print("get_four_points2(): m2=m3=", m3, " , exiting")
         return False, None
 
     xint_right = (b3-b2)/(m2-m3)
     yint_right = m2*xint_right+b2
-    #print("xint_right=", xint_right, " yint_right=", yint_right)
     int_point_right = tuple([int(xint_right), int(yint_right)])
-    #cv2.circle(image, int_point_right, 4, fuschia, -1)
-    #print("int_point_right=", int_point_right)
 
+    
     # Find points on contour closest to intersection points (they may already be on the contour)
     lower_index = leftmost_index
     upper_index = rightmost_index
-    min_dist_squared = 100000000000
+    min_dist_squared = float("inf")
     min_dist_squared_index = lower_index
     for i in range(lower_index, upper_index):
         xdiff = int_point_left[0] - cnt[i][0][0]
@@ -619,12 +600,15 @@ def get_four_points2(cnt, image):
             min_dist_squared = dist_squared
             if dist_squared == 0:
                 break
+
+    #dist_squared = [(int_point_left[0]-pt[0][0])**2 + (int_point_left[1]-pt[0][1])**2 for pt in cnt]
+    #min_dist_squared_index = np.argmin(dist_squared)
+
     int_point_left2 = tuple(cnt[min_dist_squared_index][0])
-    #print("int_point_left2=", int_point_left2)
 
     lower_index = leftmost_index
     upper_index = rightmost_index
-    min_dist_squared = 100000000000
+    min_dist_squared = float("inf")
     min_dist_squared_index = lower_index
     for i in range(lower_index, upper_index):
         xdiff = int_point_right[0] - cnt[i][0][0]
@@ -635,8 +619,11 @@ def get_four_points2(cnt, image):
             min_dist_squared = dist_squared
             if dist_squared == 0:
                 break
+
+    #dist_squared = [(int_point_right[0]-pt[0][0])**2 + (int_point_right[1]-pt[0][1])**2 for pt in cnt]
+    #min_dist_squared_index = np.argmin(dist_squared)
+
     int_point_right2 = tuple(cnt[min_dist_squared_index][0])
-    #print("int_point_right2=", int_point_right2)
 
     four_points = np.array([
                             leftmost,
