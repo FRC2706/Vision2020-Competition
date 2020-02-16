@@ -193,6 +193,8 @@ while (True):
 
             initialFilteredContours.append(indiv)
 
+
+    print("RL: Brian number of contours:", len(initialFilteredContours))
     if initialFilteredContours:
 
         cnt = initialFilteredContours[0]
