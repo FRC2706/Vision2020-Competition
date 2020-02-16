@@ -10,7 +10,9 @@ blue = (255, 0, 0)
 
 booWrite = False
 
-def outer_bottoms(apprx, left):
+def outer_bottoms(apprx, left_side):
+    """
+    """
     # can't find sort for approx array output, so re-create as simple list
     # pull each row and remove layer of []
     [row0] = apprx[0]
@@ -35,7 +37,7 @@ def outer_bottoms(apprx, left):
 
     # create list to return with outside corners first, inside second
     xlst = []
-    if left:
+    if left_side:
         xlst.append(ylst[0])
         xlst.append(ylst[1])
     else:
@@ -44,6 +46,19 @@ def outer_bottoms(apprx, left):
 
     # return list in desired form
     return xlst
+
+def is_cv3():
+    # if we are using OpenCV 3.X, then our cv2.__version__ will start
+    # with '3.'
+    return check_opencv_version("3.")
+
+def check_opencv_version(major, lib=None):
+    # if the supplied library is None, import OpenCV
+    if lib is None:
+        import cv2 as lib
+    # return whether or not the current OpenCV version matches the
+    # major version number
+    return lib.__version__.startswith(major) 
 
 def get_four(boundr, width, height, contour):
     """
@@ -89,7 +104,10 @@ def get_four(boundr, width, height, contour):
         if booWrite: cv2.imwrite('05-bitwise_bottoms.jpg',bitwise_bottoms)
 
         # make contours of bitwise_and and keep largest two
-        imgFindContourReturn, bitwiseContours, hierarchy = cv2.findContours(bitwise_bottoms, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        if is_cv3():
+            imgFindContourReturn, bitwiseContours, hierarchy = cv2.findContours(bitwise_bottoms, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        else:
+            bitwiseContours, hierarchy = cv2.findContours(bitwise_bottoms, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         sortedContours = sorted(bitwiseContours, key = cv2.contourArea, reverse = True)[:2]
 
         # sort contours so we know left vs right
@@ -186,7 +204,7 @@ def get_four(boundr, width, height, contour):
         urx = rurx + xb
         ury = rury + yb
 
-        return [(ulx,uly), (blx,bly), (bcx,bcy), (brx,bry), (urx,ury)]
+        return True, [(float(ulx),float(uly)), (float(blx),float(bly)), (float(bcx),float(bcy)), (float(brx),float(bry)), (float(urx),float(ury))]
 
     else:
-        return None
+        return False, None

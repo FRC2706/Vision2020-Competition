@@ -26,6 +26,7 @@ from adrian_pyimage import WebcamVideoStream
 from pathlib import Path
 from visual4 import get_four
 
+
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
 print()
@@ -345,9 +346,9 @@ while (True):
         ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
         
         # send chosen contour to 4 point finder, get back found points or None
-        try_get_four = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
+        foundCorners, try_get_four = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
 
-        if try_get_four is None:
+        if foundCorners is False:
             pass
 
         else:

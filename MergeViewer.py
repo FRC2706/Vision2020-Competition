@@ -70,14 +70,15 @@ def load_images_from_folder(folder):
 #images, imagename = load_images_from_folder("./OuterTargetProblems")
 #images, imagename = load_images_from_folder("./OuterTargetImages")
 #images, imagename = load_images_from_folder("./OuterTargetHalfScale")
+#images, imagename = load_images_from_folder("./OuterTargetFullScale")
 #images, imagename = load_images_from_folder("./OuterTargetRingTest")
-images, imagename = load_images_from_folder("./OuterTargetFullDistance")
 #images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
+images, imagename = load_images_from_folder("./OuterTargetFullDistance")
 #images, imagename = load_images_from_folder("./OuterTargetSketchup")
 #images, imagename = load_images_from_folder("./OuterTargetLiger")
 
 # Inner Target Images
-images, imagename = load_images_from_folder("./InnerTargetExplore")
+#images, imagename = load_images_from_folder("./InnerTargetExplore")
 
 # finds height/width of camera frame (eg. 640 width, 480 height)
 image_height, image_width = images[0].shape[:2]
