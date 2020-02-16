@@ -5,6 +5,12 @@ from VisionUtilities import *
 from VisionConstants import *
 from DistanceFunctions import *
 
+try:
+    from PrintPublisher import *
+except ImportError:
+    from NetworkTablePublisher import *
+
+
 # Draws Contours and finds center and yaw of orange ball
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
@@ -94,8 +100,8 @@ def findBall(contours, image, centerX, centerY):
             cv2.circle(image, bottommost, 6, blue, -1)
             #print('extreme points', leftmost,rightmost,topmost,bottommost)
 
-            print("topmost: " + str(topmost[0]))
-            print("bottommost: " + str(bottommost[0]))
+            #print("topmost: " + str(topmost[0]))
+            #print("bottommost: " + str(bottommost[0]))
            
             #xCoord of the closest ball will be the x position differences between the topmost and 
             #bottom most points
@@ -104,11 +110,11 @@ def findBall(contours, image, centerX, centerY):
             else: 
                 xCoord = int(round((bottommost[0]-topmost[0])/2)+topmost[0])
 
-            print(xCoord)
+            #print(xCoord)
             if (closestPowerCell[4] > 0.9 and closestPowerCell[4] < 1.2):
                 xCoord = closestPowerCell[0]
 
-            print ("aspect ratio of ball: " + str(closestPowerCell[4]))     
+            #print ("aspect ratio of ball: " + str(closestPowerCell[4]))     
 
             finalTarget.append(calculateYaw(xCoord, centerX, H_FOCAL_LENGTH))
             finalTarget.append(calculateDistWPILib(closestPowerCell[3],TARGET_BALL_HEIGHT,KNOWN_BALL_PIXEL_HEIGHT,KNOWN_BALL_DISTANCE ))
@@ -125,8 +131,8 @@ def findBall(contours, image, centerX, centerY):
 
             currentAngleError = finalTarget[0]
             # pushes cargo angle to network tables
-
-
+            publishNumber("YawToPowerCell", finalTarget[0])
+            publishNumber("DistanceToPowerCell", finalYaw)
 
         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 

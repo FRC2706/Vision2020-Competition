@@ -76,6 +76,9 @@ images, imagename = load_images_from_folder("./OuterTargetProblems")
 #images, imagename = load_images_from_folder("./OuterTargetSketchup")
 #images, imagename = load_images_from_folder("./OuterTargetLiger")
 
+# Inner Target Images
+images, imagename = load_images_from_folder("./InnerTargetExplore")
+
 # finds height/width of camera frame (eg. 640 width, 480 height)
 image_height, image_width = images[0].shape[:2]
 print(image_height, image_width)
@@ -102,7 +105,7 @@ while True:
     frame = img
 
     # start
-    #fps = FPS().start()
+    fps = FPS().start()
 
     if Driver:
         processed = frame
@@ -121,7 +124,13 @@ while True:
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)
                 processed = findControlPanel(frame, threshold)
 
-    cv2.putText(processed, 'FPS: 3.1415', (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    # end of cycle so update counter
+    fps.update()
+    # in merge view also end of time we want to measure so stop FPS
+    fps.stop()
+    # because we are timing in this file, have to add the fps to image processed 
+    cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(processed, 'FPS: {:.2f}'.format(fps.fps()), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
     cv2.imshow("raw", img)
     cv2.imshow(filename, processed)
