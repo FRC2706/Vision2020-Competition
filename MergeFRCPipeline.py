@@ -500,7 +500,7 @@ if __name__ == "__main__":
 
         # end of cycle so update counter
         fps.update()
-        # in merge view also end of time we want to measure so stop FPS
+        # also end of time we want to measure so stop FPS
         fps.stop()
         # because we are timing in this file, have to add the fps to image processed 
         cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
