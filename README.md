@@ -25,7 +25,7 @@ If an error occurs when uploading (because it won't over write automatically),
 login to the pi (ssh pi@frcvision.local with password raspberry).  Then issue
 the command:
 
-rm *.py   - This will remove all the .py images from the folder
+>rm *.py   - This will remove all the .py images from the folder
 
 Upload the 'visionComp.zip' file, no errors shoud occur this time
 
