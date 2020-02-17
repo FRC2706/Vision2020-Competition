@@ -24,7 +24,7 @@ import math
 from adrian_pyimage import FPS
 from adrian_pyimage import WebcamVideoStream
 from pathlib import Path
-from visual4 import get_four
+from visual4_old import get_four
 
 
 print("Using python version {0}".format(sys.version))
