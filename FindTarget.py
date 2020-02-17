@@ -5,11 +5,6 @@ from VisionMasking import *
 from VisionUtilities import *
 from DistanceFunctions import *
 
-try:
-    from PrintPublisher import *
-except ImportError:
-    from NetworkTablePublisher import *
-
 
 # real world dimensions of the goal target
 # These are the full dimensions around both strips
@@ -154,7 +149,7 @@ def get_four_points(cnt):
 
     if ((topmost_index == -1)   or (leftmost_index == -1) or 
         (rightmost_index == -1) or (bottommost_index == -1)    ):
-        #print ("Critical point(s) not found in contour")
+        print ("Critical point(s) not found in contour")
         return image
 
     # In some cases, topmost and rightmost pixel will be the same so that index of
@@ -170,13 +165,13 @@ def get_four_points(cnt):
         num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
         #print("num_points_to_collect=", num_points_to_collect)
         if num_points_to_collect == 0:
-            #print ("num_points_to_collect=0, exiting")
+            print ("num_points_to_collect=0, exiting")
             return image
         line1_points = cnt[bottommost_index:bottommost_index+num_points_to_collect+1]
         # Get set of points before rightmost
         num_points_to_collect = max(int(0.25*(bottommost_index-leftmost_index)), 4)
         if num_points_to_collect == 0:
-            #print ("num_points_to_collect=0, exiting")
+            print ("num_points_to_collect=0, exiting")
             return image
         #print("num_points_to_collect=", num_points_to_collect)
         line2_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
@@ -191,7 +186,7 @@ def get_four_points(cnt):
         # Get set of point before bottommost
         num_points_to_collect = max(int(0.25*(rightmost_index-leftmost_index)), 4)
         if num_points_to_collect == 0:
-            #print ("num_points_to_collect=0, exiting")
+            print ("num_points_to_collect=0, exiting")
             return image
         #print("num_points_to_collect=", num_points_to_collect)
         line2_points = cnt[bottommost_index-num_points_to_collect:bottommost_index+1]
@@ -210,7 +205,7 @@ def get_four_points(cnt):
 
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
-        #print("Warning v11=0")
+        print("Warning v11=0")
         v11 = 0.1
     m1 = v21/v11
     b1 = y01 - m1*x01
@@ -392,7 +387,6 @@ def displaycorners(image, outer_corners):
 # centerY is center y coordinate of image
 
 def findTape(contours, image, centerX, centerY):
-
     #global warped
     screenHeight, screenWidth, channels = image.shape
     # Seen vision targets (correct angle, adjacent to each other)
@@ -400,18 +394,52 @@ def findTape(contours, image, centerX, centerY):
 
     if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
-       
-        for cnt in cntsSorted:
-            x, y, w, h = cv2.boundingRect(cnt)
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:17]
+        
+        cntsFiltered = []
 
-            cntHeight = h
-            aspect_ratio = float(w) / h
-           
-            # Calculate Contour area
-            cntArea = cv2.contourArea(cnt)
-            # Filters contours based off of hulled area and 
-            if (checkTargetSize(cntArea, aspect_ratio)):
+        if cntsSorted:
+
+            for (j, cnt) in enumerate(cntsSorted):
+
+                # Calculate Contour area
+                cntArea = cv2.contourArea(cnt)
+
+                # rotated rectangle fingerprinting
+                rect = cv2.minAreaRect(cnt)
+                (xr,yr),(wr,hr),ar = rect #x,y width, height, angle of rotation = rotated rect
+
+                #to get rid of height and width switching
+                if hr > wr: 
+                    ar = ar + 90
+                    wr, hr = [hr, wr]
+                else:
+                    ar = ar + 180
+                if ar == 180:
+                    ar = 0
+
+                cntAspectRatio = float(wr)/hr
+                minAextent = float(cntArea)/(wr*hr)
+
+                # Hull
+                hull = cv2.convexHull(cnt)
+                hull_area = cv2.contourArea(hull)
+                solidity = float(cntArea)/hull_area
+
+                if (minAextent < 0.16 or minAextent > 0.26): continue
+                if (cntAspectRatio < 2.0 or cntAspectRatio > 3.0): continue
+                if (solidity < 0.22 or solidity > 0.30): continue
+
+                cntsFiltered.append(cnt)
+                #end fingerprinting
+
+            # We will work on the filtered contour with the largest area which is the
+            # first one in the list
+            if (len(cntsFiltered) > 0):
+
+                cnt = cntsFiltered[0]
+
+                # Filters contours based off of hulled area and 
 
                 rw_coordinates = real_world_coordinates
 
@@ -446,7 +474,7 @@ def findTape(contours, image, centerX, centerY):
                         distance, angle1, angle2 = compute_output_values(rvec, tvec)
                         cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                        #cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         if (YawToTarget >= -2 and YawToTarget <= 2):
                             colour = green
                         if ((YawToTarget >= -5 and YawToTarget < -2) or (YawToTarget > 2 and YawToTarget <= 5)):  
@@ -458,8 +486,6 @@ def findTape(contours, image, centerX, centerY):
                         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
                         #publishResults(name,value)
-                        publishNumber("YawToTarget", YawToTarget)
-                        publishNumber("DistanceToTarget", round(distance/12,2))
 
     #     # pushes vision target angle to network table
 
@@ -467,8 +493,8 @@ def findTape(contours, image, centerX, centerY):
 
 # Checks if the target contours are worthy 
 def checkTargetSize(cntArea, cntAspectRatio):
-    #print("cntArea: " + str(cntArea))
-    #print("aspect ratio: " + str(cntAspectRatio))
+    print("cntArea: " + str(cntArea))
+    print("aspect ratio: " + str(cntAspectRatio))
     return (cntArea > image_width/3 and cntArea < MAXIMUM_TARGET_AREA and cntAspectRatio > 1.0)
 
 def get_four_points2(cnt, image):
@@ -489,20 +515,20 @@ def get_four_points2(cnt, image):
         point = tuple(cnt[i][0])
         if (point == topmost):
             topmost_index = i
-            #print("Found topmost:", topmost, " at index ", i)
+            print("Found topmost:", topmost, " at index ", i)
         if (point == leftmost):
-            #print("Found leftmost:", leftmost, " at index ", i)
+            print("Found leftmost:", leftmost, " at index ", i)
             leftmost_index = i
         if (point == bottommost):
-            #print("Found bottommost:", bottommost, " at index ", i)
+            print("Found bottommost:", bottommost, " at index ", i)
             bottommost_index = i
         if (point == rightmost):
-            #print("Found rightmost:", rightmost, " at index ", i)
+            print("Found rightmost:", rightmost, " at index ", i)
             rightmost_index = i
 
     if ((topmost_index == -1)   or (leftmost_index == -1) or 
         (rightmost_index == -1) or (bottommost_index == -1)    ):
-        #print ("Critical point(s) not found in contour")
+        print ("Critical point(s) not found in contour")
         return False, None
 
     # In some cases, topmost and rightmost pixel will be the same so that index of
@@ -515,17 +541,17 @@ def get_four_points2(cnt, image):
 
     # Get set of points after leftmost
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
-    #print("num_points_to_collect=", num_points_to_collect)
+    print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("num_points_to_collect=0, exiting")
         return False, None
     line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
 
     # Get set of points around the middle of the bottom line
     num_points_to_collect = max(int(0.2*(rightmost_index-leftmost_index)), 4)
-    #print("num_points_to_collect=", num_points_to_collect)
+    print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("num_points_to_collect=0, exiting")
         return False, None
     approx_center_of_bottom = leftmost_index + int((rightmost_index - leftmost_index)/2)
     z =  int(num_points_to_collect/2)
@@ -534,9 +560,9 @@ def get_four_points2(cnt, image):
     # Get set of points before rightmost
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("num_points_to_collect=0, exiting")
         return False, None
-    #print("num_points_to_collect=", num_points_to_collect)
+    print("num_points_to_collect=", num_points_to_collect)
     line3_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
 
     for pt in line1_points:
@@ -578,7 +604,7 @@ def get_four_points2(cnt, image):
     [v13,v23,x03,y03] = cv2.fitLine(line3_points, cv2.DIST_L2,0,0.01,0.01)
     m3 = v23/v13
     if (v13==0):
-        #print("Warning v13=0")
+        print("Warning v13=0")
         v13 = 0.1
     b3 = y03 - m3*x03
     #print("From fitline: m3=", m3, " b3=", b3)
@@ -592,7 +618,7 @@ def get_four_points2(cnt, image):
     #print("xint_left=", xint_left, " yint_left=", yint_left)
     int_point_left = tuple([int(xint_left), int(yint_left)])
     #cv2.circle(image, int_point, 4, fuschia, -1)
-    #print("int_point_left=", int_point_left)
+    print("int_point_right=", int_point_left)
 
     # Right bottom point is intersection of line2 and line3
     if (m2 == m3):
@@ -603,14 +629,14 @@ def get_four_points2(cnt, image):
     #print("xint_right=", xint_right, " yint_right=", yint_right)
     int_point_right = tuple([int(xint_right), int(yint_right)])
     #cv2.circle(image, int_point_right, 4, fuschia, -1)
-    #print("int_point_right=", int_point_right)
+    print("int_point_right=", int_point_right)
 
     # Find points on contour closest to intersection points (they may already be on the contour)
     lower_index = leftmost_index
     upper_index = rightmost_index
     min_dist_squared = 100000000000
     min_dist_squared_index = lower_index
-    for i in range(lower_index, upper_index):
+    for i in range(lower_index, upper_index+1):
         xdiff = int_point_left[0] - cnt[i][0][0]
         ydiff = int_point_left[1] - cnt[i][0][1]
         dist_squared = xdiff**2 + ydiff**2
@@ -620,13 +646,13 @@ def get_four_points2(cnt, image):
             if dist_squared == 0:
                 break
     int_point_left2 = tuple(cnt[min_dist_squared_index][0])
-    #print("int_point_left2=", int_point_left2)
+    print("int_point_left2=", int_point_left2)
 
     lower_index = leftmost_index
     upper_index = rightmost_index
     min_dist_squared = 100000000000
     min_dist_squared_index = lower_index
-    for i in range(lower_index, upper_index):
+    for i in range(lower_index, upper_index+1):
         xdiff = int_point_right[0] - cnt[i][0][0]
         ydiff = int_point_right[1] - cnt[i][0][1]
         dist_squared = xdiff**2 + ydiff**2
@@ -636,7 +662,7 @@ def get_four_points2(cnt, image):
             if dist_squared == 0:
                 break
     int_point_right2 = tuple(cnt[min_dist_squared_index][0])
-    #print("int_point_right2=", int_point_right2)
+    print("int_point_right2=", int_point_right2)
 
     four_points = np.array([
                             leftmost,
