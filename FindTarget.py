@@ -62,10 +62,13 @@ real_world_coordinates_right = np.array([
 
 MAXIMUM_TARGET_AREA = 4400
 
-#Corner method 1 is find tape with 3 points (John and Jeremy)
-#Corner method 2 is find tape with 4 ponts (Robert, Rachel and Rebecca)
-#Corner method 3 is find tape with 4 points (Robert, Rachel and Rebecca)
-CornerMethod = 3
+#Corner method 3 is find tape with 3 points (John and Jeremy)
+#Corner method 4 is find tape with 4 ponts (Robert, Rachel and Rebecca)
+#Corner method 5 is find tape with 4 points (Robert, Rachel and Rebecca)
+#Corner method 6 is find tape with 4 points (Erik and Brian)
+#Corner method 7 is find tape with 4 points (Erik and Brian)
+
+CornerMethod = 5
 
 
 # Finds the tape targets from the masked image and displays them on original stream + network tales
@@ -417,14 +420,14 @@ def findTape(contours, image, centerX, centerY):
 
                 #Pick which Corner solving method to use
                 foundCorners = False
-                if (CornerMethod == 1):
+                if (CornerMethod == 3):
                     outer_corners, rw_coordinates = get_four_points_with3(cnt)
                     foundCorners = True
 
-                if (CornerMethod == 2):
+                if (CornerMethod == 4):
                     foundCorners, outer_corners = get_four_points(cnt)
 
-                if (CornerMethod == 3):
+                if (CornerMethod == 5):
                     foundCorners, outer_corners = get_four_points2(cnt,image)    
 
                 if (foundCorners):
