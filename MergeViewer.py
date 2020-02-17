@@ -28,6 +28,7 @@ from threading import Thread
 from CornersVisual4 import get_four
 from adrian_pyimage import FPS  
 
+
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
 print()
