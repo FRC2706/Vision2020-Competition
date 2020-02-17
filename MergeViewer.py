@@ -25,8 +25,8 @@ import sys
 import numpy as np
 
 from threading import Thread
-from TaskCode.visual4 import get_four
-from TaskCode.adrian_pyimage import FPS
+from CornersVisual4 import get_four
+from adrian_pyimage import FPS
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
