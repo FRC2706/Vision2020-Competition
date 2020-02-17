@@ -24,7 +24,7 @@ import math
 from adrian_pyimage import FPS
 from adrian_pyimage import WebcamVideoStream
 from pathlib import Path
-from visual4 import get_four
+from visual4_old import get_four
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
@@ -85,7 +85,7 @@ else:
 print (photos)
 
 # set index of files
-i = 4
+i = 0
 intLastFile = len(photos) -1
 
 # begin main loop indent 1
