@@ -21,10 +21,10 @@ import sys
 import os
 import math
 
-from adrian_pyimage import FPS
+from TaskCode.adrian_pyimage import FPS
 from adrian_pyimage import WebcamVideoStream
 from pathlib import Path
-from visual4_old import get_four
+from TaskCode.visual4_old import get_four
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
@@ -223,7 +223,7 @@ while (True):
         # straight bounding rectangle
         xb,yb,wb,hb = cv2.boundingRect(cnt)
         print('straight bounding rectangle = ', (xb,yb) ,wb,hb)
-        brect = (xb,yb,wb,hb)
+        bounding_rect = (xb,yb,wb,hb)
         #cv2.rectangle(imgContours,(xb,yb),(xb+wb,yb+hb),green,2)
         print('bounding rectangle aspect = ', float(wb)/float(hb))
         print('bounding rectangle extent = ', float(area)/(float(wb)*float(hb)))
@@ -345,9 +345,9 @@ while (True):
         ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
         
         # send chosen contour to 4 point finder, get back found points or None
-        try_get_four = get_four(brect, intROMWidth, intROMHeight, ROISortedContours[0])
+        foundCorners, try_get_four = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
 
-        if try_get_four is None:
+        if foundCorners is False:
             pass
 
         else:
