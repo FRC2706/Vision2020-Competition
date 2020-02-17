@@ -1,9 +1,12 @@
 import math
 import numpy as np
+
 from VisionConstants import *
 from VisionMasking import *
 from VisionUtilities import *
 from DistanceFunctions import *
+
+from CornersVisual4 import get_four
 
 try:
     from PrintPublisher import *
@@ -14,13 +17,16 @@ except ImportError:
 # real world dimensions of the goal target
 # These are the full dimensions around both strips
 TARGET_STRIP_LENGTH = 19.625    # inches
-TARGET_HEIGHT = 17.0            # inches@!
+TARGET_STRIP_WIDTH = 2.0        # inches
+TARGET_HEIGHT = 17.0            # inches
 TARGET_TOP_WIDTH = 39.25        # inches
 TARGET_BOTTOM_WIDTH = TARGET_TOP_WIDTH - 2*TARGET_STRIP_LENGTH*math.cos(math.radians(60))
 
 #This is the X position difference between the upper target length and corner point
 TARGET_BOTTOM_CORNER_WIDTH = math.sqrt(math.pow(TARGET_STRIP_LENGTH,2) - math.pow(TARGET_HEIGHT,2))
 
+# This is the bottom width between corners
+TARGET_INNER_BOTTOM_WIDTH =  TARGET_BOTTOM_WIDTH - 2.0*TARGET_STRIP_WIDTH*math.cos(math.radians(60))
 
 # real_world_coordinates = np.array([
 #     [-TARGET_TOP_WIDTH / 2, TARGET_HEIGHT / 2, 0.0],
@@ -35,7 +41,6 @@ real_world_coordinates = np.array([
     [-TARGET_BOTTOM_WIDTH / 2.0, TARGET_HEIGHT, 0.0],
     [TARGET_BOTTOM_WIDTH / 2.0, TARGET_HEIGHT, 0.0],
 ])
-
 
 #top_left, top_right, bottom_left, bottom_right
 # real_world_coordinates = np.array([
@@ -60,16 +65,30 @@ real_world_coordinates_right = np.array([
         [TARGET_TOP_WIDTH-TARGET_BOTTOM_CORNER_WIDTH, TARGET_HEIGHT, 0.0]     # Bottom Right point
     ])        
 
+real_world_coordinates_inner = np.array([
+    [-TARGET_TOP_WIDTH / 2.0, 0.0, 0.0],
+    [-TARGET_INNER_BOTTOM_WIDTH / 2.0, TARGET_HEIGHT-2.0, 0.0],
+    [TARGET_INNER_BOTTOM_WIDTH / 2.0, TARGET_HEIGHT-2.0, 0.0],
+    [TARGET_TOP_WIDTH / 2.0, 0.0, 0.0],
+])
+
+real_world_coordinates_inner_five = np.array([
+    [-TARGET_TOP_WIDTH / 2.0, 0.0, 0.0],
+    [-TARGET_INNER_BOTTOM_WIDTH / 2.0, TARGET_HEIGHT-2.0, 0.0],
+    [0.0, TARGET_HEIGHT-2.0, 0.0],
+    [TARGET_INNER_BOTTOM_WIDTH / 2.0, TARGET_HEIGHT-2.0, 0.0],
+    [TARGET_TOP_WIDTH / 2.0, 0.0, 0.0],
+])
+
 MAXIMUM_TARGET_AREA = 4400
 
-#Corner method 3 is find tape with 3 points (John and Jeremy)
-#Corner method 4 is find tape with 4 ponts (Robert, Rachel and Rebecca)
-#Corner method 5 is find tape with 4 points (Robert, Rachel and Rebecca)
-#Corner method 6 is find tape with 4 points (Erik and Brian)
-#Corner method 7 is find tape with 4 points (Erik and Brian)
-
-CornerMethod = 5
-
+# Corner method 3 is find tape with 3 points (John and Jeremy)
+# Corner method 4 is find tape with 4 ponts (Robert, Rachel and Rebecca)
+# Corner method 5 is find tape with 4 points (Robert, Rachel and Rebecca)
+# Corner method 6 uses visual methods to find 4 points (Brian and Erik)
+# Corner method 7 uses visual methods to find 5 points (Brian and Erik)
+ 
+CornerMethod = 6
 
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):
@@ -85,13 +104,27 @@ def findTargets(frame, mask):
     #img_erosion = cv2.erode(mask, kernel, iterations=1) 
     #mask = cv2.dilate(img_erosion, kernel, iterations=1) 
     #cv2.imshow("mask2", mask)
+
     # Finds contours
+    # we are accomodating different versions of openCV and the different methods for corners
     if is_cv3():
-      #  _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-        _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    else:
-       # contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        if CornerMethod is 3:
+            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+        elif CornerMethod is 4 or CornerMethod is 5:
+            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        elif CornerMethod is 6 or CornerMethod is 7:
+            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        else:
+            pass
+    else: #implies not cv3, either version 2 or 4
+        if CornerMethod is 3:
+            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+        elif CornerMethod is 4 or CornerMethod is 5:
+            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        elif CornerMethod is 6 or CornerMethod is 7:
+            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        else:
+            pass
 
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
@@ -105,7 +138,7 @@ def findTargets(frame, mask):
     image = frame.copy()
     # Processes the contours, takes in (contours, output_image, (centerOfImage)
     if len(contours) != 0:
-        image = findTape(contours, image, centerX, centerY)
+        image = findTape(contours, image, centerX, centerY, mask)
     # Shows the contours overlayed on the original video
     return image
 
@@ -381,11 +414,19 @@ def compute_output_values(rvec, tvec):
 def displaycorners(image, outer_corners):
     # draw extreme points
     # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
-    cv2.circle(image, (int(outer_corners[0,0]),int(outer_corners[0,1])), 6, green, -1)
-    cv2.circle(image, (int(outer_corners[1,0]),int(outer_corners[1,1])), 6, red, -1)
-    cv2.circle(image, (int(outer_corners[2,0]),int(outer_corners[2,1])), 6, white,-1)
-    cv2.circle(image, (int(outer_corners[3,0]),int(outer_corners[3,1])), 6, blue, -1)
-    #print('extreme points', leftmost,rightmost,topmost,bottommost)
+    if len(outer_corners) == 4: #this is methods 1 to 4 
+        cv2.circle(image, (int(outer_corners[0,0]),int(outer_corners[0,1])), 6, green, -1)
+        cv2.circle(image, (int(outer_corners[1,0]),int(outer_corners[1,1])), 6, red, -1)
+        cv2.circle(image, (int(outer_corners[2,0]),int(outer_corners[2,1])), 6, white,-1)
+        cv2.circle(image, (int(outer_corners[3,0]),int(outer_corners[3,1])), 6, blue, -1)
+        #print('extreme points', leftmost,rightmost,topmost,bottommost)
+    else: # this assumes len is 5 and method 5
+        cv2.circle(image, (int(outer_corners[0,0]),int(outer_corners[0,1])), 6, green, -1)
+        cv2.circle(image, (int(outer_corners[1,0]),int(outer_corners[1,1])), 6, blue, -1)
+        cv2.circle(image, (int(outer_corners[2,0]),int(outer_corners[2,1])), 6, purple, -1)
+        cv2.circle(image, (int(outer_corners[3,0]),int(outer_corners[3,1])), 6, white,-1)
+        cv2.circle(image, (int(outer_corners[4,0]),int(outer_corners[4,1])), 6, red, -1)
+
 
 # Draws Contours and finds center and yaw of vision targets
 # centerX is center x coordinate of image
@@ -394,7 +435,8 @@ def displaycorners(image, outer_corners):
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
 
-def findTape(contours, image, centerX, centerY):
+def findTape(contours, image, centerX, centerY, mask):
+
     #global warped
     screenHeight, screenWidth, channels = image.shape
     # Seen vision targets (correct angle, adjacent to each other)
@@ -450,21 +492,56 @@ def findTape(contours, image, centerX, centerY):
 
                 cnt = cntsFiltered[0]
 
+                xb, yb, wb, hb = cv2.boundingRect(cnt)
+                bounding_rect = (xb,yb,wb,hb)
+
                 # Filters contours based off of hulled area and 
 
                 rw_coordinates = real_world_coordinates
 
                 #Pick which Corner solving method to use
                 foundCorners = False
-                if (CornerMethod == 3):
+
+                if CornerMethod is 3:
+                    rw_coordinates = real_world_coordinates
                     outer_corners, rw_coordinates = get_four_points_with3(cnt)
                     foundCorners = True
 
-                if (CornerMethod == 4):
+                elif CornerMethod is 4:
+                    rw_coordinates = real_world_coordinates
                     foundCorners, outer_corners = get_four_points(cnt)
 
-                if (CornerMethod == 5):
-                    foundCorners, outer_corners = get_four_points2(cnt,image)    
+                elif CornerMethod is 5:
+                    rw_coordinates = real_world_coordinates
+                    foundCorners, outer_corners = get_four_points2(cnt,image)
+
+                elif CornerMethod is 6:
+                    rw_coordinates = real_world_coordinates_inner
+                    ROI_mask = mask[yb:yb+hb, xb:xb+wb]
+                    intROMHeight, intROMWidth = ROI_mask.shape[:2]
+                    if is_cv3():
+                        imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    else:
+                        ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
+                    foundCorners, inner_corners = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
+                    only_four = ((inner_corners[0]),(inner_corners[1]),(inner_corners[3]),(inner_corners[4]))
+                    outer_corners = np.array(only_four)
+
+                elif CornerMethod is 7:
+                    rw_coordinates = real_world_coordinates_inner_five
+                    ROI_mask = mask[yb:yb+hb, xb:xb+wb]
+                    intROMHeight, intROMWidth = ROI_mask.shape[:2]
+                    if is_cv3():
+                        imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    else:
+                        ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
+                    foundCorners, inner_bottom = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
+                    outer_corners = np.array(inner_bottom)
+
+                else:
+                    pass
 
                 if (foundCorners):
                     displaycorners(image, outer_corners)
