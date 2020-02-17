@@ -423,6 +423,7 @@ def findTape(contours, image, centerX, centerY):
                 if ar == 180:
                     ar = 0
 
+                if hr==0: continue
                 cntAspectRatio = float(wr)/hr
                 minAextent = float(cntArea)/(wr*hr)
 
