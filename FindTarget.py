@@ -6,7 +6,7 @@ from VisionMasking import *
 from VisionUtilities import *
 from DistanceFunctions import *
 
-from TaskCode.visual4 import get_four
+from CornersVisual4 import get_four
 
 try:
     from PrintPublisher import *
