@@ -82,13 +82,13 @@ real_world_coordinates_inner_five = np.array([
 
 MAXIMUM_TARGET_AREA = 4400
 
-#Corner method 1 is find tape with 3 points (John and Jeremy)
-#Corner method 2 is find tape with 4 ponts (Robert, Rachel and Rebecca)
-#Corner method 3 is find tape with 4 points (Robert, Rachel and Rebecca)
-#Corner method 4 uses visual methods to find 4 points (Brian and Erik)
-#Corner method 5 uses visual methods to find 5 points (Brian and Erik)
-
-CornerMethod = 2
+# Corner method 3 is find tape with 3 points (John and Jeremy)
+# Corner method 4 is find tape with 4 ponts (Robert, Rachel and Rebecca)
+# Corner method 5 is find tape with 4 points (Robert, Rachel and Rebecca)
+# Corner method 6 uses visual methods to find 4 points (Brian and Erik)
+# Corner method 7 uses visual methods to find 5 points (Brian and Erik)
+ 
+CornerMethod = 5
 
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):
@@ -108,20 +108,20 @@ def findTargets(frame, mask):
     # Finds contours
     # we are accomodating different versions of openCV and the different methods for corners
     if is_cv3():
-        if CornerMethod is 1:
+        if CornerMethod is 3:
             _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-        elif CornerMethod is 2 or CornerMethod is 3:
-            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         elif CornerMethod is 4 or CornerMethod is 5:
+            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        elif CornerMethod is 6 or CornerMethod is 7:
             _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         else:
             pass
     else: #implies not cv3, either version 2 or 4
-        if CornerMethod is 1:
+        if CornerMethod is 3:
             contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-        elif CornerMethod is 2 or CornerMethod is 3:
-            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         elif CornerMethod is 4 or CornerMethod is 5:
+            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        elif CornerMethod is 6 or CornerMethod is 7:
             contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         else:
             pass
@@ -463,20 +463,20 @@ def findTape(contours, image, centerX, centerY, mask):
                 #Pick which Corner solving method to use
                 foundCorners = False
 
-                if CornerMethod is 1:
+                if CornerMethod is 3:
                     rw_coordinates = real_world_coordinates
                     outer_corners, rw_coordinates = get_four_points_with3(cnt)
                     foundCorners = True
 
-                elif CornerMethod is 2:
+                elif CornerMethod is 4:
                     rw_coordinates = real_world_coordinates
                     foundCorners, outer_corners = get_four_points(cnt)
 
-                elif CornerMethod is 3:
+                elif CornerMethod is 5:
                     rw_coordinates = real_world_coordinates
                     foundCorners, outer_corners = get_four_points2(cnt,image)
 
-                elif CornerMethod is 4:
+                elif CornerMethod is 6:
                     rw_coordinates = real_world_coordinates_inner
                     ROI_mask = mask[yb:yb+hb, xb:xb+wb]
                     intROMHeight, intROMWidth = ROI_mask.shape[:2]
@@ -489,7 +489,7 @@ def findTape(contours, image, centerX, centerY, mask):
                     only_four = ((inner_corners[0]),(inner_corners[1]),(inner_corners[3]),(inner_corners[4]))
                     outer_corners = np.array(only_four)
 
-                elif CornerMethod is 5:
+                elif CornerMethod is 7:
                     rw_coordinates = real_world_coordinates_inner_five
                     ROI_mask = mask[yb:yb+hb, xb:xb+wb]
                     intROMHeight, intROMWidth = ROI_mask.shape[:2]
