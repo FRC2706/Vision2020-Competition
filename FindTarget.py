@@ -88,7 +88,7 @@ MAXIMUM_TARGET_AREA = 4400
 # Corner method 6 uses visual methods to find 4 points (Brian and Erik)
 # Corner method 7 uses visual methods to find 5 points (Brian and Erik)
  
-CornerMethod = 5
+CornerMethod = 6
 
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):

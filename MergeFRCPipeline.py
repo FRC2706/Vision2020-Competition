@@ -387,7 +387,7 @@ if __name__ == "__main__":
 
     networkTable.putBoolean("Driver", False)
     networkTable.putBoolean("Tape", False)
-    networkTable.putNumber("CornerMethod", 3)
+    networkTable.putNumber("CornerMethod", 6)
     networkTable.putBoolean("PowerCell", True)
     networkTable.putBoolean("ControlPanel", False)
     networkTable.putBoolean("WriteImages", False)
@@ -398,7 +398,7 @@ if __name__ == "__main__":
     matchNumberDefault = random.randint(1, 1000)
     processed = 0
 
-    CornerMethod = 3
+    CornerMethod = 6
 
     framePSGroups = 50
     displayFPS = 3.1415
