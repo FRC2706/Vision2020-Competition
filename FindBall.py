@@ -114,7 +114,8 @@ def findBall(contours, image, centerX, centerY):
             if (closestPowerCell[4] > 0.9 and closestPowerCell[4] < 1.2):
                 xCoord = closestPowerCell[0]
 
-            #print ("aspect ratio of ball: " + str(closestPowerCell[4]))     
+            #
+            #  ("aspect ratio of ball: " + str(closestPowerCell[4]))     
 
             finalTarget.append(calculateYaw(xCoord, centerX, H_FOCAL_LENGTH))
             finalTarget.append(calculateDistWPILib(closestPowerCell[3],TARGET_BALL_HEIGHT,KNOWN_BALL_PIXEL_HEIGHT,KNOWN_BALL_DISTANCE ))
