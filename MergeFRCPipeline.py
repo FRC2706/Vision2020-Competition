@@ -385,7 +385,6 @@ if __name__ == "__main__":
     # cap.autoExpose=True;
     tape = True
 
-    # loop forever
     networkTable.putBoolean("Driver", False)
     networkTable.putBoolean("Tape", False)
     networkTable.putNumber("CornerMethod", 3)
@@ -401,10 +400,13 @@ if __name__ == "__main__":
 
     CornerMethod = 3
 
-    while True:
+    framePSGroups = 50
+    displayFPS = 3.1415
+    # start frames per second outside loop, will stop and restart every framePSGroups
+    fps = FPS().start()
 
-        # start frames per second
-        fps = FPS().start()
+    # loop forever
+    while True:
 
         if networkTableTime.getNumber("Match Time", 1) == 0:
             networkTable.putBoolean("WriteImages", False)
@@ -500,11 +502,16 @@ if __name__ == "__main__":
 
         # end of cycle so update counter
         fps.update()
-        # also end of time we want to measure so stop FPS
-        fps.stop()
+
+        # only update FPS in groups according to framePSGroups
+        if fps._numFrames == framePSGroups:
+            # also end of time we want to measure so stop FPS
+            fps.stop()
+            displayFPS = fps.fps()
+            fps.start()
+
         # because we are timing in this file, have to add the fps to image processed 
-        cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-        cv2.putText(processed, 'FPS: {:.2f}'.format(fps.fps()), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.putText(processed, 'FPS: {:.2f}'.format(displayFPS), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
         # networkTable.putBoolean("Driver", True)
         streamViewer.frame = processed
