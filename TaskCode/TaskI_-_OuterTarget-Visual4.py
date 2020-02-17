@@ -21,11 +21,10 @@ import sys
 import os
 import math
 
-from adrian_pyimage import FPS
+from TaskCode.adrian_pyimage import FPS
 from adrian_pyimage import WebcamVideoStream
 from pathlib import Path
-from visual4_old import get_four
-
+from TaskCode.visual4_old import get_four
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
