@@ -26,8 +26,8 @@ import numpy as np
 
 from threading import Thread
 from CornersVisual4 import get_four
-from adrian_pyimage import FPS  
-
+from adrian_pyimage import FPS
+from adrian_pyimage import WebcamVideoStream
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
@@ -48,6 +48,10 @@ from ControlPanel import *
 frameStop = 0
 ImageCounter = 0
 
+# CHOOSE VIDEO OR FILES HERE!!!!
+# boolean for video input, if true does video, if false images
+useVideo = True
+
 #Code to load images from a folder
 def load_images_from_folder(folder):
     images = []
@@ -59,52 +63,74 @@ def load_images_from_folder(folder):
             imagename.append(filename)
     return images, imagename
 
-# Power Cell Images
-#images, imagename = load_images_from_folder("./PowerCell25Scale")
-#images, imagename = load_images_from_folder("./PowerCellImages")
-#images, imagename = load_images_from_folder("./PowerCellFullScale")
-#images, imagename = load_images_from_folder("./PowerCellFullMystery")
-#images, imagename = load_images_from_folder("./PowerCellSketchup")
-#images, imagename = load_images_from_folder("./LifeCamPhotos")
+if useVideo: # test against video
+    # Outer Target Videos
+    videoname = './OuterTargetVideos/ThirdScale-01.webm'
 
-# Outer Target Images
-#images, imagename = load_images_from_folder("./OuterTargetProblems")
-#images, imagename = load_images_from_folder("./OuterTargetImages")
-#images, imagename = load_images_from_folder("./OuterTargetHalfScale")
-#images, imagename = load_images_from_folder("./OuterTargetFullScale")
-#images, imagename = load_images_from_folder("./OuterTargetRingTest")
-#images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
-images, imagename = load_images_from_folder("./OuterTargetFullDistance")
-#images, imagename = load_images_from_folder("./OuterTargetSketchup")
-#images, imagename = load_images_from_folder("./OuterTargetLiger")
+# implies images are to be read
+else: 
+    # Power Cell Images
+    #images, imagename = load_images_from_folder("./PowerCell25Scale")
+    #images, imagename = load_images_from_folder("./PowerCellImages")
+    #images, imagename = load_images_from_folder("./PowerCellFullScale")
+    #images, imagename = load_images_from_folder("./PowerCellFullMystery")
+    #images, imagename = load_images_from_folder("./PowerCellSketchup")
+    #images, imagename = load_images_from_folder("./LifeCamPhotos")
 
-# Inner Target Images
-#images, imagename = load_images_from_folder("./InnerTargetExplore")
+    # Outer Target Images
+    #images, imagename = load_images_from_folder("./OuterTargetProblems")
+    #images, imagename = load_images_from_folder("./OuterTargetImages")
+    #images, imagename = load_images_from_folder("./OuterTargetHalfScale")
+    #images, imagename = load_images_from_folder("./OuterTargetFullScale")
+    #images, imagename = load_images_from_folder("./OuterTargetRingTest")
+    #images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
+    images, imagename = load_images_from_folder("./OuterTargetFullDistance")
+    #images, imagename = load_images_from_folder("./OuterTargetSketchup")
+    #images, imagename = load_images_from_folder("./OuterTargetLiger")
 
-# finds height/width of camera frame (eg. 640 width, 480 height)
-image_height, image_width = images[0].shape[:2]
-print(image_height, image_width)
+    # Inner Target Images
+    #images, imagename = load_images_from_folder("./InnerTargetExplore")
+
+    # finds height/width of camera frame (eg. 640 width, 480 height)
+    image_height, image_width = images[0].shape[:2]
+    print(image_height, image_width)
+
+    currentImg = 0
 
 team = 2706
 server = False
 cameraConfigs = []
-
-currentImg = 0
 
 Driver = False
 Tape = True
 PowerCell = False
 ControlPanel = False
 
-img = images[0]
-filename = imagename[0]
+if useVideo:
+    #cap = cv2.VideoCapture(videoname)
+    cap = cv2.VideoCapture('./OuterTargetVideos/ThirdScale-01.mp4')
 
-imgLength = len(images)
+else:
+    img = images[0]
+    filename = imagename[0]
+    imgLength = len(images)
 
 print("Hello Vision Team!")
 
-while True:
-    frame = img
+stayInLoop = True
+
+while stayInLoop or cap.isOpened():
+
+    if useVideo:
+        (ret, frame) = cap.read()
+        # if frame is read correctly ret is True
+        if not ret:
+            print("Can't receive frame, likely end of file, Exiting ...")
+            stayInLoop = False
+            break
+    else:
+        imgLength = len(images)
+        frame = img
 
     # start
     fps = FPS().start()
@@ -132,27 +158,46 @@ while True:
     fps.stop()
     # because we are timing in this file, have to add the fps to image processed 
     cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-    cv2.putText(processed, 'FPS: {:.2f}'.format(fps.fps()), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(processed, 'FPS: {:.7f}'.format(3.14159265), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
-    cv2.imshow("raw", img)
-    cv2.imshow(filename, processed)
+    cv2.imshow("raw", frame)
     cv2.setMouseCallback('raw', draw_circle)
 
-    key = cv2.waitKey(0)
-    print(key) 
+    if useVideo:
+        cv2.imshow('videoname', processed)
 
-    if key == 27:
-        break
+        key = cv2.waitKey(1)
+        if key == 27:
+            break
 
-    currentImg += 1
-    print(imgLength)
+    else:
+        cv2.imshow(filename, processed)
 
-    if (currentImg == imgLength):
-         currentImg = 0
+        key = cv2.waitKey(0)
+        print(key) 
 
-    img = images[currentImg]
+        if key == 27:
+            stayInLoop = False
+            break
 
-    #destroy old window
-    cv2.destroyWindow(filename)
-    filename = imagename[currentImg]
-    
+        currentImg += 1
+        print(imgLength)
+
+        if (currentImg == imgLength):
+            currentImg = 0
+
+        img = images[currentImg]
+
+        #destroy old window
+        cv2.destroyWindow(filename)
+        filename = imagename[currentImg]
+
+    # end while
+# end if
+
+if useVideo:
+    cap.release()
+else:
+    pass
+
+cv2.destroyAllWindows()

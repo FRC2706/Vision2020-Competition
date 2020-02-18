@@ -138,73 +138,76 @@ def get_four(boundr, width, height, contour):
         cv2.drawContours(approx_points, rightApprox, -1, red, thickness)
         if booWrite: cv2.imwrite('07-approx_points.jpg',approx_points)
 
-        # seems it is dificult to sort output of approx function, use custom sort
-        leftBottoms = outer_bottoms(leftApprox, True)
-        rightBottoms = outer_bottoms(rightApprox, False)
+        if len(leftApprox) is 4 and len(rightApprox) is 4:
+            # seems it is dificult to sort output of approx function, use custom sort
+            leftBottoms = outer_bottoms(leftApprox, True)
+            rightBottoms = outer_bottoms(rightApprox, False)
 
-        # first entries are outer points
-        arrayLeft = leftBottoms[0]
-        arrayRight = rightBottoms[0]
+            # first entries are outer points
+            arrayLeft = leftBottoms[0]
+            arrayRight = rightBottoms[0]
 
-        # extract out desired bottom corners
-        [blx, bly] = arrayLeft
-        [brx, bry] = arrayRight
-        bottomleft = (blx, bly)
-        bottomright = (brx, bry)
+            # extract out desired bottom corners
+            [blx, bly] = arrayLeft
+            [brx, bry] = arrayRight
+            bottomleft = (blx, bly)
+            bottomright = (brx, bry)
 
-        # potential fifth point, average of inner points, from split of hull
-        [lx5, ly5] = leftBottoms[1]
-        [rx5, ry5] = rightBottoms[1]
-        fifth = (int((lx5+rx5)/2),int((ly5+ry5)/2))
-        bottomcenter = fifth
+            # potential fifth point, average of inner points, from split of hull
+            [lx5, ly5] = leftBottoms[1]
+            [rx5, ry5] = rightBottoms[1]
+            fifth = (int((lx5+rx5)/2),int((ly5+ry5)/2))
+            bottomcenter = fifth
 
-        # draw found corners
-        color_bottoms = cv2.cvtColor(bitwise_bottoms, cv2.COLOR_GRAY2RGB)
-        cv2.circle(color_bottoms, bottomleft, thickness, green, -1)
-        cv2.circle(color_bottoms, bottomright, thickness, red, -1)
-        cv2.circle(color_bottoms, bottomcenter, thickness, blue, -1)
-        if booWrite: cv2.imwrite('08-bottom_points.jpg',color_bottoms)
+            # draw found corners
+            color_bottoms = cv2.cvtColor(bitwise_bottoms, cv2.COLOR_GRAY2RGB)
+            cv2.circle(color_bottoms, bottomleft, thickness, green, -1)
+            cv2.circle(color_bottoms, bottomright, thickness, red, -1)
+            cv2.circle(color_bottoms, bottomcenter, thickness, blue, -1)
+            if booWrite: cv2.imwrite('08-bottom_points.jpg',color_bottoms)
 
-        # draw four corners and center
-        four_corners = cv2.cvtColor(bitwise_bottoms, cv2.COLOR_GRAY2RGB)
-        cv2.circle(four_corners, leftmost, int(thickness/2), green, -1)
-        cv2.circle(four_corners, rightmost, int(thickness/2), red, -1)
-        cv2.circle(four_corners, bottomleft, int(thickness/2), blue, -1)
-        cv2.circle(four_corners, bottomcenter, int(thickness/2), blue, -1)
-        cv2.circle(four_corners, bottomright, int(thickness/2), blue, -1)
-        if booWrite: cv2.imwrite('09-four_points.jpg',four_corners)
+            # draw four corners and center
+            four_corners = cv2.cvtColor(bitwise_bottoms, cv2.COLOR_GRAY2RGB)
+            cv2.circle(four_corners, leftmost, int(thickness/2), green, -1)
+            cv2.circle(four_corners, rightmost, int(thickness/2), red, -1)
+            cv2.circle(four_corners, bottomleft, int(thickness/2), blue, -1)
+            cv2.circle(four_corners, bottomcenter, int(thickness/2), blue, -1)
+            cv2.circle(four_corners, bottomright, int(thickness/2), blue, -1)
+            if booWrite: cv2.imwrite('09-four_points.jpg',four_corners)
 
-        if booWrite: img789visual4 = np.hstack([approx_points, color_bottoms, four_corners])
+            if booWrite: img789visual4 = np.hstack([approx_points, color_bottoms, four_corners])
 
-        if booWrite: 
-            imgTraceVisual4 = np.vstack([img789visual4])
-            cv2.imshow('Visual4 Trace Steps', imgTraceVisual4)
-            #cv2.imwrite('10-Vision4Steps',imgTraceVisual4)
-            cv2.moveWindow('Visual4 Trace Steps',350,760)
+            if booWrite: 
+                imgTraceVisual4 = np.vstack([img789visual4])
+                cv2.imshow('Visual4 Trace Steps', imgTraceVisual4)
+                #cv2.imwrite('10-Vision4Steps',imgTraceVisual4)
+                cv2.moveWindow('Visual4 Trace Steps',350,760)
 
-        rul, rbl, rbc, rbr, rur = leftmost, bottomleft, bottomcenter, bottomright, rightmost
+            rul, rbl, rbc, rbr, rur = leftmost, bottomleft, bottomcenter, bottomright, rightmost
 
-        rulx, ruly = rul
-        ulx = rulx + xb
-        uly = ruly + yb
+            rulx, ruly = rul
+            ulx = rulx + xb
+            uly = ruly + yb
 
-        rblx, rbly = rbl
-        blx = rblx + xb
-        bly = rbly + yb
+            rblx, rbly = rbl
+            blx = rblx + xb
+            bly = rbly + yb
 
-        rbcx, rbcy = rbc
-        bcx = rbcx + xb
-        bcy = rbcy + yb
+            rbcx, rbcy = rbc
+            bcx = rbcx + xb
+            bcy = rbcy + yb
 
-        rbrx, rbry = rbr
-        brx = rbrx + xb
-        bry = rbry + yb
+            rbrx, rbry = rbr
+            brx = rbrx + xb
+            bry = rbry + yb
 
-        rurx, rury = rur
-        urx = rurx + xb
-        ury = rury + yb
+            rurx, rury = rur
+            urx = rurx + xb
+            ury = rury + yb
 
-        return True, [(float(ulx),float(uly)), (float(blx),float(bly)), (float(bcx),float(bcy)), (float(brx),float(bry)), (float(urx),float(ury))]
+            return True, [(float(ulx),float(uly)), (float(blx),float(bly)), (float(bcx),float(bcy)), (float(brx),float(bry)), (float(urx),float(ury))]
 
+        else:
+            return False, None
     else:
         return False, None

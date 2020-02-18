@@ -401,7 +401,7 @@ if __name__ == "__main__":
     CornerMethod = 6
 
     framePSGroups = 50
-    displayFPS = 3.1415
+    displayFPS = 3.14159265
     # start frames per second outside loop, will stop and restart every framePSGroups
     fps = FPS().start()
 
@@ -511,7 +511,7 @@ if __name__ == "__main__":
             fps.start()
 
         # because we are timing in this file, have to add the fps to image processed 
-        cv2.putText(processed, 'FPS: {:.2f}'.format(displayFPS), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.putText(processed, 'FPS: {:.7f}'.format(displayFPS), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
         # networkTable.putBoolean("Driver", True)
         streamViewer.frame = processed
