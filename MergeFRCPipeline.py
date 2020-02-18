@@ -507,7 +507,7 @@ if __name__ == "__main__":
         if fps._numFrames == framePSGroups:
             # also end of time we want to measure so stop FPS
             fps.stop()
-            displayFPS = fps.fps()
+            #displayFPS = fps.fps() # this is broken will be stuck at 3.14 for now
             fps.start()
 
         # because we are timing in this file, have to add the fps to image processed 
