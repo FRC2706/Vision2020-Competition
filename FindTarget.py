@@ -88,7 +88,7 @@ MAXIMUM_TARGET_AREA = 4400
 # Corner method 6 uses visual methods to find 4 points (Brian and Erik)
 # Corner method 7 uses visual methods to find 5 points (Brian and Erik)
  
-CornerMethod = 6
+CornerMethod = 5
 
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):
@@ -486,8 +486,11 @@ def findTape(contours, image, centerX, centerY, mask):
                         ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                     ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
                     foundCorners, inner_corners = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
-                    only_four = ((inner_corners[0]),(inner_corners[1]),(inner_corners[3]),(inner_corners[4]))
-                    outer_corners = np.array(only_four)
+                    if foundCorners == True:
+                        only_four = ((inner_corners[0]),(inner_corners[1]),(inner_corners[3]),(inner_corners[4]))
+                        outer_corners = np.array(only_four)
+                    else:
+                        pass
 
                 elif CornerMethod is 7:
                     rw_coordinates = real_world_coordinates_inner_five
@@ -499,8 +502,10 @@ def findTape(contours, image, centerX, centerY, mask):
                         ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                     ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
                     foundCorners, inner_bottom = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
-                    outer_corners = np.array(inner_bottom)
-
+                    if foundCorners == True:
+                        outer_corners = np.array(inner_bottom)
+                    else:
+                        pass
                 else:
                     pass
 
