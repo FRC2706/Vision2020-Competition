@@ -68,7 +68,7 @@ def load_images_from_folder(folder):
 
 if useVideo: # test against video
     # Outer Target Videos
-    videoname = './OuterTargetVideos/ThirdScale-01.webm'
+    videoname = './OuterTargetVideos/ThirdScale-01.mp4'
 
 elif useWebCam: #test against live camera
     pass
@@ -113,8 +113,7 @@ PowerCell = False
 ControlPanel = False
 
 if useVideo:
-    #cap = cv2.VideoCapture(videoname)
-    cap = cv2.VideoCapture('./OuterTargetVideos/ThirdScale-01.mp4')
+    cap = cv2.VideoCapture(videoname)
 
 elif useWebCam:
     pass
