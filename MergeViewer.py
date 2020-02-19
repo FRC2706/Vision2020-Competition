@@ -51,6 +51,9 @@ ImageCounter = 0
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
 useVideo = True
+# integer for usb camera to use, boolean for live webcam
+useWebCam = True
+webCamNumber = 0
 
 #Code to load images from a folder
 def load_images_from_folder(folder):
@@ -66,6 +69,9 @@ def load_images_from_folder(folder):
 if useVideo: # test against video
     # Outer Target Videos
     videoname = './OuterTargetVideos/ThirdScale-01.webm'
+
+elif useWebCam: #test against live camera
+    pass
 
 # implies images are to be read
 else: 
@@ -110,6 +116,9 @@ if useVideo:
     #cap = cv2.VideoCapture(videoname)
     cap = cv2.VideoCapture('./OuterTargetVideos/ThirdScale-01.mp4')
 
+elif useWebCam:
+    pass
+
 else:
     img = images[0]
     filename = imagename[0]
@@ -128,6 +137,8 @@ while stayInLoop or cap.isOpened():
             print("Can't receive frame, likely end of file, Exiting ...")
             stayInLoop = False
             break
+    elif useWebCam:
+        pass
     else:
         imgLength = len(images)
         frame = img
@@ -163,7 +174,7 @@ while stayInLoop or cap.isOpened():
     cv2.imshow("raw", frame)
     cv2.setMouseCallback('raw', draw_circle)
 
-    if useVideo:
+    if useVideo or useWebCam:
         cv2.imshow('videoname', processed)
 
         key = cv2.waitKey(1)
@@ -197,6 +208,8 @@ while stayInLoop or cap.isOpened():
 
 if useVideo:
     cap.release()
+elif useWebCam:
+    pass
 else:
     pass
 
