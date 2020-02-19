@@ -22,7 +22,13 @@ use the .zip file upload to upload the file.  Make sure the unzip option is
 selected.
 
 If an error occurs when uploading (because it won't over write automatically),
-login to the pi (ssh pi@frcvision.local with password raspberry).  Then issue
+login to the pi:
+
+>ssh pi@frcvision.local  
+
+with password raspberry.  frcvision.local is the default name.   If the pi is on a Robot
+it is probably using an IP address like 10.27.6.20 or something like that.   
+
 the command:
 
 >rm *.py   - This will remove all the .py images from the folder
@@ -30,6 +36,13 @@ the command:
 Upload the 'visionComp.zip' file, no errors shoud occur this time
 
 Vision code should now run on the pi!
+
+There are network table settings under 'MergeVision' that control things like finding the Target, 
+Finding the Ball, etc.  
+
+Connect to the network table server and look for 'MergeVision' to see the settings that are available
+
+
 
 
 
