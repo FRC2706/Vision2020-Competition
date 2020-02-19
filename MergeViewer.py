@@ -52,7 +52,7 @@ ImageCounter = 0
 # boolean for video input, if true does video, if false images
 useVideo = True
 # integer for usb camera to use, boolean for live webcam
-useWebCam = True
+useWebCam = False
 webCamNumber = 0
 
 #Code to load images from a folder
@@ -144,6 +144,7 @@ while stayInLoop or cap.isOpened():
 
     # start
     fps = FPS().start()
+    start = milliSince1970()
 
     if Driver:
         processed = frame
@@ -166,9 +167,12 @@ while stayInLoop or cap.isOpened():
     fps.update()
     # in merge view also end of time we want to measure so stop FPS
     fps.stop()
+    stop = milliSince1970()
     # because we are timing in this file, have to add the fps to image processed 
-    cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-    cv2.putText(processed, 'FPS: {:.7f}'.format(3.14159265), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    #cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    #cv2.putText(processed, 'FPS: {:.7f}'.format(3.14159265), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(processed, "elapsed time: " + str(int(stop-start)) + " ms", (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(processed, 'FPS: {:.7f}'.format(1000/(stop-start)), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
     cv2.imshow("raw", frame)
     cv2.setMouseCallback('raw', draw_circle)
