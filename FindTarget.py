@@ -400,18 +400,68 @@ def findTape(contours, image, centerX, centerY):
 
     if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
-       
-        for cnt in cntsSorted:
-            x, y, w, h = cv2.boundingRect(cnt)
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:17]
+        
+        cntsFiltered = []
 
-            cntHeight = h
-            aspect_ratio = float(w) / h
-           
-            # Calculate Contour area
-            cntArea = cv2.contourArea(cnt)
-            # Filters contours based off of hulled area and 
-            if (checkTargetSize(cntArea, aspect_ratio)):
+        if cntsSorted:
+
+            for (j, cnt) in enumerate(cntsSorted):
+
+                print("j=", j)
+                # Calculate Contour area
+                cntArea = cv2.contourArea(cnt)
+
+                # rotated rectangle fingerprinting
+                rect = cv2.minAreaRect(cnt)
+                (xr,yr),(wr,hr),ar = rect #x,y width, height, angle of rotation = rotated rect
+
+                print("rect=", rect)
+
+                box = cv2.boxPoints(rect)
+                box = np.int0(box)
+                cv2.drawContours(image,[box],0,blue,2)
+
+                #to get rid of height and width switching
+                if hr > wr: 
+                    ar = ar + 90
+                    wr, hr = [hr, wr]
+                else:
+                    ar = ar + 180
+                if ar == 180:
+                    ar = 0
+
+                if hr==0: 
+                    print("hr=0, reject contour")
+                    continue
+                cntAspectRatio = float(wr)/hr
+                minAextent = float(cntArea)/(wr*hr)
+
+                # Hull
+                hull = cv2.convexHull(cnt)
+                hull_area = cv2.contourArea(hull)
+                solidity = float(cntArea)/hull_area
+
+                if (minAextent < 0.16 or minAextent > 0.26):
+                    print("area extent fail") 
+                    continue
+                if (cntAspectRatio < 2.0 or cntAspectRatio > 3.0): 
+                    print("contour aspect ratio fails: ", cntAspectRatio)
+                    continue
+                if (solidity < 0.22 or solidity > 0.35): 
+                    print("solidity fails: ", solidity)
+                    continue
+
+                cntsFiltered.append(cnt)
+                #end fingerprinting
+
+            print("Number of contours after filtering: ", len(cntsFiltered))
+
+            # We will work on the filtered contour with the largest area which is the
+            # first one in the list
+            if (len(cntsFiltered) > 0):
+
+                cnt = cntsFiltered[0]
 
                 rw_coordinates = real_world_coordinates
 
