@@ -129,6 +129,17 @@ stayInLoop = True
 
 while stayInLoop or cap.isOpened():
 
+    # Method 1 is based on measuring distance between leftmost and rightmost
+    # Method 2 is based on measuring the minimum enclosing circle
+    # Method 3 is based on measuring the major axis of the minimum enclsing ellipse
+    # Method 4 is a three point SolvePNP solution for distance (John and Jeremy)
+    # Method 5 is a four point SolvePNP solution for distance (John and Jeremy)
+    # Method 6 is a four point (version A) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+    # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+    # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
+    # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
+    # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
+
     if useVideo:
         (ret, frame) = cap.read()
         # if frame is read correctly ret is True

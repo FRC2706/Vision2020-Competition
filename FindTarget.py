@@ -82,13 +82,18 @@ real_world_coordinates_inner_five = np.array([
 
 MAXIMUM_TARGET_AREA = 4400
 
-# Corner method 3 is find tape with 3 points (John and Jeremy)
-# Corner method 4 is find tape with 4 ponts (Robert, Rachel and Rebecca)
-# Corner method 5 is find tape with 4 points (Robert, Rachel and Rebecca)
-# Corner method 6 uses visual methods to find 4 points (Brian and Erik)
-# Corner method 7 uses visual methods to find 5 points (Brian and Erik)
+# Method 1 is based on measuring distance between leftmost and rightmost
+# Method 2 is based on measuring the minimum enclosing circle
+# Method 3 is based on measuring the major axis of the minimum enclsing ellipse
+# Method 4 is a three point SolvePNP solution for distance (John and Jeremy)
+# Method 5 is a four point SolvePNP solution for distance (John and Jeremy)
+# Method 6 is a four point (version A) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+# Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+# Method 8 is a four point visual method using SolvePNP (Brian and Erik)
+# Method 9 is a five point visual method using SolvePNP (Brian and Erik)
+# Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
  
-CornerMethod = 5
+CornerMethod = 7
 
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):
