@@ -21,6 +21,11 @@ import sys
 import os
 import math
 import datetime
+import time
+
+import json
+import random
+import sys
 
 from pathlib import Path
 from visual4_old import get_four
@@ -81,13 +86,13 @@ def displaycorners(image, outer_corners):
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
 #strImageFolder = str(strVisionRoot / 'OuterTargetFullDistance')
-#strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
+strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
 #strImageFolder = str(strVisionRoot / 'OuterTargetLiger')
 #strImageFolder = str(strVisionRoot / 'OuterTargetRingTest')
-strImageFolder = str(strVisionRoot / 'OuterTargetProblems')
+#strImageFolder = str(strVisionRoot / 'OuterTargetProblems')
 
 print (strImageFolder)
 booBlankUpper = False
@@ -235,7 +240,8 @@ while (True):
         hull = cv2.convexHull(cnt)
         #print('hull', hull)
         print('hull contour length = ', len(hull))
-        #cv2.drawContours(imgContours, [hull], -1, orange, 5)
+        hull_mask = np.zeros([intImageHeight,intImageWidth,1],dtype=np.uint8)
+        cv2.drawContours(hull_mask, [hull], -1, 255, cv2.FILLED)
         #cv2.imshow('hull over green mask', imgContours)
         hull_area = cv2.contourArea(hull)
         print('area of convex hull',hull_area)
@@ -285,7 +291,7 @@ while (True):
         print('minimum enclosing circle = ', (xc,yc),radius)
         center = (int(xc),int(yc))
         radius = int(radius)
-        cv2.circle(imgContours,center,radius,green,2)
+        #cv2.circle(imgContours,center,radius,green,2)
         #equi_diameter = np.sqrt(4*area/np.pi)
         #cv2.circle(imgContours, (cx,cy), int(equi_diameter/2), purple, 3)
 
@@ -298,7 +304,7 @@ while (True):
             print('ellipse center, maj axis, min axis, rotation = ', (xe,ye) ,(majAxis, minAxis), ae)
             # search major and minor axis from ellipse
             # https://namkeenman.wordpress.com/2015/12/21/opencv-determine-orientation-of-ellipserotatedrect-in-fitellipse/
-            cv2.ellipse(imgContours,ellipse,orange,2)
+            #cv2.ellipse(imgContours,ellipse,orange,2)
             print('ellipse aspect = ', float(majAxis)/minAxis)
 
         # fitting a line
@@ -307,7 +313,7 @@ while (True):
         [vx,vy,xl,yl] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
         lefty = int((-xl*vy/vx) + yl)
         righty = int(((cols-xl)*vy/vx)+yl)
-        cv2.line(imgContours,(cols-1,righty),(0,lefty),green,2)
+        #cv2.line(imgContours,(cols-1,righty),(0,lefty),green,2)
         # http://ottonello.gitlab.io/selfdriving/nanodegree/python/line%20detection/2016/12/18/extrapolating_lines.html
         slope = vy / vx
         intercept = yl - (slope * xl)
@@ -363,29 +369,69 @@ while (True):
 
         # Start of visual4
         # prepare chosen contour for 4 point finder as ROI
-        ROI_mask = binary_mask[yb:yb+hb, xb:xb+wb]
-        intROMHeight, intROMWidth = ROI_mask.shape[:2]
-        imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
-
+        #ROI_mask = binary_mask[yb:yb+hb, xb:xb+wb]
+        #intROMHeight, intROMWidth = ROI_mask.shape[:2]
+        #imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        #ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
 
         # send chosen contour to 4 point finder, get back found points or None
-        try_get_four = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
-        if try_get_four is None:
-            pass
-        else:
-            only_four = ((try_get_four[0]),(try_get_four[1]),(try_get_four[3]),(try_get_four[4]))
-            outer_corners = np.array(only_four)
-            displaycorners(imgContours, outer_corners)
-
-            #[(ulx,uly), (blx,bly), (bcx,bcy), (brx,bry), (urx,ury)]  = try_get_four
-
-            #cv2.circle(imgContours, (ulx,uly), 10, green, -1)
-            #cv2.circle(imgContours, (blx,bly), 10, blue, -1)
-            #cv2.circle(imgContours, (bcx,bcy), 10, blue, -1)
-            #cv2.circle(imgContours, (brx,bry), 10, blue, -1)
-            #cv2.circle(imgContours, (urx,ury), 10, red, -1)
+        #try_get_four = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
+        #if try_get_four is None:
+        #    pass
+        #else:
+        #    only_four = ((try_get_four[0]),(try_get_four[1]),(try_get_four[3]),(try_get_four[4]))
+        #    outer_corners = np.array(only_four)
+        #    displaycorners(imgContours, outer_corners)
         # End of visual4
+
+        # Start of Method10
+        # Do left sloped line first
+        left_ys = int(round(leftmost[1]+hr/10,0))
+        left_yf = int(round(leftmost[1]+hr,0))
+        left_xs = xb+int(round(wr/20,0))
+        left_xf = xb+int(round(wr/7,0))
+        left_box = [(left_xs, left_ys), (left_xf, left_yf)]
+        ROI_mask_left = hull_mask[left_ys:left_yf, left_xs:left_xf]
+        cv2.imshow('ROI_mask_left', ROI_mask_left)
+        cv2.moveWindow('ROI_mask_left',50,50)
+        cv2.rectangle(imgContours, (left_xs, left_ys), (left_xf, left_yf), yellow, 1)
+        imgFindContourReturn, leftContour, hierarchy = cv2.findContours(ROI_mask_left, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        sortedContours = sorted(leftContour, key = cv2.contourArea, reverse = True)[:1]
+        # extract "bottommost-left and bottommost-right" or minX,mayY and maxX,maxY
+        # from two points define left line
+
+        # Do right sloped line second
+        right_ys = int(round(rightmost[1]+hr/10,0))
+        right_yf = int(round(rightmost[1]+hr,0))
+        right_xs = xb+wb-int(round(wr/7,0))
+        right_xf = xb+wb-int(round(wr/20,0))
+        right_box = [(right_xs, right_ys), (right_xf, right_yf)]
+        ROI_mask_right = hull_mask[right_ys:right_yf, right_xs:right_xf]
+        cv2.imshow('ROI_mask_right', ROI_mask_right)
+        cv2.moveWindow('ROI_mask_right',100,50)
+        cv2.rectangle(imgContours, (right_xs, right_ys), (right_xf, right_yf), yellow, 1)
+        imgFindContourReturn, rightContour, hierarchy = cv2.findContours(ROI_mask_left, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        sortedContours = sorted(rightContour, key = cv2.contourArea, reverse = True)[:1]
+        # extract "bottommost-left and bottommost-right" or minX,mayY and maxX,maxY
+        # from two points define right line
+
+        # Do bottom line third
+        center_ys = int(round(yr,0))
+        center_yf = int(round(yr+hr,0))
+        center_xs = int(round(xr-wr/7,0))
+        center_xf = int(round(xr+wr/7,0))
+        center_box = [(center_xs, center_ys), (center_xf, center_yf)]
+        ROI_mask_center = hull_mask[center_ys:center_yf, center_xs:center_xf]
+        cv2.imshow('ROI_mask_center', ROI_mask_center)
+        cv2.moveWindow('ROI_mask_center',150,50)
+        cv2.rectangle(imgContours, (center_xs, center_ys), (center_xf, center_yf), yellow, 1)
+        imgFindContourReturn, centerContour, hierarchy = cv2.findContours(ROI_mask_left, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        sortedContours = sorted(centerContour, key = cv2.contourArea, reverse = True)[:1]
+        # extract "bottommost-left and bottommost-right" or minX,mayY and maxX,maxY
+        # from two points define center line
+
+        # from three lines define two points
+        # continue with other method
 
     stop = milliSince1970()
     # because we are timing in this file, have to add the fps to image processed 
