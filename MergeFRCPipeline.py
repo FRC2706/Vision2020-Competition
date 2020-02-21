@@ -153,7 +153,7 @@ class WebcamVideoStream:
                 ##print("Driver mode")
                 if self.autoExpose != self.prevValue:
                     #self.webcam.setExposureManual(60)
-                    self.webcam.setExposureManual(50)
+                    self.webcam.setExposureManual(39)
                     self.webcam.setExposureAuto()
                     ##print("Driver mode")
                     self.prevValue = self.autoExpose
@@ -191,19 +191,15 @@ class WebcamVideoStream:
 frameStop = 0
 ImageCounter = 0
 
-# Angles in radians
-
-switch = 1
-
+# Set Default to find the Tape target
+switch = 2
 
 # Masks the video based on a range of hsv colors
 # Takes in a frame, range of color, and a blurred frame, returns a masked frame
 def threshold_video(lower_color, upper_color, blur):
     # Convert BGR to HSV
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-
     h, s, v = cv2.split(hsv)
-
     h = threshold_range(h, lower_color[0], upper_color[0])
     s = threshold_range(s, lower_color[1], upper_color[1])
     v = threshold_range(v, lower_color[2], upper_color[2])
@@ -222,12 +218,6 @@ def threshold_video(lower_color, upper_color, blur):
         cv2.imwrite('/mnt/VisionImages/visionImg-' + str(matchNumber) + "-" + str(ImageCounter) + '_mask.png',
                     combined_mask)
     return combined_mask
-
-
-
-# #             # pushes powerCell angle to network tables
-# #             networkTable.putNumber("YawToPowerCell", finalTarget[0])
-# #             networkTable.putNumber("DistanceToPowerCell", finalYaw)
 
 #################### FRC VISION PI Image Specific #############
 configFile = "/boot/frc.json"
@@ -386,9 +376,9 @@ if __name__ == "__main__":
     tape = True
 
     networkTable.putBoolean("Driver", False)
-    networkTable.putBoolean("Tape", False)
-    networkTable.putNumber("CornerMethod", 6)
-    networkTable.putBoolean("PowerCell", True)
+    networkTable.putBoolean("Tape", True)
+    networkTable.putNumber("CornerMethod", 5)
+    networkTable.putBoolean("PowerCell", False)
     networkTable.putBoolean("ControlPanel", False)
     networkTable.putBoolean("WriteImages", False)
     networkTable.putBoolean("SendMask", False)
@@ -398,7 +388,7 @@ if __name__ == "__main__":
     matchNumberDefault = random.randint(1, 1000)
     processed = 0
 
-    CornerMethod = 6
+    CornerMethod = 5
 
     framePSGroups = 50
     displayFPS = 3.14159265
@@ -445,39 +435,23 @@ if __name__ == "__main__":
 
         switch = 0
 
+        #Check if Network Table value Tape is True
         if (networkTable.getBoolean("Tape", True)):
-            #if switch != 2:
-                #print("finding tape")
             switch = 2
-
             CornerMethod = int(networkTable.getNumber("CornerMethod", 1))
-            #print("Corner Method: " + str(CornerMethod))
-            # Lowers exposure to 0
-            #cap.autoExpose = False
-            #cap.webcam.setExposureManual(50)
-            #cap.webcam.setExposureManual(20)
-            #boxBlur = blurImg(frame, green_blur)
-            # cv2.putText(frame, "Find Tape", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, white)
             threshold = threshold_video(lower_green, upper_green, frame)
             processed = findTargets(frame, threshold)
 
         else:
             if (networkTable.getBoolean("PowerCell", True)):
                 # Checks if you just want to look for PowerCells
-                #if switch != 3:
-                    ##print("find Power Cell")
                 switch = 3
-                #cap.webcam.setExposureManual(35)
-                #cap.autoExpose = True
                 boxBlur = blurImg(frame, yellow_blur)
-                # cv2.putText(frame, "Find Cargo", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, white)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
                 processed = findPowerCell(frame, threshold)
+
             elif (networkTable.getBoolean("ControlPanel", True)):
                 # Checks if you just want camera for Control Panel, by dent of everything else being false, true by default
-                #if (networkTable.getBoolean("Cargo", True)):
-                #if switch != 4:
-                    ##print("find Control Panel Colour")
                 switch = 4
                 #cap.autoExpose = True
                 boxBlur = blurImg(frame, yellow_blur)
@@ -520,7 +494,5 @@ if __name__ == "__main__":
         ntinst.flush()
 
     # end of while true
-
 # end of main
-
 # end of file

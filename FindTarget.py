@@ -93,7 +93,7 @@ MAXIMUM_TARGET_AREA = 4400
 # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
 # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
  
-CornerMethod = 7
+CornerMethod = 5
 
 # Finds the tape targets from the masked image and displays them on original stream + network tales
 def findTargets(frame, mask):
@@ -548,8 +548,18 @@ def findTape(contours, image, centerX, centerY, mask):
                         publishNumber("YawToTarget", YawToTarget)
                         publishNumber("DistanceToTarget", round(distance/12,2))
 
-    #     # pushes vision target angle to network table
+            else:
+                #If Nothing is found, publish -99 and -1 to Network table
+                publishNumber("YawToTarget", -99)
+                publishNumber("DistanceToTarget", -1)    
 
+
+    else:
+        #If Nothing is found, publish -99 and -1 to Network table
+        publishNumber("YawToTarget", -99)
+        publishNumber("DistanceToTarget", -1)    
+             
+    #     # pushes vision target angle to network table
     return image
 
 # Checks if the target contours are worthy 
