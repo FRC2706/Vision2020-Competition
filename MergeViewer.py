@@ -47,6 +47,7 @@ from ControlPanel import *
 # counts frames for writing images
 frameStop = 0
 ImageCounter = 0
+showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
@@ -69,6 +70,7 @@ def load_images_from_folder(folder):
 if useVideo: # test against video
     # Outer Target Videos
     videoname = './OuterTargetVideos/ThirdScale-01.mp4'
+    showAverageFPS = True
 
 elif useWebCam: #test against live camera
     pass
@@ -127,6 +129,11 @@ print("Hello Vision Team!")
 
 stayInLoop = True
 
+#Setup variables for average framecount
+frameCount = 0
+averageTotal = 0
+averageFPS = 0
+
 while stayInLoop or cap.isOpened():
 
     # Method 1 is based on measuring distance between leftmost and rightmost
@@ -154,7 +161,7 @@ while stayInLoop or cap.isOpened():
         frame = img
 
     # start
-    fps = FPS().start()
+    #fps = FPS().start()
     start = milliSince1970()
 
     if Driver:
@@ -175,15 +182,30 @@ while stayInLoop or cap.isOpened():
                 processed = findControlPanel(frame, threshold)
 
     # end of cycle so update counter
-    fps.update()
+    #fps.update()
     # in merge view also end of time we want to measure so stop FPS
-    fps.stop()
+    #fps.stop()
     stop = milliSince1970()
+    processedMilli = (stop-start)
+    averageTotal = averageTotal+(stop-start)
+
+    frameCount = frameCount+1
+
+    if ((frameCount%30)==0.0):
+        averageFPS = (1000/(averageTotal/frameCount))
+
     # because we are timing in this file, have to add the fps to image processed 
     #cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
     #cv2.putText(processed, 'FPS: {:.7f}'.format(3.14159265), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-    cv2.putText(processed, "elapsed time: " + str(int(stop-start)) + " ms", (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-    cv2.putText(processed, 'FPS: {:.7f}'.format(1000/(stop-start)), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(processed, "elapsed time: " + str(int(processedMilli)) + " ms", (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(processed, 'FPS: {:.7f}'.format(1000/(processedMilli)), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    
+    if (showAverageFPS): 
+        cv2.putText(processed, 'Average FPS: {:.7f}'.format(averageFPS), (40, 120), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+
+    
+
+
 
     cv2.imshow("raw", frame)
     cv2.setMouseCallback('raw', draw_circle)
