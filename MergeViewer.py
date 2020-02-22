@@ -125,7 +125,7 @@ ControlPanel = False
 # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
 # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
 
-Method = 8
+Method = 5
 
 if useVideo and not useWebCam:
     cap = cv2.VideoCapture(videoname)

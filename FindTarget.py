@@ -571,28 +571,17 @@ def get_four_points2(cnt, image):
 
     # Order of points in contour appears to be top, left, bottom, right
 
-    # Run through all points in the contour, collecting points to build lines whose
-    # intersection gives the fourth point.
-    topmost_index = leftmost_index = bottommost_index = rightmost_index = -1
-    for i in range(len(cnt)):
-        point = tuple(cnt[i][0])
-        if (point == topmost):
-            topmost_index = i
-            #print("Found topmost:", topmost, " at index ", i)
-        if (point == leftmost):
-            #print("Found leftmost:", leftmost, " at index ", i)
-            leftmost_index = i
-        if (point == bottommost):
-            #print("Found bottommost:", bottommost, " at index ", i)
-            bottommost_index = i
-        if (point == rightmost):
-            #print("Found rightmost:", rightmost, " at index ", i)
-            rightmost_index = i
-
-    if ((topmost_index == -1)   or (leftmost_index == -1) or 
-        (rightmost_index == -1) or (bottommost_index == -1)    ):
-        #print ("Critical point(s) not found in contour")
+    # Determine indices of leftmost and rightmost point
+    cnt_list = cnt[:,0].tolist()
+    if list(leftmost) in cnt_list:
+        leftmost_index = cnt_list.index(list(leftmost))
+    else:
+        print("get_four_points2(): Leftmost point not found in contour, exiting")
         return False, None
+    if list(rightmost) in cnt_list:
+        rightmost_index = cnt_list.index(list(rightmost))
+    else:
+        print("get_four_points2(): Rightmost point not found in contour, exiting")
 
     # In some cases, topmost and rightmost pixel will be the same so that index of
     # rightmost pixel in contour will be zero (instead of near the end of the contour)
@@ -695,37 +684,18 @@ def get_four_points2(cnt, image):
     #print("int_point_right=", int_point_right)
 
     # Find points on contour closest to intersection points (they may already be on the contour)
-    lower_index = leftmost_index
-    upper_index = rightmost_index
-    min_dist_squared = 100000000000
-    min_dist_squared_index = lower_index
-    for i in range(lower_index, upper_index):
-        xdiff = int_point_left[0] - cnt[i][0][0]
-        ydiff = int_point_left[1] - cnt[i][0][1]
-        dist_squared = xdiff**2 + ydiff**2
-        if dist_squared < min_dist_squared:
-            min_dist_squared_index = i
-            min_dist_squared = dist_squared
-            if dist_squared == 0:
-                break
-    int_point_left2 = tuple(cnt[min_dist_squared_index][0])
-    #print("int_point_left2=", int_point_left2)
+    
+    cnt_pts = cnt[leftmost_index:rightmost_index]
+    diffs = cnt_pts - int_point_left
+    dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
+    min_index = dist_sq.argmin()
+    int_point_left2 = cnt_pts[min_index][0]
 
-    lower_index = leftmost_index
-    upper_index = rightmost_index
-    min_dist_squared = 100000000000
-    min_dist_squared_index = lower_index
-    for i in range(lower_index, upper_index):
-        xdiff = int_point_right[0] - cnt[i][0][0]
-        ydiff = int_point_right[1] - cnt[i][0][1]
-        dist_squared = xdiff**2 + ydiff**2
-        if dist_squared < min_dist_squared:
-            min_dist_squared_index = i
-            min_dist_squared = dist_squared
-            if dist_squared == 0:
-                break
-    int_point_right2 = tuple(cnt[min_dist_squared_index][0])
-    #print("int_point_right2=", int_point_right2)
+    cnt_pts = cnt[leftmost_index:rightmost_index]
+    diffs = cnt_pts - int_point_right
+    dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
+    min_index = dist_sq.argmin()
+    int_point_right2 = cnt_pts[min_index][0]
 
     four_points = np.array([
                             leftmost,
