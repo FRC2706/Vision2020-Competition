@@ -459,7 +459,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                 #Pick which Corner solving method to use
                 foundCorners = False
 
-                if CornerMethod is 5:
+                if CornerMethod is 4:
                     rw_coordinates = real_world_coordinates
                     outer_corners, rw_coordinates = get_four_points_with3(cnt)
                     foundCorners = True
