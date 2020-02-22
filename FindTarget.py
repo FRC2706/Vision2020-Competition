@@ -426,9 +426,12 @@ def findTape(contours, image, centerX, centerY):
                 hull_area = cv2.contourArea(hull)
                 solidity = float(cntArea)/hull_area
 
-                if (minAextent < 0.16 or minAextent > 0.26): continue
-                if (cntAspectRatio < 2.0 or cntAspectRatio > 3.0): continue
-                if (solidity < 0.22 or solidity > 0.30): continue
+                #previous values: 0.16-0.26
+                if (minAextent < 0.139 or minAextent > 1.1): continue
+                #previous values: 2-3
+                if (cntAspectRatio < 1.7 or cntAspectRatio > 3.3): continue
+                #previous values: 0.22-0.35
+                if (solidity < 0.19 or solidity > 0.35): continue
 
                 cntsFiltered.append(cnt)
                 #end fingerprinting
