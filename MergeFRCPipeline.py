@@ -34,14 +34,10 @@ from VisionMasking import *
 from DistanceFunctions import *
 from ControlPanel import *
 
-#
-##print('OpenCV version is', cv2.__version__)
-
-########### SET RESOLUTION TO 256x144 !!!! ############
+print('OpenCV version is', cv2.__version__)
 
 # import the necessary packages
 import datetime
-
 
 # Class to examine Frames per second of camera stream. Currently not used.
 class FPS:
@@ -377,7 +373,6 @@ if __name__ == "__main__":
 
     networkTable.putBoolean("Driver", False)
     networkTable.putBoolean("Tape", True)
-    networkTable.putNumber("CornerMethod", 5)
     networkTable.putBoolean("PowerCell", False)
     networkTable.putBoolean("ControlPanel", False)
     networkTable.putBoolean("WriteImages", False)
@@ -388,12 +383,34 @@ if __name__ == "__main__":
     matchNumberDefault = random.randint(1, 1000)
     processed = 0
 
-    CornerMethod = 5
+    # choose Method HERE !!!!!
+    Method = 7 # likely not needed
+    networkTable.putNumber("Method", 7)
+
+    # Method 1 is based on measuring distance between leftmost and rightmost
+    # Method 2 is based on measuring the minimum enclosing circle
+    # Method 3 is based on measuring the major axis of the minimum enclsing ellipse
+    # Method 4 is a three point SolvePNP solution for distance (John and Jeremy)
+    # Method 5 is a four point SolvePNP solution for distance (John and Jeremy)
+    # Method 6 is a four point (version A) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+    # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+    # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
+    # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
+    # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
+
+    #Setup variables for average framecount
+    frameCount = 0
+    averageTotal = 0
+    averageFPS = 0
 
     framePSGroups = 50
     displayFPS = 3.14159265
+
     # start frames per second outside loop, will stop and restart every framePSGroups
-    fps = FPS().start()
+    #fps = FPS().start()
+    begin = milliSince1970()
+    start = begin
+    prev_update = start
 
     # loop forever
     while True:
@@ -433,14 +450,14 @@ if __name__ == "__main__":
             continue
         # Checks if you just want camera for driver (No processing), False by default
 
-        switch = 0
+        switch = 2
 
         #Check if Network Table value Tape is True
         if (networkTable.getBoolean("Tape", True)):
             switch = 2
-            CornerMethod = int(networkTable.getNumber("CornerMethod", 1))
+            Method = int(networkTable.getNumber("Method", 1))
             threshold = threshold_video(lower_green, upper_green, frame)
-            processed = findTargets(frame, threshold)
+            processed = findTargets(frame, threshold, Method)
 
         else:
             if (networkTable.getBoolean("PowerCell", True)):
@@ -475,17 +492,27 @@ if __name__ == "__main__":
                     ImageCounter=0
 
         # end of cycle so update counter
-        fps.update()
+        #fps.update()
+        frameCount = frameCount+1
+        update = milliSince1970()        
+
+        processedMilli = (update-prev_update)
+        averageTotal = averageTotal+(processedMilli)
+        prev_update = update
+
+        if ((frameCount%30)==0.0):
+            averageFPS = (1000/((update-begin)/frameCount))
 
         # only update FPS in groups according to framePSGroups
-        if fps._numFrames == framePSGroups:
+        if frameCount%framePSGroups == 0.0:
             # also end of time we want to measure so stop FPS
-            fps.stop()
-            #displayFPS = fps.fps() # this is broken will be stuck at 3.14 for now
-            fps.start()
+            stop = milliSince1970()  
+            displayFPS = (stop-start)/framePSGroups
+            start = milliSince1970()
 
         # because we are timing in this file, have to add the fps to image processed 
-        cv2.putText(processed, 'FPS: {:.7f}'.format(displayFPS), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.putText(processed, 'Grouped FPS: {:.2f}'.format(1000/displayFPS), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.putText(processed, 'Average FPS: {:.2f}'.format(averageFPS), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
         # networkTable.putBoolean("Driver", True)
         streamViewer.frame = processed

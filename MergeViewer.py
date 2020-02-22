@@ -53,8 +53,8 @@ showAverageFPS = False
 # boolean for video input, if true does video, if false images
 useVideo = True
 # integer for usb camera to use, boolean for live webcam
-useWebCam = False
-webCamNumber = 0
+useWebCam = True
+webCamNumber = 1
 
 #Code to load images from a folder
 def load_images_from_folder(folder):
@@ -67,16 +67,16 @@ def load_images_from_folder(folder):
             imagename.append(filename)
     return images, imagename
 
+# choose video to process -> Outer Target Videos
+videoname = './OuterTargetVideos/ThirdScale-01.mp4'
+
 if useVideo: # test against video
-    # Outer Target Videos
-    videoname = './OuterTargetVideos/ThirdScale-01.mp4'
     showAverageFPS = True
 
 elif useWebCam: #test against live camera
-    pass
+    showAverageFPS = True
 
-# implies images are to be read
-else: 
+else:  # implies images are to be read
     # Power Cell Images
     #images, imagename = load_images_from_folder("./PowerCell25Scale")
     #images, imagename = load_images_from_folder("./PowerCellImages")
@@ -114,11 +114,25 @@ Tape = True
 PowerCell = False
 ControlPanel = False
 
-if useVideo:
+# Method 1 is based on measuring distance between leftmost and rightmost
+# Method 2 is based on measuring the minimum enclosing circle
+# Method 3 is based on measuring the major axis of the minimum enclsing ellipse
+# Method 4 is a three point SolvePNP solution for distance (John and Jeremy)
+# Method 5 is a four point SolvePNP solution for distance (John and Jeremy)
+# Method 6 is a four point (version A) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+# Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+# Method 8 is a four point visual method using SolvePNP (Brian and Erik)
+# Method 9 is a five point visual method using SolvePNP (Brian and Erik)
+# Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
+
+Method = 8
+
+if useVideo and not useWebCam:
     cap = cv2.VideoCapture(videoname)
 
 elif useWebCam:
-    pass
+    # src defines which camera, assume 2nd camera or src=1
+    vs = WebcamVideoStream(src=webCamNumber).start()
 
 else:
     img = images[0]
@@ -134,43 +148,38 @@ frameCount = 0
 averageTotal = 0
 averageFPS = 0
 
+framePSGroups = 50
+displayFPS = 3.14159265
+
+# start
+#fps = FPS().start()
+begin = milliSince1970()
+start = begin
+prev_update = start
+
 while stayInLoop or cap.isOpened():
 
-    # Method 1 is based on measuring distance between leftmost and rightmost
-    # Method 2 is based on measuring the minimum enclosing circle
-    # Method 3 is based on measuring the major axis of the minimum enclsing ellipse
-    # Method 4 is a three point SolvePNP solution for distance (John and Jeremy)
-    # Method 5 is a four point SolvePNP solution for distance (John and Jeremy)
-    # Method 6 is a four point (version A) SolvePNP solution for distance (Robert, Rachel and Rebecca)
-    # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
-    # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
-    # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
-    # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
-
-    if useVideo:
+    if useVideo and not useWebCam:
         (ret, frame) = cap.read()
         # if frame is read correctly ret is True
         if not ret:
             print("Can't receive frame, likely end of file, Exiting ...")
             stayInLoop = False
             break
+
     elif useWebCam:
-        pass
+        frame = vs.read()
+
     else:
         imgLength = len(images)
         frame = img
-
-    # start
-    #fps = FPS().start()
-    start = milliSince1970()
 
     if Driver:
         processed = frame
     else:
         if Tape:
             threshold = threshold_video(lower_green, upper_green, frame)
-            processed = findTargets(frame, threshold)
-
+            processed = findTargets(frame, threshold, Method)
         else:
             if PowerCell:
                 boxBlur = blurImg(frame, yellow_blur)
@@ -185,27 +194,33 @@ while stayInLoop or cap.isOpened():
     #fps.update()
     # in merge view also end of time we want to measure so stop FPS
     #fps.stop()
-    stop = milliSince1970()
-    processedMilli = (stop-start)
-    averageTotal = averageTotal+(stop-start)
-
     frameCount = frameCount+1
+    update = milliSince1970()
+
+    processedMilli = (update-prev_update)
+    averageTotal = averageTotal+(processedMilli)
+    prev_update = update
 
     if ((frameCount%30)==0.0):
-        averageFPS = (1000/(averageTotal/frameCount))
+        averageFPS = (1000/((update-begin)/frameCount))
+
+    if frameCount%framePSGroups == 0.0:
+        # also end of time we want to measure so stop FPS
+        stop = milliSince1970()  
+        displayFPS = (stop-start)/framePSGroups
+        start = milliSince1970()
 
     # because we are timing in this file, have to add the fps to image processed 
     #cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
     #cv2.putText(processed, 'FPS: {:.7f}'.format(3.14159265), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-    cv2.putText(processed, "elapsed time: " + str(int(processedMilli)) + " ms", (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-    cv2.putText(processed, 'FPS: {:.7f}'.format(1000/(processedMilli)), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(processed, "frame time: " + str(int(processedMilli)) + " ms", (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(processed, 'Instant FPS: {:.2f}'.format(1000/(processedMilli)), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
     
     if (showAverageFPS): 
-        cv2.putText(processed, 'Average FPS: {:.7f}'.format(averageFPS), (40, 120), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-
-    
-
-
+        cv2.putText(processed, 'Grouped FPS: {:.2f}'.format(1000/(displayFPS)), (40, 120), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.putText(processed, 'Average FPS: {:.2f}'.format(averageFPS), (40, 160), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    else:
+        cv2.putText(processed, 'Grouped FPS: {:.2f}'.format(1000/(displayFPS)), (40, 120), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
     cv2.imshow("raw", frame)
     cv2.setMouseCallback('raw', draw_circle)
@@ -242,10 +257,10 @@ while stayInLoop or cap.isOpened():
     # end while
 # end if
 
-if useVideo:
+if useVideo and not useWebCam:
     cap.release()
 elif useWebCam:
-    pass
+    vs.stop()
 else:
     pass
 

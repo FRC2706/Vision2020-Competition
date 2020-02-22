@@ -82,21 +82,8 @@ real_world_coordinates_inner_five = np.array([
 
 MAXIMUM_TARGET_AREA = 4400
 
-# Method 1 is based on measuring distance between leftmost and rightmost
-# Method 2 is based on measuring the minimum enclosing circle
-# Method 3 is based on measuring the major axis of the minimum enclsing ellipse
-# Method 4 is a three point SolvePNP solution for distance (John and Jeremy)
-# Method 5 is a four point SolvePNP solution for distance (John and Jeremy)
-# Method 6 is a four point (version A) SolvePNP solution for distance (Robert, Rachel and Rebecca)
-# Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
-# Method 8 is a four point visual method using SolvePNP (Brian and Erik)
-# Method 9 is a five point visual method using SolvePNP (Brian and Erik)
-# Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
- 
-CornerMethod = 5
-
 # Finds the tape targets from the masked image and displays them on original stream + network tales
-def findTargets(frame, mask):
+def findTargets(frame, mask, CornerMethod):
 
     # Taking a matrix of size 5 as the kernel 
     #kernel = np.ones((3,3), np.uint8) 
@@ -113,20 +100,24 @@ def findTargets(frame, mask):
     # Finds contours
     # we are accomodating different versions of openCV and the different methods for corners
     if is_cv3():
-        if CornerMethod is 3:
-            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+        if CornerMethod is 1 or CornerMethod is 2 or CornerMethod is 3:
+            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         elif CornerMethod is 4 or CornerMethod is 5:
-            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
         elif CornerMethod is 6 or CornerMethod is 7:
+            _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        elif CornerMethod is 8 or CornerMethod is 9 or CornerMethod is 10:
             _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         else:
             pass
     else: #implies not cv3, either version 2 or 4
-        if CornerMethod is 3:
-            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+        if CornerMethod is 1 or CornerMethod is 2 or CornerMethod is 3:
+            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         elif CornerMethod is 4 or CornerMethod is 5:
-            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
         elif CornerMethod is 6 or CornerMethod is 7:
+            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        elif CornerMethod is 8 or CornerMethod is 9 or CornerMethod is 10:
             contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         else:
             pass
@@ -143,7 +134,7 @@ def findTargets(frame, mask):
     image = frame.copy()
     # Processes the contours, takes in (contours, output_image, (centerOfImage)
     if len(contours) != 0:
-        image = findTape(contours, image, centerX, centerY, mask)
+        image = findTape(contours, image, centerX, centerY, mask, CornerMethod)
     # Shows the contours overlayed on the original video
     return image
 
@@ -440,7 +431,7 @@ def displaycorners(image, outer_corners):
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
 
-def findTape(contours, image, centerX, centerY, mask):
+def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
     #global warped
     screenHeight, screenWidth, channels = image.shape
@@ -468,20 +459,20 @@ def findTape(contours, image, centerX, centerY, mask):
                 #Pick which Corner solving method to use
                 foundCorners = False
 
-                if CornerMethod is 3:
+                if CornerMethod is 5:
                     rw_coordinates = real_world_coordinates
                     outer_corners, rw_coordinates = get_four_points_with3(cnt)
                     foundCorners = True
 
-                elif CornerMethod is 4:
+                elif CornerMethod is 6:
                     rw_coordinates = real_world_coordinates
                     foundCorners, outer_corners = get_four_points(cnt)
 
-                elif CornerMethod is 5:
+                elif CornerMethod is 7:
                     rw_coordinates = real_world_coordinates
                     foundCorners, outer_corners = get_four_points2(cnt,image)
 
-                elif CornerMethod is 6:
+                elif CornerMethod is 8:
                     rw_coordinates = real_world_coordinates_inner
                     ROI_mask = mask[yb:yb+hb, xb:xb+wb]
                     intROMHeight, intROMWidth = ROI_mask.shape[:2]
@@ -497,7 +488,7 @@ def findTape(contours, image, centerX, centerY, mask):
                     else:
                         pass
 
-                elif CornerMethod is 7:
+                elif CornerMethod is 9:
                     rw_coordinates = real_world_coordinates_inner_five
                     ROI_mask = mask[yb:yb+hb, xb:xb+wb]
                     intROMHeight, intROMWidth = ROI_mask.shape[:2]
@@ -566,7 +557,8 @@ def findTape(contours, image, centerX, centerY, mask):
 def checkTargetSize(cntArea, cntAspectRatio):
     #print("cntArea: " + str(cntArea))
     #print("aspect ratio: " + str(cntAspectRatio))
-    return (cntArea > image_width/3 and cntArea < MAXIMUM_TARGET_AREA and cntAspectRatio > 1.0)
+    #return (cntArea > image_width/3 and cntArea < MAXIMUM_TARGET_AREA and cntAspectRatio > 1.0)
+    return (cntArea > image_width/3 and cntAspectRatio > 1.0)
 
 def get_four_points2(cnt, image):
     # Get the left, right, and bottom points
