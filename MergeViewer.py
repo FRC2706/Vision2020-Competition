@@ -51,9 +51,9 @@ showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
-useVideo = True
+useVideo = False
 # integer for usb camera to use, boolean for live webcam
-useWebCam = True
+useWebCam = False
 webCamNumber = 1
 
 #Code to load images from a folder
@@ -125,7 +125,7 @@ ControlPanel = False
 # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
 # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
 
-Method = 5
+Method = 4
 
 if useVideo and not useWebCam:
     cap = cv2.VideoCapture(videoname)
