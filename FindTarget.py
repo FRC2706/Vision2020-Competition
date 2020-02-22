@@ -812,6 +812,7 @@ def get_four_points2(cnt, image):
     #print("int_point_left=", int_point_left)
     #print("int_point_left2=", int_point_left2)
     
+    """
     print("time_01 delta=", time_01 - time_00)
     print("time_02 delta=", time_02 - time_01)
     print("time_03 delta=", time_03 - time_02)
@@ -819,6 +820,7 @@ def get_four_points2(cnt, image):
     print("time_05 delta=", time_05 - time_04)
     print("time_06 delta=", time_06 - time_05)
     print("time_07 delta=", time_07 - time_06)
+    """
 
     four_points = np.array([
                             leftmost,
