@@ -384,8 +384,8 @@ if __name__ == "__main__":
     processed = 0
 
     # choose Method HERE !!!!!
-    Method = 7 # likely not needed
-    networkTable.putNumber("Method", 7)
+    Method = 8 # likely not needed
+    networkTable.putNumber("Method", 8)
 
     # Method 1 is based on measuring distance between leftmost and rightmost
     # Method 2 is based on measuring the minimum enclosing circle

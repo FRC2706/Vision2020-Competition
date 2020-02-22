@@ -54,7 +54,7 @@ showAverageFPS = False
 useVideo = True
 # integer for usb camera to use, boolean for live webcam
 useWebCam = True
-webCamNumber = 1
+webCamNumber = 0
 
 #Code to load images from a folder
 def load_images_from_folder(folder):
@@ -125,7 +125,7 @@ ControlPanel = False
 # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
 # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
 
-Method = 8
+Method = 7
 
 if useVideo and not useWebCam:
     cap = cv2.VideoCapture(videoname)
