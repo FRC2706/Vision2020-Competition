@@ -203,10 +203,6 @@ while stayInLoop or cap.isOpened():
     if (showAverageFPS): 
         cv2.putText(processed, 'Average FPS: {:.7f}'.format(averageFPS), (40, 120), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
-    
-
-
-
     cv2.imshow("raw", frame)
     cv2.setMouseCallback('raw', draw_circle)
 

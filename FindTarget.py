@@ -8,6 +8,8 @@ from DistanceFunctions import *
 
 from CornersVisual4 import get_four
 
+from VisionUtilities import milliSince1970
+
 try:
     from PrintPublisher import *
 except ImportError:
@@ -116,18 +118,31 @@ def findTargets(frame, mask):
         if CornerMethod is 3:
             _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
         elif CornerMethod is 4 or CornerMethod is 5:
+            t_00 = milliSince1970()
             _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+            t_01 = milliSince1970()
+            #print("CornerMethod4or5: t_01-t_00=", t_01-t_00)
         elif CornerMethod is 6 or CornerMethod is 7:
+            t_00 = milliSince1970()
             _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            t_01 = milliSince1970()
+            #print("CornerMethod6or7: t_01-t_00=", t_01-t_00)
         else:
             pass
     else: #implies not cv3, either version 2 or 4
         if CornerMethod is 3:
             contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
         elif CornerMethod is 4 or CornerMethod is 5:
+            t_00 = milliSince1970()
             contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+            t_01 = milliSince1970()
+            #print("CornerMethod4or5: t_01-t_00=", t_01-t_00)
         elif CornerMethod is 6 or CornerMethod is 7:
+            t_00 = milliSince1970()
             contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            t_01 = milliSince1970()
+            #print("CornerMethod6or7: t_01-t_00=", t_01-t_00)
+
         else:
             pass
 
@@ -569,6 +584,9 @@ def checkTargetSize(cntArea, cntAspectRatio):
     return (cntArea > image_width/3 and cntArea < MAXIMUM_TARGET_AREA and cntAspectRatio > 1.0)
 
 def get_four_points2(cnt, image):
+
+    time_00 = milliSince1970()
+
     # Get the left, right, and bottom points
     # extreme points
     leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
@@ -577,10 +595,36 @@ def get_four_points2(cnt, image):
     bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
     #print('extreme points', leftmost,rightmost,topmost,bottommost)
 
+    time_01 = milliSince1970()
+
     # Order of points in contour appears to be top, left, bottom, right
 
     # Run through all points in the contour, collecting points to build lines whose
     # intersection gives the fourth point.
+
+    #top_index = cnt[:,0].index(leftmost)
+    #print("cnt[:,0]=", cnt[:,0])
+    #print("leftmost=", leftmost)
+    #print("list(leftmost)=", list(leftmost))
+    #top_index1 = np.where(cnt[:,0] == list(leftmost))
+    #top_index2 = np.nonzero(cnt[:,0]  == list(leftmost))
+    #top_index2 = np.nonzero(cnt[:,0]  == leftmost)
+    cnt_list = cnt[:,0].tolist()
+    #print("cnt_list=", cnt_list)
+    if list(leftmost) in cnt_list:
+        leftmost_index = cnt_list.index(list(leftmost))
+    else:
+        print("get_four_points2(): Leftmost point not found in contour, exiting")
+        return False, None
+    if list(rightmost) in cnt_list:
+        rightmost_index = cnt_list.index(list(rightmost))
+    else:
+        print("get_four_points2(): Rightmost point not found in contour, exiting")
+
+    #print("leftmostindex=", leftmost_index)
+    #print("rightmostindex=", rightmost_index)
+    
+    """
     topmost_index = leftmost_index = bottommost_index = rightmost_index = -1
     for i in range(len(cnt)):
         point = tuple(cnt[i][0])
@@ -601,6 +645,7 @@ def get_four_points2(cnt, image):
         (rightmost_index == -1) or (bottommost_index == -1)    ):
         #print ("Critical point(s) not found in contour")
         return False, None
+    """
 
     # In some cases, topmost and rightmost pixel will be the same so that index of
     # rightmost pixel in contour will be zero (instead of near the end of the contour)
@@ -609,6 +654,8 @@ def get_four_points2(cnt, image):
     # rightmost pixel will be very close.) 
     if rightmost_index == 0:
         rightmost_index = len(cnt-1)
+
+    time_02 = milliSince1970()
 
     # Get set of points after leftmost
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
@@ -636,6 +683,9 @@ def get_four_points2(cnt, image):
     #print("num_points_to_collect=", num_points_to_collect)
     line3_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
 
+    time_03 = milliSince1970()
+
+    """
     for pt in line1_points:
         cv2.circle(image, tuple(pt[0]), 1, orange, -1)
 
@@ -644,11 +694,14 @@ def get_four_points2(cnt, image):
 
     for pt in line3_points:
         cv2.circle(image, tuple(pt[0]), 1, orange, -1)
+    """
 
     min_points_for_line_fit = 5
 
     if len(line1_points) < min_points_for_line_fit:
         return False, None
+
+    time_04 = milliSince1970()
 
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
@@ -657,6 +710,7 @@ def get_four_points2(cnt, image):
     m1 = v21/v11
     b1 = y01 - m1*x01
     #print("From fitline: m1=", m1, " b1=", b1)
+
 
     if len(line2_points) < min_points_for_line_fit:
         return False, None
@@ -680,6 +734,8 @@ def get_four_points2(cnt, image):
     b3 = y03 - m3*x03
     #print("From fitline: m3=", m3, " b3=", b3)
 
+    time_05 = milliSince1970()
+  
     # Left bottom point is intersection of line1 and line2
     if (m1 == m2):
         return False, None
@@ -702,7 +758,10 @@ def get_four_points2(cnt, image):
     #cv2.circle(image, int_point_right, 4, fuschia, -1)
     #print("int_point_right=", int_point_right)
 
+    time_06 = milliSince1970()
+
     # Find points on contour closest to intersection points (they may already be on the contour)
+    """
     lower_index = leftmost_index
     upper_index = rightmost_index
     min_dist_squared = 100000000000
@@ -734,6 +793,32 @@ def get_four_points2(cnt, image):
                 break
     int_point_right2 = tuple(cnt[min_dist_squared_index][0])
     #print("int_point_right2=", int_point_right2)
+    """
+
+    cnt_pts = cnt[leftmost_index:rightmost_index]
+    diffs = cnt_pts - int_point_left
+    dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
+    min_index = dist_sq.argmin()
+    int_point_left2 = cnt_pts[min_index][0]
+
+    cnt_pts = cnt[leftmost_index:rightmost_index]
+    diffs = cnt_pts - int_point_right
+    dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
+    min_index = dist_sq.argmin()
+    int_point_right2 = cnt_pts[min_index][0]
+
+    time_07 = milliSince1970()
+
+    #print("int_point_left=", int_point_left)
+    #print("int_point_left2=", int_point_left2)
+    
+    print("time_01 delta=", time_01 - time_00)
+    print("time_02 delta=", time_02 - time_01)
+    print("time_03 delta=", time_03 - time_02)
+    print("time_04 delta=", time_04 - time_03)
+    print("time_05 delta=", time_05 - time_04)
+    print("time_06 delta=", time_06 - time_05)
+    print("time_07 delta=", time_07 - time_06)
 
     four_points = np.array([
                             leftmost,
