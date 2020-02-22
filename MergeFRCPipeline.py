@@ -39,42 +39,6 @@ print('OpenCV version is', cv2.__version__)
 # import the necessary packages
 import datetime
 
-# Class to examine Frames per second of camera stream. Currently not used.
-class FPS:
-    def __init__(self):
-        # store the start time, end time, and total number of frames
-        # that were examined between the start and end intervals
-        self._start = None
-        self._end = None
-        self._numFrames = 0
-
-    def start(self):
-        # start the timer
-        self._start = datetime.datetime.now()
-        return self
-
-    def stop(self):
-        # stop the timer
-        self._end = datetime.datetime.now()
-
-    def update(self):
-        # increment the total number of frames examined during the
-        # start and end intervals
-        self._numFrames += 1
-
-    def elapsed(self):
-        # return the total number of seconds between the start and
-        # end interval
-        if self._end != None:
-            return datetime.datetime.now() - self._start
-        else:
-            return datetime.datetime.now() - self._start
-
-    def fps(self):
-        # compute the (approximate) frames per second
-        return self._numFrames / self.elapsed()
-
-
 # class that runs separate thread for showing video,
 class VideoShow:
     """
@@ -452,12 +416,17 @@ if __name__ == "__main__":
 
         switch = 2
 
+        
+
         #Check if Network Table value Tape is True
         if (networkTable.getBoolean("Tape", True)):
             switch = 2
-            Method = int(networkTable.getNumber("Method", 1))
+            Method = int(networkTable.getNumber("Method", 7))
             threshold = threshold_video(lower_green, upper_green, frame)
-            processed = findTargets(frame, threshold, Method)
+            if (networkTable.getBoolean("SendMask", False)):
+                processed = threshold
+            else:    
+                processed = findTargets(frame, threshold, Method)
 
         else:
             if (networkTable.getBoolean("PowerCell", True)):
@@ -465,7 +434,10 @@ if __name__ == "__main__":
                 switch = 3
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                processed = findPowerCell(frame, threshold)
+                if (networkTable.getBoolean("SendMask", False)):
+                    processed = threshold
+                else:   
+                    processed = findPowerCell(frame, threshold)
 
             elif (networkTable.getBoolean("ControlPanel", True)):
                 # Checks if you just want camera for Control Panel, by dent of everything else being false, true by default
@@ -474,7 +446,10 @@ if __name__ == "__main__":
                 boxBlur = blurImg(frame, yellow_blur)
                 # Need to create proper mask for control panel
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                processed = findControlPanel(frame, threshold)
+                if (networkTable.getBoolean("SendMask", False)):
+                    processed = threshold
+                else:    
+                    processed = findControlPanel(frame, threshold)
 
         # Puts timestamp of camera on network tables
         networkTable.putNumber("VideoTimestamp", timestamp)
