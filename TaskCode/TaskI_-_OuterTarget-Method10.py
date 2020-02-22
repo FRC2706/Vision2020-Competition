@@ -397,8 +397,34 @@ while (True):
         cv2.rectangle(imgContours, (left_xs, left_ys), (left_xf, left_yf), yellow, 1)
         imgFindContourReturn, leftContour, hierarchy = cv2.findContours(ROI_mask_left, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         sortedContours = sorted(leftContour, key = cv2.contourArea, reverse = True)[:1]
+        ROI_mask_left_invert = cv2.bitwise_not(ROI_mask_left)
+        imgFindContourReturn, leftContour_invert, hierarchy = cv2.findContours(ROI_mask_left_invert, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        sortedContours_invert = sorted(leftContour_invert, key = cv2.contourArea, reverse = True)[:1]
+
         # extract "bottommost-left and bottommost-right" or minX,mayY and maxX,maxY
         # from two points define left line
+        # Get leftmost and bottommost
+        cnt = sortedContours[0]
+        leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
+        rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
+        topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
+        bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+
+        # For leftmost ROI, first point is topmost of negative ROI
+        cnt = sortedContours_invert[0]
+        topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
+        pt1 = topmost
+        pt1_abs = (left_xs + pt1[0], left_ys + pt1[1])
+
+        # For leftmost ROI, second point is bottommost of regular ROI
+        cnt = sortedContours[0]
+        bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+        pt2 = bottommost      
+
+        print("pt1=", pt1)
+        print("pt2=", pt2)
+        print("pt1_abs=", pt1_abs)
+        #print("pt2_abs=", pt2_abs)
 
         # Do right sloped line second
         right_ys = int(round(rightmost[1]+hr/10,0))
