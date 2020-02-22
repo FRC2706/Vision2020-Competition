@@ -602,15 +602,8 @@ def get_four_points2(cnt, image):
     # Run through all points in the contour, collecting points to build lines whose
     # intersection gives the fourth point.
 
-    #top_index = cnt[:,0].index(leftmost)
-    #print("cnt[:,0]=", cnt[:,0])
-    #print("leftmost=", leftmost)
-    #print("list(leftmost)=", list(leftmost))
-    #top_index1 = np.where(cnt[:,0] == list(leftmost))
-    #top_index2 = np.nonzero(cnt[:,0]  == list(leftmost))
-    #top_index2 = np.nonzero(cnt[:,0]  == leftmost)
+    
     cnt_list = cnt[:,0].tolist()
-    #print("cnt_list=", cnt_list)
     if list(leftmost) in cnt_list:
         leftmost_index = cnt_list.index(list(leftmost))
     else:
@@ -620,9 +613,6 @@ def get_four_points2(cnt, image):
         rightmost_index = cnt_list.index(list(rightmost))
     else:
         print("get_four_points2(): Rightmost point not found in contour, exiting")
-
-    #print("leftmostindex=", leftmost_index)
-    #print("rightmostindex=", rightmost_index)
     
     """
     topmost_index = leftmost_index = bottommost_index = rightmost_index = -1
@@ -761,7 +751,8 @@ def get_four_points2(cnt, image):
     time_06 = milliSince1970()
 
     # Find points on contour closest to intersection points (they may already be on the contour)
-    """
+    
+    
     lower_index = leftmost_index
     upper_index = rightmost_index
     min_dist_squared = 100000000000
@@ -793,8 +784,8 @@ def get_four_points2(cnt, image):
                 break
     int_point_right2 = tuple(cnt[min_dist_squared_index][0])
     #print("int_point_right2=", int_point_right2)
+    
     """
-
     cnt_pts = cnt[leftmost_index:rightmost_index]
     diffs = cnt_pts - int_point_left
     dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
@@ -806,12 +797,13 @@ def get_four_points2(cnt, image):
     dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
     min_index = dist_sq.argmin()
     int_point_right2 = cnt_pts[min_index][0]
-
-    time_07 = milliSince1970()
+    """
 
     #print("int_point_left=", int_point_left)
     #print("int_point_left2=", int_point_left2)
-    
+
+    time_07 = milliSince1970()
+
     """
     print("time_01 delta=", time_01 - time_00)
     print("time_02 delta=", time_02 - time_01)
