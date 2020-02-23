@@ -594,7 +594,7 @@ def get_four_points2(cnt, image):
     line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
 
     # For Line 2, get a set of points around the middle of the bottom part of contour
-    num_points_to_collect = max(int(0.2*(rightmost_index-leftmost_index)), 4)
+    num_points_to_collect = max(int(0.15*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
         print ("get_four_points2(): num_points_to_collect=0 (bottom line), exiting")
         return False, None
