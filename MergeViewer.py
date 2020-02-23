@@ -51,7 +51,7 @@ showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
-useVideo = False
+useVideo = True
 # integer for usb camera to use, boolean for live webcam
 useWebCam = False
 webCamNumber = 1
@@ -68,7 +68,8 @@ def load_images_from_folder(folder):
     return images, imagename
 
 # choose video to process -> Outer Target Videos
-videoname = './OuterTargetVideos/ThirdScale-01.mp4'
+#videoname = './OuterTargetVideos/ThirdScale-01.mp4'
+videoname = './OuterTargetVideos/FullScale-02.mp4'
 
 if useVideo: # test against video
     showAverageFPS = True
@@ -125,7 +126,7 @@ ControlPanel = False
 # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
 # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
 
-Method = 4
+Method = 7
 
 if useVideo and not useWebCam:
     cap = cv2.VideoCapture(videoname)
