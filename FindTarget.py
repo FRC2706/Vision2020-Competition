@@ -561,16 +561,12 @@ def checkTargetSize(cntArea, cntAspectRatio):
     return (cntArea > image_width/3 and cntAspectRatio > 1.0)
 
 def get_four_points2(cnt, image):
-    # Get the left, right, and bottom points
-    # extreme points
+
+    # Get the left and right extreme points
     leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
     rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
-    topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
-    bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
-    #print('extreme points', leftmost,rightmost,topmost,bottommost)
 
-    # Order of points in contour appears to be top, left, bottom, right
-
+    # Order of extreme points in contour found to be: top, left, bottom, right
     # Determine indices of leftmost and rightmost point
     cnt_list = cnt[:,0].tolist()
     if list(leftmost) in cnt_list:
@@ -582,126 +578,116 @@ def get_four_points2(cnt, image):
         rightmost_index = cnt_list.index(list(rightmost))
     else:
         print("get_four_points2(): Rightmost point not found in contour, exiting")
-
+    
     # In some cases, topmost and rightmost pixel will be the same so that index of
     # rightmost pixel in contour will be zero (instead of near the end of the contour)
     # To handle this case correctly and keep the code simple, set index of rightmost
     # pixel to be the final one in the contour. (The corresponding point and the actual
     # rightmost pixel will be very close.) 
-    if rightmost_index == 0:
-        rightmost_index = len(cnt-1)
+    if rightmost_index == 0: rightmost_index = len(cnt-1)
 
-    # Get set of points after leftmost
+    # For Line 1, get a set of points *after* leftmost extreme point on left part of contour
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
-    #print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("get_four_points2(): num_points_to_collect=0 (left vertical line), exiting")
         return False, None
     line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
 
-    # Get set of points around the middle of the bottom line
+    # For Line 2, get a set of points around the middle of the bottom part of contour
     num_points_to_collect = max(int(0.2*(rightmost_index-leftmost_index)), 4)
-    #print("num_points_to_collect=", num_points_to_collect)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("get_four_points2(): num_points_to_collect=0 (bottom line), exiting")
         return False, None
     approx_center_of_bottom = leftmost_index + int((rightmost_index - leftmost_index)/2)
     z =  int(num_points_to_collect/2)
     line2_points = cnt[approx_center_of_bottom-z:approx_center_of_bottom+z]
 
-    # Get set of points before rightmost
+    # For Line 3, Get set of points *before* rightmost extreme point on right part of contour
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
-        #print ("num_points_to_collect=0, exiting")
+        print ("get_four_points2(): num_points_to_collect=0 (right vertical line), exiting")
         return False, None
-    #print("num_points_to_collect=", num_points_to_collect)
     line3_points = cnt[(rightmost_index-num_points_to_collect)%len(cnt):rightmost_index+1]
 
+    # Draw points found above to help a human understand what is going on
     for pt in line1_points:
         cv2.circle(image, tuple(pt[0]), 1, orange, -1)
-
     for pt in line2_points:
         cv2.circle(image, tuple(pt[0]), 1, orange, -1)
-
     for pt in line3_points:
         cv2.circle(image, tuple(pt[0]), 1, orange, -1)
 
     min_points_for_line_fit = 5
 
+    # Line 1: Best fit line for left part of contour
     if len(line1_points) < min_points_for_line_fit:
+        print("get_four_points2(): len(line1_points) < min_points_for_line_fit, exiting")
         return False, None
-
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
-        print("Warning v11=0")
+        print("get_four_points2(): Warning v11=0")
         v11 = 0.1
     m1 = v21/v11
     b1 = y01 - m1*x01
-    #print("From fitline: m1=", m1, " b1=", b1)
 
+    # Line 2: Best fit line for bottom part of contour
     if len(line2_points) < min_points_for_line_fit:
+        print("get_four_points2(): len(line2_points) < min_points_for_line_fit, exiting")
         return False, None
-
     [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
     m2 = v22/v12
     if (v12==0):
-        print("Warning v12=0")
+        print("get_four_points2(): Warning v12=0")
         v12 = 0.1
     b2 = y02 - m2*x02
-    #print("From fitline: m2=", m2, " b2=", b2)
 
+    # Line 3: Best fit line for right part of contour
     if len(line3_points) < min_points_for_line_fit:
+        print("get_four_points2(): len(line3_points) < min_points_for_line_fit, exiting")
         return False, None
-
     [v13,v23,x03,y03] = cv2.fitLine(line3_points, cv2.DIST_L2,0,0.01,0.01)
     m3 = v23/v13
     if (v13==0):
-        #print("Warning v13=0")
+        print("get_four_points2(): Warning v13=0")
         v13 = 0.1
     b3 = y03 - m3*x03
-    #print("From fitline: m3=", m3, " b3=", b3)
 
-    # Left bottom point is intersection of line1 and line2
+    # Intersection point for left bottom corner point is intersection of Lines 1 and 2
     if (m1 == m2):
+        print("get_four_points2(): slope of Lines 1 and 2 equal, exiting") 
         return False, None
-
     xint_left = (b2-b1)/(m1-m2)
     yint_left = m1*xint_left+b1
-    #print("xint_left=", xint_left, " yint_left=", yint_left)
-    int_point_left = tuple([int(xint_left), int(yint_left)])
-    #cv2.circle(image, int_point, 4, fuschia, -1)
-    #print("int_point_left=", int_point_left)
+    int_point_bottom_left = tuple([int(xint_left), int(yint_left)])
 
-    # Right bottom point is intersection of line2 and line3
+    # Intersection point for right bottom corner point is intersection of Lines 2 and 3
     if (m2 == m3):
+        print("get_four_points2(): slope of Lines 2 and 3 equal, exiting") 
         return False, None
-
     xint_right = (b3-b2)/(m2-m3)
     yint_right = m2*xint_right+b2
-    #print("xint_right=", xint_right, " yint_right=", yint_right)
-    int_point_right = tuple([int(xint_right), int(yint_right)])
-    #cv2.circle(image, int_point_right, 4, fuschia, -1)
-    #print("int_point_right=", int_point_right)
+    int_point_bottom_right = tuple([int(xint_right), int(yint_right)])
 
-    # Find points on contour closest to intersection points (they may already be on the contour)
+    # Left and right bottom points found by intersection above might actually lie on the contour. 
+    # For improved accuracy, find points on contour closest to them
+
+    cnt_pts = cnt[leftmost_index:rightmost_index]
+    diffs = cnt_pts - int_point_bottom_left
+    dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
+    min_index = dist_sq.argmin()
+    bottom_left = cnt_pts[min_index][0]
+
+    cnt_pts = cnt[leftmost_index:rightmost_index]
+    diffs = cnt_pts - int_point_bottom_right
+    dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
+    min_index = dist_sq.argmin()
+    bottom_right = cnt_pts[min_index][0]
     
-    cnt_pts = cnt[leftmost_index:rightmost_index]
-    diffs = cnt_pts - int_point_left
-    dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
-    min_index = dist_sq.argmin()
-    int_point_left2 = cnt_pts[min_index][0]
-
-    cnt_pts = cnt[leftmost_index:rightmost_index]
-    diffs = cnt_pts - int_point_right
-    dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
-    min_index = dist_sq.argmin()
-    int_point_right2 = cnt_pts[min_index][0]
-
     four_points = np.array([
                             leftmost,
                             rightmost,
-                            int_point_left2,
-                            int_point_right2
+                            bottom_left,
+                            bottom_right
                            ], dtype="double")
 
     return True, four_points
