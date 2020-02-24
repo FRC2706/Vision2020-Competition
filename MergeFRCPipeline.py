@@ -34,50 +34,10 @@ from VisionMasking import *
 from DistanceFunctions import *
 from ControlPanel import *
 
-#
-##print('OpenCV version is', cv2.__version__)
-
-########### SET RESOLUTION TO 256x144 !!!! ############
+print('OpenCV version is', cv2.__version__)
 
 # import the necessary packages
 import datetime
-
-
-# Class to examine Frames per second of camera stream. Currently not used.
-class FPS:
-    def __init__(self):
-        # store the start time, end time, and total number of frames
-        # that were examined between the start and end intervals
-        self._start = None
-        self._end = None
-        self._numFrames = 0
-
-    def start(self):
-        # start the timer
-        self._start = datetime.datetime.now()
-        return self
-
-    def stop(self):
-        # stop the timer
-        self._end = datetime.datetime.now()
-
-    def update(self):
-        # increment the total number of frames examined during the
-        # start and end intervals
-        self._numFrames += 1
-
-    def elapsed(self):
-        # return the total number of seconds between the start and
-        # end interval
-        if self._end != None:
-            return datetime.datetime.now() - self._start
-        else:
-            return datetime.datetime.now() - self._start
-
-    def fps(self):
-        # compute the (approximate) frames per second
-        return self._numFrames / self.elapsed()
-
 
 # class that runs separate thread for showing video,
 class VideoShow:
@@ -153,7 +113,7 @@ class WebcamVideoStream:
                 ##print("Driver mode")
                 if self.autoExpose != self.prevValue:
                     #self.webcam.setExposureManual(60)
-                    self.webcam.setExposureManual(50)
+                    self.webcam.setExposureManual(39)
                     self.webcam.setExposureAuto()
                     ##print("Driver mode")
                     self.prevValue = self.autoExpose
@@ -191,19 +151,15 @@ class WebcamVideoStream:
 frameStop = 0
 ImageCounter = 0
 
-# Angles in radians
-
-switch = 1
-
+# Set Default to find the Tape target
+switch = 2
 
 # Masks the video based on a range of hsv colors
 # Takes in a frame, range of color, and a blurred frame, returns a masked frame
 def threshold_video(lower_color, upper_color, blur):
     # Convert BGR to HSV
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-
     h, s, v = cv2.split(hsv)
-
     h = threshold_range(h, lower_color[0], upper_color[0])
     s = threshold_range(s, lower_color[1], upper_color[1])
     v = threshold_range(v, lower_color[2], upper_color[2])
@@ -222,12 +178,6 @@ def threshold_video(lower_color, upper_color, blur):
         cv2.imwrite('/mnt/VisionImages/visionImg-' + str(matchNumber) + "-" + str(ImageCounter) + '_mask.png',
                     combined_mask)
     return combined_mask
-
-
-
-# #             # pushes powerCell angle to network tables
-# #             networkTable.putNumber("YawToPowerCell", finalTarget[0])
-# #             networkTable.putNumber("DistanceToPowerCell", finalYaw)
 
 #################### FRC VISION PI Image Specific #############
 configFile = "/boot/frc.json"
@@ -385,11 +335,9 @@ if __name__ == "__main__":
     # cap.autoExpose=True;
     tape = True
 
-    # loop forever
     networkTable.putBoolean("Driver", False)
-    networkTable.putBoolean("Tape", False)
-    networkTable.putNumber("CornerMethod", 3)
-    networkTable.putBoolean("PowerCell", True)
+    networkTable.putBoolean("Tape", True)
+    networkTable.putBoolean("PowerCell", False)
     networkTable.putBoolean("ControlPanel", False)
     networkTable.putBoolean("WriteImages", False)
     networkTable.putBoolean("SendMask", False)
@@ -399,12 +347,37 @@ if __name__ == "__main__":
     matchNumberDefault = random.randint(1, 1000)
     processed = 0
 
-    CornerMethod = 3
+    # choose Method HERE !!!!!
+    Method = 7 # likely not needed
+    networkTable.putNumber("Method", 7)
 
+    # Method 1 is based on measuring distance between leftmost and rightmost
+    # Method 2 is based on measuring the minimum enclosing circle
+    # Method 3 is based on measuring the major axis of the minimum enclsing ellipse
+    # Method 4 is a three point SolvePNP solution for distance (John and Jeremy)
+    # Method 5 is a four point SolvePNP solution for distance (John and Jeremy)
+    # Method 6 is a four point (version A) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+    # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
+    # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
+    # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
+    # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
+
+    #Setup variables for average framecount
+    frameCount = 0
+    averageTotal = 0
+    averageFPS = 0
+
+    framePSGroups = 50
+    displayFPS = 3.14159265
+
+    # start frames per second outside loop, will stop and restart every framePSGroups
+    #fps = FPS().start()
+    begin = milliSince1970()
+    start = begin
+    prev_update = start
+
+    # loop forever
     while True:
-
-        # start frames per second
-        fps = FPS().start()
 
         if networkTableTime.getNumber("Match Time", 1) == 0:
             networkTable.putBoolean("WriteImages", False)
@@ -441,47 +414,42 @@ if __name__ == "__main__":
             continue
         # Checks if you just want camera for driver (No processing), False by default
 
-        switch = 0
+        switch = 2
 
+        
+
+        #Check if Network Table value Tape is True
         if (networkTable.getBoolean("Tape", True)):
-            #if switch != 2:
-                #print("finding tape")
             switch = 2
-
-            CornerMethod = int(networkTable.getNumber("CornerMethod", 1))
-            #print("Corner Method: " + str(CornerMethod))
-            # Lowers exposure to 0
-            #cap.autoExpose = False
-            #cap.webcam.setExposureManual(50)
-            #cap.webcam.setExposureManual(20)
-            #boxBlur = blurImg(frame, green_blur)
-            # cv2.putText(frame, "Find Tape", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, white)
+            Method = int(networkTable.getNumber("Method", 7))
             threshold = threshold_video(lower_green, upper_green, frame)
-            processed = findTargets(frame, threshold)
+            if (networkTable.getBoolean("SendMask", False)):
+                processed = threshold
+            else:    
+                processed = findTargets(frame, threshold, Method)
 
         else:
             if (networkTable.getBoolean("PowerCell", True)):
                 # Checks if you just want to look for PowerCells
-                #if switch != 3:
-                    ##print("find Power Cell")
                 switch = 3
-                #cap.webcam.setExposureManual(35)
-                #cap.autoExpose = True
                 boxBlur = blurImg(frame, yellow_blur)
-                # cv2.putText(frame, "Find Cargo", (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6, white)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                processed = findPowerCell(frame, threshold)
+                if (networkTable.getBoolean("SendMask", False)):
+                    processed = threshold
+                else:   
+                    processed = findPowerCell(frame, threshold)
+
             elif (networkTable.getBoolean("ControlPanel", True)):
                 # Checks if you just want camera for Control Panel, by dent of everything else being false, true by default
-                #if (networkTable.getBoolean("Cargo", True)):
-                #if switch != 4:
-                    ##print("find Control Panel Colour")
                 switch = 4
                 #cap.autoExpose = True
                 boxBlur = blurImg(frame, yellow_blur)
                 # Need to create proper mask for control panel
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                processed = findControlPanel(frame, threshold)
+                if (networkTable.getBoolean("SendMask", False)):
+                    processed = threshold
+                else:    
+                    processed = findControlPanel(frame, threshold)
 
         # Puts timestamp of camera on network tables
         networkTable.putNumber("VideoTimestamp", timestamp)
@@ -499,12 +467,27 @@ if __name__ == "__main__":
                     ImageCounter=0
 
         # end of cycle so update counter
-        fps.update()
-        # also end of time we want to measure so stop FPS
-        fps.stop()
+        #fps.update()
+        frameCount = frameCount+1
+        update = milliSince1970()        
+
+        processedMilli = (update-prev_update)
+        averageTotal = averageTotal+(processedMilli)
+        prev_update = update
+
+        if ((frameCount%30)==0.0):
+            averageFPS = (1000/((update-begin)/frameCount))
+
+        # only update FPS in groups according to framePSGroups
+        if frameCount%framePSGroups == 0.0:
+            # also end of time we want to measure so stop FPS
+            stop = milliSince1970()  
+            displayFPS = (stop-start)/framePSGroups
+            start = milliSince1970()
+
         # because we are timing in this file, have to add the fps to image processed 
-        cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-        cv2.putText(processed, 'FPS: {:.2f}'.format(fps.fps()), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.putText(processed, 'Grouped FPS: {:.2f}'.format(1000/displayFPS), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.putText(processed, 'Average FPS: {:.2f}'.format(averageFPS), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
         # networkTable.putBoolean("Driver", True)
         streamViewer.frame = processed
@@ -513,7 +496,5 @@ if __name__ == "__main__":
         ntinst.flush()
 
     # end of while true
-
 # end of main
-
 # end of file

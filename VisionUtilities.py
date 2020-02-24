@@ -1,6 +1,7 @@
 import math, cv2
 import numpy as np
 from VisionMasking import *
+import datetime
 
 # Flip image if camera mounted upside down
 def flipImage(frame):
@@ -78,4 +79,7 @@ def getEllipseRotation(image, cnt):
 def draw_circle(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDOWN:
         green = np.uint8([[[img[y, x, 0], img[y, x, 1], img[y, x, 2]]]])
-        print(img[y, x, 2], img[y, x, 1], img[y, x, 0], cv2.cvtColor(green,cv2.COLOR_BGR2HSV))         
+        print(img[y, x, 2], img[y, x, 1], img[y, x, 0], cv2.cvtColor(green,cv2.COLOR_BGR2HSV))  
+
+def milliSince1970():
+    return int((datetime.datetime.utcnow() - datetime.datetime(1970,1,1)).total_seconds()*1000)               

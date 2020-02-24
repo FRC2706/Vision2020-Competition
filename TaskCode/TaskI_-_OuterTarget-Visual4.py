@@ -20,11 +20,10 @@ import cv2
 import sys
 import os
 import math
+import datetime
 
-from adrian_pyimage import FPS
-from adrian_pyimage import WebcamVideoStream
 from pathlib import Path
-from visual4 import get_four
+from visual4_old import get_four
 
 print("Using python version {0}".format(sys.version))
 print('OpenCV Version = ', cv2.__version__)
@@ -56,11 +55,33 @@ def get_opposit(hyp, theta):
 def get_adjacent(hyp, theta):
     return abs(hyp*math.cos(math.radians(theta)))
 
+def milliSince1970():
+    return int((datetime.datetime.utcnow() - datetime.datetime(1970,1,1)).total_seconds()*1000)               
+
+#Simple function that displays 4 corners on an image
+#A np.array() is expected as the input argument
+def displaycorners(image, outer_corners):
+    # draw extreme points
+    # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
+    if len(outer_corners) == 4: #this is methods 1 to 4 
+        cv2.circle(image, (int(outer_corners[0,0]),int(outer_corners[0,1])), 6, green, -1)
+        cv2.circle(image, (int(outer_corners[1,0]),int(outer_corners[1,1])), 6, red, -1)
+        cv2.circle(image, (int(outer_corners[2,0]),int(outer_corners[2,1])), 6, white,-1)
+        cv2.circle(image, (int(outer_corners[3,0]),int(outer_corners[3,1])), 6, blue, -1)
+        #print('extreme points', leftmost,rightmost,topmost,bottommost)
+    else: # this assumes len is 5 and method 5
+        cv2.circle(image, (int(outer_corners[0,0]),int(outer_corners[0,1])), 6, green, -1)
+        cv2.circle(image, (int(outer_corners[1,0]),int(outer_corners[1,1])), 6, blue, -1)
+        cv2.circle(image, (int(outer_corners[2,0]),int(outer_corners[2,1])), 6, purple, -1)
+        cv2.circle(image, (int(outer_corners[3,0]),int(outer_corners[3,1])), 6, white,-1)
+        cv2.circle(image, (int(outer_corners[4,0]),int(outer_corners[4,1])), 6, red, -1)
+
+
 # select folder of interest
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
 #strImageFolder = str(strVisionRoot / 'OuterTargetFullDistance')
-strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
+#strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
@@ -85,7 +106,7 @@ else:
 print (photos)
 
 # set index of files
-i = 4
+i = 0
 intLastFile = len(photos) -1
 
 # begin main loop indent 1
@@ -107,6 +128,9 @@ while (True):
 
     #cv2.imshow('imgImageInput', imgImageInput)
     #cv2.moveWindow('imgImageInput',300,350)
+
+    # start
+    start = milliSince1970()
 
     # Convert BGR to HSV
     hsvImageInput = cv2.cvtColor(imgImageInput, cv2.COLOR_BGR2HSV)
@@ -223,7 +247,7 @@ while (True):
         # straight bounding rectangle
         xb,yb,wb,hb = cv2.boundingRect(cnt)
         print('straight bounding rectangle = ', (xb,yb) ,wb,hb)
-        brect = (xb,yb,wb,hb)
+        bounding_rect = (xb,yb,wb,hb)
         #cv2.rectangle(imgContours,(xb,yb),(xb+wb,yb+hb),green,2)
         print('bounding rectangle aspect = ', float(wb)/float(hb))
         print('bounding rectangle extent = ', float(area)/(float(wb)*float(hb)))
@@ -343,22 +367,30 @@ while (True):
         intROMHeight, intROMWidth = ROI_mask.shape[:2]
         imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
-        
-        # send chosen contour to 4 point finder, get back found points or None
-        try_get_four = get_four(brect, intROMWidth, intROMHeight, ROISortedContours[0])
 
+
+        # send chosen contour to 4 point finder, get back found points or None
+        try_get_four = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
         if try_get_four is None:
             pass
-
         else:
-            [(ulx,uly), (blx,bly), (bcx,bcy), (brx,bry), (urx,ury)]  = try_get_four
+            only_four = ((try_get_four[0]),(try_get_four[1]),(try_get_four[3]),(try_get_four[4]))
+            outer_corners = np.array(only_four)
+            displaycorners(imgContours, outer_corners)
 
-            cv2.circle(imgContours, (ulx,uly), 10, green, -1)
-            cv2.circle(imgContours, (blx,bly), 10, blue, -1)
-            cv2.circle(imgContours, (bcx,bcy), 10, blue, -1)
-            cv2.circle(imgContours, (brx,bry), 10, blue, -1)
-            cv2.circle(imgContours, (urx,ury), 10, red, -1)
+            #[(ulx,uly), (blx,bly), (bcx,bcy), (brx,bry), (urx,ury)]  = try_get_four
+
+            #cv2.circle(imgContours, (ulx,uly), 10, green, -1)
+            #cv2.circle(imgContours, (blx,bly), 10, blue, -1)
+            #cv2.circle(imgContours, (bcx,bcy), 10, blue, -1)
+            #cv2.circle(imgContours, (brx,bry), 10, blue, -1)
+            #cv2.circle(imgContours, (urx,ury), 10, red, -1)
         # End of visual4
+
+    stop = milliSince1970()
+    # because we are timing in this file, have to add the fps to image processed 
+    cv2.putText(imgContours, "elapsed time: " + str(int(stop-start)) + " ms", (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    cv2.putText(imgContours, 'FPS: {:.1f}'.format(1000/(stop-start)), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
     # Display the contours and maths generated
     cv2.imshow('contours and math over green mask', imgContours)
