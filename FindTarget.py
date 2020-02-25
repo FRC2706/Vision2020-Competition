@@ -509,6 +509,8 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
                 elif CornerMethod is 8:
                     rw_coordinates = real_world_coordinates_inner
+                    xb, yb, wb, hb = cv2.boundingRect(cnt)
+                    bounding_rect = (xb,yb,wb,hb)
                     ROI_mask = mask[yb:yb+hb, xb:xb+wb]
                     intROMHeight, intROMWidth = ROI_mask.shape[:2]
                     if is_cv3():
@@ -525,6 +527,8 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
                 elif CornerMethod is 9:
                     rw_coordinates = real_world_coordinates_inner_five
+                    xb, yb, wb, hb = cv2.boundingRect(cnt)
+                    bounding_rect = (xb,yb,wb,hb)
                     ROI_mask = mask[yb:yb+hb, xb:xb+wb]
                     intROMHeight, intROMWidth = ROI_mask.shape[:2]
                     if is_cv3():
