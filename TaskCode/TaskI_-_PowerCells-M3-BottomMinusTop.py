@@ -46,9 +46,10 @@ strVisionRoot = posCodePath.parent.parent
 #strImageFolder = str(strVisionRoot / '2706-Elimins-Images')
 #strImageFolder = str(strVisionRoot / 'PowerCellImages')
 #strImageFolder = str(strVisionRoot / 'PowerCell25Scale')
-strImageFolder = str(strVisionRoot / 'PowerCellFullScale')
+#strImageFolder = str(strVisionRoot / 'PowerCellFullScale')
 #strImageFolder = str(strVisionRoot / 'PowerCellFullMystery')
-strImageFolder = str(strVisionRoot / 'PowerCellSketchup')
+#strImageFolder = str(strVisionRoot / 'PowerCellSketchup')
+strImageFolder = str(strVisionRoot / 'PowerCellUpperFull')
 
 print (strImageFolder)
 booBlankUpper = False
@@ -67,7 +68,7 @@ else:
 print (photos)
 
 # set index of files
-i = 10
+i = 0
 intLastFile = len(photos) -1
 
 # begin main loop indent 1
@@ -97,8 +98,8 @@ while (True):
     hsvImageInput = cv2.cvtColor(imgImageInput, cv2.COLOR_BGR2HSV)
 
     # define range of yellow color in HSV
-    lower_color = np.array([20,65,80])
-    upper_color = np.array([65,255,255])
+    lower_color = np.array([15,150,150])
+    upper_color = np.array([23,255,255])
 
     # Threshold the HSV image to get only yellow colors
     binary_mask = cv2.inRange(hsvImageInput, lower_color, upper_color)
