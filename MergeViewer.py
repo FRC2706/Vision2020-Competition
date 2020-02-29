@@ -53,8 +53,8 @@ showAverageFPS = False
 # boolean for video input, if true does video, if false images
 useVideo = True
 # integer for usb camera to use, boolean for live webcam
-useWebCam = True
-webCamNumber = 0
+useWebCam = False
+webCamNumber = 1
 
 #Code to load images from a folder
 def load_images_from_folder(folder):
@@ -68,7 +68,8 @@ def load_images_from_folder(folder):
     return images, imagename
 
 # choose video to process -> Outer Target Videos
-videoname = './OuterTargetVideos/ThirdScale-01.mp4'
+#videoname = './OuterTargetVideos/ThirdScale-01.mp4'
+videoname = './OuterTargetVideos/FullScale-02.mp4'
 
 if useVideo: # test against video
     showAverageFPS = True
