@@ -68,7 +68,7 @@ else:
 print (photos)
 
 # set index of files
-i = 10
+i = 0
 intLastFile = len(photos) -1
 
 # begin main loop indent 1
