@@ -98,8 +98,8 @@ while (True):
     hsvImageInput = cv2.cvtColor(imgImageInput, cv2.COLOR_BGR2HSV)
 
     # define range of yellow color in HSV
-    lower_color = np.array([20,65,80])
-    upper_color = np.array([65,255,255])
+    lower_color = np.array([15,150,150])
+    upper_color = np.array([23,255,255])
 
     # Threshold the HSV image to get only yellow colors
     binary_mask = cv2.inRange(hsvImageInput, lower_color, upper_color)
