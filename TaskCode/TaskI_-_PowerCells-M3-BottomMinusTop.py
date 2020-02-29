@@ -46,9 +46,10 @@ strVisionRoot = posCodePath.parent.parent
 #strImageFolder = str(strVisionRoot / '2706-Elimins-Images')
 #strImageFolder = str(strVisionRoot / 'PowerCellImages')
 #strImageFolder = str(strVisionRoot / 'PowerCell25Scale')
-strImageFolder = str(strVisionRoot / 'PowerCellFullScale')
+#strImageFolder = str(strVisionRoot / 'PowerCellFullScale')
 #strImageFolder = str(strVisionRoot / 'PowerCellFullMystery')
-strImageFolder = str(strVisionRoot / 'PowerCellSketchup')
+#strImageFolder = str(strVisionRoot / 'PowerCellSketchup')
+strImageFolder = str(strVisionRoot / 'PowerCellUpperFull')
 
 print (strImageFolder)
 booBlankUpper = False
