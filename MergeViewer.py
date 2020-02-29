@@ -53,8 +53,8 @@ showAverageFPS = False
 # boolean for video input, if true does video, if false images
 useVideo = True
 # integer for usb camera to use, boolean for live webcam
-useWebCam = True
-webCamNumber = 0
+useWebCam = False
+webCamNumber = 1
 
 #Code to load images from a folder
 def load_images_from_folder(folder):
