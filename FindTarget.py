@@ -440,7 +440,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
     if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:10]
        
         cntsFiltered = []
 
