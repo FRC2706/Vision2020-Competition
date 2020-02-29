@@ -90,15 +90,15 @@ while (True):
     cv2.moveWindow(strDoubleImageName,100,50)
 
     ## display double size original image
-    imgDoubleInput = cv2.resize(imgImageInput, None, fx=2.0, fy=2.0, interpolation = cv2.INTER_AREA)
+    imgDoubleInput = cv2.resize(imgImageInput, None, fx=1.0, fy=1.0, interpolation = cv2.INTER_AREA)
     cv2.imshow(strDoubleImageName, imgDoubleInput)
 
     ## Convert BGR to HSV
     hsvImageInput = cv2.cvtColor(imgImageInput, cv2.COLOR_BGR2HSV)
 
     ## define range of yellow color in HSV
-    lower_yellow = np.array([22,105,145]) #28,150,150
-    upper_yellow = np.array([36,255,255]) #32,255,255
+    lower_yellow = np.array([15,150,150]) #28,150,150
+    upper_yellow = np.array([23,255,255]) #32,255,255
 
     ## Threshold the HSV image to get only yellow colors
     binary_mask = cv2.inRange(hsvImageInput, lower_yellow, upper_yellow)
@@ -117,7 +117,7 @@ while (True):
     cv2.moveWindow('yellow_masked',261,350)
 
     ## display double size original image
-    imgDoubleHSV = cv2.resize(hsvImageInput, None, fx=2.0, fy=2.0, interpolation = cv2.INTER_AREA)
+    imgDoubleHSV = cv2.resize(hsvImageInput, None, fx=1.0, fy=1.0, interpolation = cv2.INTER_AREA)
     cv2.imshow('hsvImageInput', imgDoubleHSV)
 
     ## display the masked images to screen
