@@ -440,7 +440,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
     if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:17]
        
         cntsFiltered = []
 
@@ -474,11 +474,13 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                 solidity = float(cntArea)/hull_area
 
                 #previous values: 0.16-0.26
-                if (minAextent < 0.139 or minAextent > 1.1): continue
+                #if (minAextent < 0.139 or minAextent > 1.1): continue
                 #previous values: 2-3
-                if (cntAspectRatio < 1.7 or cntAspectRatio > 3.3): continue
+                #if (cntAspectRatio < 1.7 or cntAspectRatio > 3.3): continue
                 #previous values: 0.22-0.35
-                if (solidity < 0.19 or solidity > 0.35): continue
+                #if (solidity < 0.19 or solidity > 0.35): continue
+
+                #insert brian's method here
 
                 cntsFiltered.append(cnt)
                 #end fingerprinting
