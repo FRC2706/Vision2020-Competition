@@ -68,7 +68,8 @@ def load_images_from_folder(folder):
     return images, imagename
 
 # choose video to process -> Outer Target Videos
-videoname = './OuterTargetVideos/ThirdScale-01.mp4'
+#videoname = './OuterTargetVideos/ThirdScale-01.mp4'
+videoname = './OuterTargetVideos/FullScale-02.mp4'
 
 if useVideo: # test against video
     showAverageFPS = True
