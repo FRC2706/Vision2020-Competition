@@ -51,7 +51,7 @@ showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
-useVideo = True
+useVideo = False
 # integer for usb camera to use, boolean for live webcam
 useWebCam = False
 webCamNumber = 1
@@ -66,6 +66,11 @@ def load_images_from_folder(folder):
             images.append(img)
             imagename.append(filename)
     return images, imagename
+
+def draw_circle(event,x,y,flags,param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        green = np.uint8([[[img[y, x, 0], img[y, x, 1], img[y, x, 2]]]])
+        print(img[y, x, 2], img[y, x, 1], img[y, x, 0], cv2.cvtColor(green,cv2.COLOR_BGR2HSV))  
 
 # choose video to process -> Outer Target Videos
 #videoname = './OuterTargetVideos/ThirdScale-01.mp4'
@@ -82,6 +87,7 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./PowerCell25Scale")
     #images, imagename = load_images_from_folder("./PowerCellImages")
     #images, imagename = load_images_from_folder("./PowerCellFullScale")
+    images, imagename = load_images_from_folder("./PowerCellUpperFull")
     #images, imagename = load_images_from_folder("./PowerCellFullMystery")
     #images, imagename = load_images_from_folder("./PowerCellSketchup")
     #images, imagename = load_images_from_folder("./LifeCamPhotos")
@@ -93,7 +99,7 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./OuterTargetFullScale")
     #images, imagename = load_images_from_folder("./OuterTargetRingTest")
     #images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
-    images, imagename = load_images_from_folder("./OuterTargetFullDistance")
+    #images, imagename = load_images_from_folder("./OuterTargetFullDistance")
     #images, imagename = load_images_from_folder("./OuterTargetSketchup")
     #images, imagename = load_images_from_folder("./OuterTargetLiger")
 
@@ -111,8 +117,8 @@ server = False
 cameraConfigs = []
 
 Driver = False
-Tape = True
-PowerCell = False
+Tape = False
+PowerCell = True
 ControlPanel = False
 
 # Method 1 is based on measuring distance between leftmost and rightmost

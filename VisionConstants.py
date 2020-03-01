@@ -62,6 +62,6 @@ upper_green = np.array([100, 255, 255])
 #lower_green = np.array([23, 50, 35])
 #upper_green = np.array([85, 255, 255])
 
-lower_yellow = np.array([14, 150, 100])
+lower_yellow = np.array([14, 150, 150])
 upper_yellow = np.array([30, 255, 255])
 

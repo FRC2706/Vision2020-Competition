@@ -27,19 +27,26 @@ def findBall(contours, image, centerX, centerY):
         for cnt in cntsSorted:
             x, y, w, h = cv2.boundingRect(cnt)
 
-            #print("bounding rec height: " + str(h))
-            #print("bounding rec width: " + str(w))
-        
-            cntHeight = h
-            aspect_ratio = float(w) / h
-            # Get moments of contour; mainly for centroid
-            M = cv2.moments(cnt)
-            # Get convex hull (bounding polygon on contour)
-            #hull = cv2.convexHull(cnt)
+            ##print("Area of bounding rec: " + str(w*h))
+            boundingRectArea = w*h
+
             # Calculate Contour area
             cntArea = cv2.contourArea(cnt)
+            ##print("Area of contour: " + str(cntArea))
+
+            #percentage of contour in bounding rect
+            boundingRectContArea = float(cntArea/boundingRectArea)
+            #print("Percentage contour area in bounding rect: " + str(boundingRectContArea))
+            #cntHeight = h
+            #find the height of the bottom (y position of contour)
+            # which is just the y value plus the height
+            bottomHeight = y+h
+            #aspect_ratio = float(w) / h
+            # Get moments of contour; mainly for centroid
+            M = cv2.moments(cnt)
+
             # Filters contours based off of size
-            if (checkBall(cntArea, aspect_ratio, image_width)):
+            if (checkBall(cntArea, image_width, boundingRectContArea)):
                 ### MOSTLY DRAWING CODE, BUT CALCULATES IMPORTANT INFO ###
                 # Gets the centeroids of contour
                 if M["m00"] != 0:
@@ -51,70 +58,62 @@ def findBall(contours, image, centerX, centerY):
 
                     ##### DRAWS CONTOUR######
                     # Gets rotated bounding rectangle of contour
-                    rect = cv2.minAreaRect(cnt)
+                    #rect = cv2.minAreaRect(cnt)
                     # Creates box around that rectangle
-                    box = cv2.boxPoints(rect)
+                    #box = cv2.boxPoints(rect)
                     # Covert boxpoints to integer
-                    box = np.int0(box)
-                    # Draws rotated rectangle
-                    #cv2.drawContours(image, [box], 0, (23, 184, 80), 3)
-
+                    #box = np.int0(box)
+                   
                     # Draws a vertical white line passing through center of contour
                     cv2.line(image, (cx, screenHeight), (cx, 0), white)
                     # Draws a white circle at center of contour
                     cv2.circle(image, (cx, cy), 6, white)
 
                     # Draws the contours
-                    cv2.drawContours(image, [cnt], 0, (23, 184, 80), 1)
+                    cv2.drawContours(image, [cnt], 0, green, 2)
 
                     # Draws contour of bounding rectangle in red
                     cv2.rectangle(image, (x, y), (x + w, y + h), red, 1)
                    
                     # Appends important info to array
-                    if [cx, cy, cnt, cntHeight] not in biggestPowerCell:
-                        biggestPowerCell.append([cx, cy, cnt, cntHeight, aspect_ratio])
+                    if [cx, cy, cnt, bottomHeight] not in biggestPowerCell:
+                        biggestPowerCell.append([cx, cy, cnt, bottomHeight])
 
         # Check if there are PowerCell seen
         if (len(biggestPowerCell) > 0):
             # pushes that it sees cargo to network tables
 
             finalTarget = []
-            # Sorts targets based on largest height
+            # Sorts targets based on largest height (bottom of contour to top of screen or y position)
             biggestPowerCell.sort(key=lambda height: math.fabs(height[3]))
 
             #sorts closestPowerCell - contains center-x, center-y, contour and contour height from the
-            #bounding rectangle.  The closest one has the largest height
+            #bounding rectangle.  The closest one has the largest bottom point
             closestPowerCell = min(biggestPowerCell, key=lambda height: (math.fabs(height[3] - centerX)))
 
             # extreme points
-            leftmost = tuple(closestPowerCell[2][closestPowerCell[2][:,:,0].argmin()][0])
-            rightmost = tuple(closestPowerCell[2][closestPowerCell[2][:,:,0].argmax()][0])
-            topmost = tuple(closestPowerCell[2][closestPowerCell[2][:,:,1].argmin()][0])
+            #topmost = tuple(closestPowerCell[2][closestPowerCell[2][:,:,1].argmin()][0])
             bottommost = tuple(closestPowerCell[2][closestPowerCell[2][:,:,1].argmax()][0])
 
             # draw extreme points
             # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
-            cv2.circle(image, leftmost, 6, green, -1)
-            cv2.circle(image, rightmost, 6, red, -1)
-            cv2.circle(image, topmost, 6, white, -1)
+            #cv2.circle(image, topmost, 6, white, -1)
             cv2.circle(image, bottommost, 6, blue, -1)
-            #print('extreme points', leftmost,rightmost,topmost,bottommost)
+            ##print('extreme points', leftmost,rightmost,topmost,bottommost)
 
             #print("topmost: " + str(topmost[0]))
             #print("bottommost: " + str(bottommost[0]))
            
-            #xCoord of the closest ball will be the x position differences between the topmost and 
-            #bottom most points
-            if (topmost[0] > bottommost[0]):
-                xCoord = int(round((topmost[0]-bottommost[0])/2)+bottommost[0])
-            else: 
-                xCoord = int(round((bottommost[0]-topmost[0])/2)+topmost[0])
+            #print("bottommost[1]: " + str(bottommost[1]))
+            #print("screenheight: " + str(screenHeight))
 
-            #print(xCoord)
-            if (closestPowerCell[4] > 0.9 and closestPowerCell[4] < 1.2):
+            #Contour that fills up bottom seems to reside on one less than 
+            # screen height.  For example, screenHeight of 480 has bottom
+            # pixel as 479, probably because 0-479 = 480 pixel rows
+            if (int(bottommost[1]) >= screenHeight - 1):
                 xCoord = closestPowerCell[0]
-
-            #print ("aspect ratio of ball: " + str(closestPowerCell[4]))     
+            else:
+                xCoord = bottommost[0]   
 
             finalTarget.append(calculateYaw(xCoord, centerX, H_FOCAL_LENGTH))
             finalTarget.append(calculateDistWPILib(closestPowerCell[3],TARGET_BALL_HEIGHT,KNOWN_BALL_PIXEL_HEIGHT,KNOWN_BALL_DISTANCE ))
@@ -129,7 +128,6 @@ def findBall(contours, image, centerX, centerY):
                         white)
             cv2.line(image, (xCoord, screenHeight), (xCoord, 0), blue, 2)
 
-            currentAngleError = finalTarget[0]
             # pushes cargo angle to network tables
             publishNumber("YawToPowerCell", finalTarget[0])
             publishNumber("DistanceToPowerCell", finalYaw)
@@ -162,10 +160,10 @@ def findPowerCell(frame, mask):
     return image
 
 # Checks if ball contours are worthy based off of contour area and (not currently) hull area
-def checkBall(cntArea, cntAspectRatio, image_width):
+def checkBall(cntArea, image_width,boundingRectContArea):
     #this checks that the area of the contour is greater than the image width divide by 2
-    #And that the aspect ratio of the bounding rectangle (width / height) is close to 1 which 
-    #is basically a circle however this would filter out 'tadpoles'
-    
-   # return (cntSize > (image_width / 2)) and (round(cntAspectRatio) > 1)
-    return (cntArea > (image_width / 2)) and (cntAspectRatio > 0.75)
+    #It also checks the percentage of the area of the bounding rectangle is
+    #greater than 30%.  A single ball is usually 70-80% while groups of balls are usually
+    #above 44% so using 30% is conservative
+    #print("cntArea " + str(cntArea))
+    return (cntArea > (image_width*2)) and (boundingRectContArea > 0.30)
