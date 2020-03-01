@@ -122,9 +122,9 @@ def findBall(contours, image, centerX, centerY):
             # Puts the yaw on screen
             # Draws yaw of target + line where center of target is
             finalYaw = round(finalTarget[1]*1000)/1000
-            cv2.putText(image, "Yaw: " + str(finalTarget[0]), (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6,
+            cv2.putText(image, "Yaw: " + str(finalTarget[0]), (40, 360), cv2.FONT_HERSHEY_COMPLEX, .6,
                         white)
-            cv2.putText(image, "Dist: " + str(finalYaw), (40, 100), cv2.FONT_HERSHEY_COMPLEX, .6,
+            cv2.putText(image, "Dist: " + str(finalYaw), (40, 400), cv2.FONT_HERSHEY_COMPLEX, .6,
                         white)
             cv2.line(image, (xCoord, screenHeight), (xCoord, 0), blue, 2)
 
