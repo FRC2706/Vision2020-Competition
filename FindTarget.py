@@ -451,7 +451,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                 # Calculate Contour area
                 cntArea = cv2.contourArea(cnt)
 
-                # rotated rectangle fingerprinting
+                # rotated rectangle 
                 rect = cv2.minAreaRect(cnt)
                 (xr,yr),(wr,hr),ar = rect #x,y width, height, angle of rotation = rotated rect
 
@@ -465,22 +465,63 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                     ar = 0
 
                 if hr == 0: continue
-                cntAspectRatio = float(wr)/hr
-                minAextent = float(cntArea)/(wr*hr)
 
-                # Hull
-                hull = cv2.convexHull(cnt)
-                hull_area = cv2.contourArea(hull)
-                solidity = float(cntArea)/hull_area
+                #brian's method here
 
-                #previous values: 0.16-0.26
-                #if (minAextent < 0.139 or minAextent > 1.1): continue
-                #previous values: 2-3
-                #if (cntAspectRatio < 1.7 or cntAspectRatio > 3.3): continue
-                #previous values: 0.22-0.35
-                #if (solidity < 0.19 or solidity > 0.35): continue
+                #change xr to an integer or else it's giving decimals and that gives an error
+                xrInt = int(xr)
+                ROI_column1 = mask[:, xrInt:xrInt+160]
+                cv2.imshow('roi1', ROI_column1)
+                ROI_column2 = mask[:, xrInt+160:xrInt+320]
+                ROI_column3 = mask[:, xrInt+320:xrInt+480]
+                ROI_column4 = mask[:, xrInt+480:xrInt+640]
 
-                #insert brian's method here
+                #find contour and then area in each part
+
+                imgFindContourReturn, contoursROI1, hierarchy = cv2.findContours(ROI_column1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                cntAreaROI1 = cv2.contourArea(contoursROI1[0])
+                if len(contoursROI1) > 1:
+                    print('more than 1 contour in ROI') 
+                cv2.drawContours(ROI_column1, contoursROI1, -1, (0, 255, 0), 5)
+                cv2.imshow('contours roi 1', ROI_column1)
+                
+                
+                imgFindContourReturn, contoursROI2, hierarchy = cv2.findContours(ROI_column2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                cntAreaROI2 = cv2.contourArea(contoursROI2[0])
+                if len(contoursROI2) > 1:
+                    print('more than 1 contour in ROI') 
+                
+                imgFindContourReturn, contoursROI3, hierarchy = cv2.findContours(ROI_column3, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                cntAreaROI3 = cv2.contourArea(contoursROI3[0])
+                if len(contoursROI3) > 1:
+                    print('more than 1 contour in ROI') 
+                
+                imgFindContourReturn, contoursROI4, hierarchy = cv2.findContours(ROI_column4, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                cntAreaROI4 = cv2.contourArea(contoursROI4[0])
+                if len(contoursROI4) > 1:
+                    print('more than 1 contour in ROI') 
+                
+                
+                #calculating pixel area of a ROI (a quarter of the whole image) by taking the height and width, finding area, then dividing by 4
+                ROIArea = (screenHeight*screenWidth)/4
+
+                percentROI1 = cntAreaROI1/ROIArea
+                percentROI2 = cntAreaROI2/ROIArea
+                percentROI3 = cntAreaROI3/ROIArea
+                percentROI4 = cntAreaROI4/ROIArea
+
+                #compare the values of the image being seen right now to the proper percentages               
+                if (percentROI1 < 0.22 or percentROI1 > 0.24): continue
+                print('percent 1 = ', percentROI1)
+                if (percentROI2 < 0.10 or percentROI2 > 0.12): continue
+                print('percent 2 = ', percentROI2)
+                if (percentROI3 < 0.10 or percentROI3 > 0.12): continue
+                print('percent 3 = ', percentROI3)
+                if (percentROI4 < 0.22 or percentROI4 > 0.24): continue
+                print('percent 4 = ', percentROI4)
+                
+                #np.average collapses x and y axis and gives percentage of white contour vs black
+                #then normalize
 
                 cntsFiltered.append(cnt)
                 #end fingerprinting

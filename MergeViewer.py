@@ -87,10 +87,10 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./LifeCamPhotos")
 
     # Outer Target Images
-    images, imagename = load_images_from_folder("./OuterTargetProblems")
+    #images, imagename = load_images_from_folder("./OuterTargetProblems")
     #images, imagename = load_images_from_folder("./OuterTargetImages")
     #images, imagename = load_images_from_folder("./OuterTargetHalfScale")
-    #images, imagename = load_images_from_folder("./OuterTargetFullScale")
+    images, imagename = load_images_from_folder("./OuterTargetFullScale")
     #images, imagename = load_images_from_folder("./OuterTargetRingTest")
     #images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
     #images, imagename = load_images_from_folder("./OuterTargetFullDistance")
