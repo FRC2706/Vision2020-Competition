@@ -67,6 +67,11 @@ def load_images_from_folder(folder):
             imagename.append(filename)
     return images, imagename
 
+def draw_circle(event,x,y,flags,param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        green = np.uint8([[[img[y, x, 0], img[y, x, 1], img[y, x, 2]]]])
+        print(img[y, x, 2], img[y, x, 1], img[y, x, 0], cv2.cvtColor(green,cv2.COLOR_BGR2HSV))  
+
 # choose video to process -> Outer Target Videos
 #videoname = './OuterTargetVideos/ThirdScale-01.mp4'
 videoname = './OuterTargetVideos/FullScale-02.mp4'
@@ -82,6 +87,7 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./PowerCell25Scale")
     #images, imagename = load_images_from_folder("./PowerCellImages")
     #images, imagename = load_images_from_folder("./PowerCellFullScale")
+    images, imagename = load_images_from_folder("./PowerCellUpperFull")
     #images, imagename = load_images_from_folder("./PowerCellFullMystery")
     #images, imagename = load_images_from_folder("./PowerCellSketchup")
     #images, imagename = load_images_from_folder("./LifeCamPhotos")

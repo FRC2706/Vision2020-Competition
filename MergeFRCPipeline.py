@@ -73,7 +73,7 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
-        self.webcam.setExposureManual(20)
+        self.webcam.setExposureManual(7)
         #self.webcam.setExposureAuto()
 
         # Some booleans so that we don't keep setting exposure over and over to the same value
@@ -121,13 +121,13 @@ class WebcamVideoStream:
             elif switch == 2: #Tape Target Mode - set manual exposure to 20
                 self.autoExpose = False
                 if self.autoExpose != self.prevValue:
-                    self.webcam.setExposureManual(20)
+                    self.webcam.setExposureManual(7)
                     self.prevValue = self.autoExpose
 
             elif switch == 3: #Power Cell Mode - set exposure to 39
                 self.autoExpose = False
                 if self.autoExpose != self.prevValue:
-                    self.webcam.setExposureManual(39)
+                    self.webcam.setExposureManual(35)
                     self.prevValue = self.autoExpose
 
             # gets the image and timestamp from cameraserver
@@ -304,6 +304,7 @@ if __name__ == "__main__":
     networkTable = NetworkTables.getTable('MergeVision')
     networkTableMatch = NetworkTables.getTable("FMSInfo")
     networkTableTime = NetworkTables.getTable("SmartDashboard")
+    networkTableMatchVariables = NetworkTables.getTable("VisionControl")
 
     if server:
         #print("Setting up NetworkTables server")

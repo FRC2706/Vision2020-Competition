@@ -401,7 +401,8 @@ def compute_output_values(rvec, tvec):
     rot, _ = cv2.Rodrigues(rvec)
     rot_inv = rot.transpose()
     pzero_world = np.matmul(rot_inv, -tvec)
-    angle2 = math.atan2(pzero_world[0][0], pzero_world[2][0])
+    angle2InRad = math.atan2(pzero_world[0][0], pzero_world[2][0])
+    angle2 = math.degrees(angle2InRad)
 
     return distance, angle1, angle2
 
@@ -440,7 +441,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
     if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:1]
+        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:10]
        
         cntsFiltered = []
 
@@ -561,9 +562,12 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                     # If success then print values to screen                               
                     if success:
                         distance, angle1, angle2 = compute_output_values(rvec, tvec)
+                        #calculate RobotYawToTarget based on Robot offset (subtract 180 degrees)
+                        RobotYawToTarget = 180-abs(angle2)
                         cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                        #cv2.putText(image, "RobotYawToTarget: " + str(angle2), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        cv2.putText(image, "RobotYawToTarget: " + str(round(RobotYawToTarget,2)), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        cv2.putText(image, "SolvePnPTargetYawToCenter: " + str(round(angle1,2)), (40, 460), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         if (YawToTarget >= -2 and YawToTarget <= 2):
                             colour = green
                         if ((YawToTarget >= -5 and YawToTarget < -2) or (YawToTarget > 2 and YawToTarget <= 5)):  
@@ -577,6 +581,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                         #publishResults(name,value)
                         publishNumber("YawToTarget", YawToTarget)
                         publishNumber("DistanceToTarget", round(distance/12,2))
+                        publishNumber("RobotYawToTarget", round(RobotYawToTarget,2))
 
             else:
                 #If Nothing is found, publish -99 and -1 to Network table
