@@ -73,6 +73,7 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
+        self.webcam.setExposureManuel(60)
         self.webcam.setExposureManual(7)
         #self.webcam.setExposureAuto()
 
@@ -112,7 +113,7 @@ class WebcamVideoStream:
                 self.autoExpose = True
                 ##print("Driver mode")
                 if self.autoExpose != self.prevValue:
-                    #self.webcam.setExposureManual(60)
+                    self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(39)
                     self.webcam.setExposureAuto()
                     ##print("Driver mode")
@@ -121,12 +122,14 @@ class WebcamVideoStream:
             elif switch == 2: #Tape Target Mode - set manual exposure to 20
                 self.autoExpose = False
                 if self.autoExpose != self.prevValue:
+                    self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(7)
                     self.prevValue = self.autoExpose
 
             elif switch == 3: #Power Cell Mode - set exposure to 39
                 self.autoExpose = False
                 if self.autoExpose != self.prevValue:
+                    self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(35)
                     self.prevValue = self.autoExpose
 
