@@ -73,7 +73,7 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
-        self.webcam.setExposureManuel(60)
+        self.webcam.setExposureManual(60)
         self.webcam.setExposureManual(7)
         #self.webcam.setExposureAuto()
 
@@ -494,6 +494,7 @@ if __name__ == "__main__":
         cv2.putText(processed, 'Average FPS: {:.2f}'.format(averageFPS), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
 
         # networkTable.putBoolean("Driver", True)
+        processed = cv2.resize(processed,(320,240),fx=0,fy=0,interpolation=cv2.INTER_CUBIC)
         streamViewer.frame = processed
 
         # Flushes camera values to reduce latency
