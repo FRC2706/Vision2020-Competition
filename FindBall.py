@@ -116,7 +116,7 @@ def findBall(contours, image, centerX, centerY):
                 xCoord = bottommost[0]   
 
             finalTarget.append(calculateYaw(xCoord, centerX, H_FOCAL_LENGTH))
-            finalTarget.append(calculateDistWPILib(closestPowerCell[3],TARGET_BALL_HEIGHT,KNOWN_BALL_PIXEL_HEIGHT,KNOWN_BALL_DISTANCE ))
+            finalTarget.append(calculateDistWPILibRyan(closestPowerCell[3],TARGET_BALL_HEIGHT,KNOWN_BALL_PIXEL_HEIGHT,KNOWN_BALL_DISTANCE ))
             #print("Yaw: " + str(finalTarget[0]))
 
             # Puts the yaw on screen
