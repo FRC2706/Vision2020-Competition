@@ -96,7 +96,7 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./OuterTargetProblems")
     #images, imagename = load_images_from_folder("./OuterTargetImages")
     #images, imagename = load_images_from_folder("./OuterTargetHalfScale")
-    images, imagename = load_images_from_folder("./OuterTargetFullScale")
+    #images, imagename = load_images_from_folder("./OuterTargetFullScale")
     #images, imagename = load_images_from_folder("./OuterTargetRingTest")
     #images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
     #images, imagename = load_images_from_folder("./OuterTargetFullDistance")
@@ -117,8 +117,8 @@ server = False
 cameraConfigs = []
 
 Driver = False
-Tape = True
-PowerCell = False
+Tape = False
+PowerCell = True
 ControlPanel = False
 
 # Method 1 is based on measuring distance between leftmost and rightmost

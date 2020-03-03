@@ -51,7 +51,7 @@ strVisionRoot = posCodePath.parent.parent
 #strImageFolder = str(strVisionRoot / 'PowerCellSketchup')
 strImageFolder = str(strVisionRoot / 'PowerCellUpperFull')
 
-print (strImageFolder)
+#print (strImageFolder)
 booBlankUpper = False
 
 # read file names, and filter file names
@@ -61,11 +61,11 @@ if os.path.exists(strImageFolder):
         if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".JPG") or file.endswith(".PNG"):
             photos.append(file)
 else:
-    print
-    print ('Directory', strImageFolder, 'does not exist, exiting ...')
-    print
+    #print
+    #print ('Directory', strImageFolder, 'does not exist, exiting ...')
+    #print
     sys.exit
-print (photos)
+#print (photos)
 
 # set index of files
 i = 0
@@ -83,7 +83,7 @@ while (True):
     ## set image input to indexed list
     strImageInput = strImageFolder + '/' + photos[i]
     ##print (i, ' ', strImageInput)
-    print ()
+    #print ()
     print (photos[i])
 
     ## read file
@@ -123,11 +123,11 @@ while (True):
     #    break
 
     # generate the contours and display
-    imgFindContourReturn, contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     imgContours = yellow_mask.copy()
 
     cv2.drawContours(imgContours, contours, -1, cyan, 2)
-    print('Found ', len(contours), 'contours in image')
+    #print('Found ', len(contours), 'contours in image')
     #print (contours)
 
     # sort contours by area descending
@@ -137,13 +137,13 @@ while (True):
     cnt = initialSortedContours[0]
     #print(cnt)
     #print('original',len(cnt),cnt)
-    print('original contour length = ', len(cnt))
+    #print('original contour length = ', len(cnt))
     M = cv2.moments(cnt)
     #print( M )
 
     cx = int(M['m10']/M['m00'])
     cy = int(M['m01']/M['m00'])
-    print('centroid = ',cx,cy)
+    #print('centroid = ',cx,cy)
     cv2.line(imgContours,(cx-10,cy-10),(cx+10,cy+10),red,2)
     cv2.line(imgContours,(cx-10,cy+10),(cx+10,cy-10),red,2)
 
@@ -151,53 +151,53 @@ while (True):
 
     # Area
     area = cv2.contourArea(cnt)
-    print('area = ', area)
+    #print('area = ', area)
 
     # Perimeter
     perimeter = cv2.arcLength(cnt,True)
-    print('perimeter = ', perimeter)
+    #print('perimeter = ', perimeter)
 
     # Contour Approximation
     epsilon = 0.005*cv2.arcLength(cnt,True)
     approx = cv2.approxPolyDP(cnt,epsilon,True)
     #print('approx', approx)
     #cv2.drawContours(imgContours, approx, -1, red, 10)
-    print('approx contour length = ', len(approx))
+    #print('approx contour length = ', len(approx))
     #cv2.imshow('approx over yellow mask', imgContours)
 
     # Hull
     hull = cv2.convexHull(cnt)
     #print('hull', hull)
-    print('hull contour length = ', len(hull))
+    #print('hull contour length = ', len(hull))
     #cv2.drawContours(imgContours, hull, -1, red, 10)
     #cv2.imshow('hull over yellow mask', imgContours)
     hull_area = cv2.contourArea(hull)
-    print('area from convex hull', float(hull_area))
-    print('solidity from convex hull', float(area)/hull_area)
+    #print('area from convex hull', float(hull_area))
+    #print('solidity from convex hull', float(area)/hull_area)
 
     # Check Convexity
-    print('convexity is', cv2.isContourConvex(cnt))
+    #print('convexity is', cv2.isContourConvex(cnt))
 
     # straight bounding rectangle
     x,y,w,h = cv2.boundingRect(cnt)
-    print('straight bounding rectangle = ', (x,y) ,w,h)
+    #print('straight bounding rectangle = ', (x,y) ,w,h)
     #cv2.rectangle(imgContours,(x,y),(x+w,y+h),green,2)
-    print('bounding rectangle aspect = ', float(w)/float(h))
-    print('bounding rectangle extend = ', float(area)/(float(w)*float(h)))
+    #print('bounding rectangle aspect = ', float(w)/float(h))
+    #print('bounding rectangle extend = ', float(area)/(float(w)*float(h)))
 
     # rotated rectangle
     rect = cv2.minAreaRect(cnt)
-    print('rotated rectangle = ',rect)
+    #print('rotated rectangle = ',rect)
     (x,y),(width,height),angleofrotation = rect
     box = cv2.boxPoints(rect)
     box = np.int0(box)
     #cv2.drawContours(imgContours,[box],0,blue,2)
-    print('minimum area rectangle aspect = ', float(width)/height)
-    print('minimum area rectangle extent = ', float(area)/(width*height))
+    #print('minimum area rectangle aspect = ', float(width)/height)
+    #print('minimum area rectangle extent = ', float(area)/(width*height))
 
     # minimum enclosing circle
     (x,y),radius = cv2.minEnclosingCircle(cnt)
-    print('minimum enclosing circle = ', (x,y),radius)
+    #print('minimum enclosing circle = ', (x,y),radius)
     center = (int(x),int(y))
     radius = int(radius)
     #cv2.circle(imgContours,center,radius,green,2)
@@ -209,11 +209,11 @@ while (True):
     #print(ellipse)
     # search ellipse to find it return a rotated rectangle in which the ellipse fits
     (x,y),(majAxis,minAxis),angleofrotation = ellipse
-    print('ellipse center, maj axis, min axis, rotation = ', (x,y) ,(majAxis, minAxis), angleofrotation)
+    #print('ellipse center, maj axis, min axis, rotation = ', (x,y) ,(majAxis, minAxis), angleofrotation)
     # search major and minor axis from ellipse
     # https://namkeenman.wordpress.com/2015/12/21/opencv-determine-orientation-of-ellipserotatedrect-in-fitellipse/
     #cv2.ellipse(imgContours,ellipse,red,2)
-    print('ellipse aspect = ', float(majAxis)/minAxis)
+    #print('ellipse aspect = ', float(majAxis)/minAxis)
 
     # fitting a line
     rows,cols = binary_mask.shape[:2]
@@ -225,7 +225,7 @@ while (True):
     # http://ottonello.gitlab.io/selfdriving/nanodegree/python/line%20detection/2016/12/18/extrapolating_lines.html
     slope = vy / vx
     intercept = y - (slope * x)
-    print('fitLine y = ', slope, '* x + ', intercept)
+    #print('fitLine y = ', slope, '* x + ', intercept)
 
     # aspect ratio
     # added retroactively to bounding, min area and elipse
@@ -247,32 +247,38 @@ while (True):
 
     # Maximum Value, Minimum Value and their locations of a binary mask not contour!
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(binary_mask)
-    print('min_val = ', min_val)
-    print('max_val = ', max_val)
-    print('min_loc = ', min_loc)
-    print('max_loc = ', max_loc)
+    #print('min_val = ', min_val)
+    #print('max_val = ', max_val)
+    #print('min_loc = ', min_loc)
+    #print('max_loc = ', max_loc)
 
     # Mean Color or Mean Intensity 
     mean_val1 = cv2.mean(imgImageInput)
-    print('mean value from input image = ', mean_val1)
+    #print('mean value from input image = ', mean_val1)
     mean_val2 = cv2.mean(hsvImageInput, mask = binary_mask)
-    print('mean value from HSV and mask = ', mean_val2)
+    #print('mean value from HSV and mask = ', mean_val2)
     # look at the result of mean_val2 on colorizer.org
     mean_val3 = cv2.mean(yellow_mask)
-    print('mean value from colored mask = ', mean_val3)
+    #print('mean value from colored mask = ', mean_val3)
 
     # extreme points
     leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
     rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
     topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
     bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+    distance1 = 39.25/12*640/(2*bottommost[1]*1.095630965)
+    tanVA1 = -0.0285*distance1 + 1.26
+    distance2 = 39.25/12*640/(2*bottommost[1]*tanVA1)
+
+    print('Distance: '+ str(distance2))
     # draw extreme points
     # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
     #cv2.circle(imgContours, leftmost, 12, green, -1)
     #cv2.circle(imgContours, rightmost, 12, red, -1)
     cv2.circle(imgContours, topmost, 12, white, -1)
     cv2.circle(imgContours, bottommost, 12, blue, -1)
-    print('extreme points = left',leftmost,'right',rightmost,'top',topmost,'bottom',bottommost)
+    #print('extreme points = left',leftmost,'right',rightmost,'top',topmost,'bottom',bottommost)
+    #print(bottommost[1])
 
     # Display the contours and maths generated
     cv2.imshow('contours and math over yellow mask', imgContours)
@@ -302,28 +308,28 @@ while (True):
             break
         elif k == 115:
             intMaskMethod = 0
-            print()
-            print('Mask Method s = Simple In-Range')
+            #print()
+            #print('Mask Method s = Simple In-Range')
             break
         elif k == 107:
             intMaskMethod = 1
-            print()
-            print('Mask Method k = Knoxville Method')
+            #print()
+            #print('Mask Method k = Knoxville Method')
             break
         elif k == 109:
             intMaskMethod = 2
-            print()
-            print('Mask Method m = Merge Mystery Method')
+            #print()
+            #print('Mask Method m = Merge Mystery Method')
             break
         elif k == 32:
-            print()
-            print('...repeat...')
+            #print()
+            #print('...repeat...')
             break
         elif k == 119:
             pass
 
         else:
-            print (k)
+            #print (k)
             pass
         ### end of loop indent 2
 
