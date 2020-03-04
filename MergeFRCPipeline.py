@@ -185,6 +185,11 @@ def threshold_video(lower_color, upper_color, blur):
 #################### FRC VISION PI Image Specific #############
 configFile = "/boot/frc.json"
 
+pipelineConfig = "pipelineConfig.json"
+
+MergeVisionPipeLineTableName = "MergeVisionPipeline"
+#MergeVisionPublishingTable = "MergeVision"
+
 class CameraConfig: pass
 
 team = 2706
@@ -282,7 +287,7 @@ currentCam = 0
 
 def switchCam():
     global currentCam, webcam, cameras, streams, cameraServer, cap, image_width, image_height, prevCam
-    if networkTable.getNumber("Cam", 1):
+    if networkTableVisionPipeline.getNumber("Cam", 1):
         currentCam = 1
     else:
         currentCam = 0
@@ -304,10 +309,13 @@ if __name__ == "__main__":
     # start NetworkTables
     ntinst = NetworkTablesInstance.getDefault()
     # Name of network table - this is how it communicates with robot. IMPORTANT
-    networkTable = NetworkTables.getTable('MergeVision')
+    #networkTable = NetworkTables.getTable(MergeVisionPublishingTable)
     networkTableMatch = NetworkTables.getTable("FMSInfo")
     networkTableTime = NetworkTables.getTable("SmartDashboard")
     networkTableMatchVariables = NetworkTables.getTable("VisionControl")
+
+    #Used to control MergeVisionPipeLineSettings
+    networkTableVisionPipeline = NetworkTables.getTable(MergeVisionPipeLineTableName)
 
 
     if server:
@@ -344,21 +352,23 @@ if __name__ == "__main__":
     networkTableMatchVariables.putBoolean("StartUp",False)
     networkTableMatchVariables.putBoolean("ShutDown",False)
 
-    networkTable.putBoolean("Driver", False)
-    networkTable.putBoolean("Tape", True)
-    networkTable.putBoolean("PowerCell", False)
-    networkTable.putBoolean("ControlPanel", False)
-    networkTable.putBoolean("WriteImages", False)
-    networkTable.putBoolean("SendMask", False)
-    networkTable.putBoolean("TopCamera", False)
-    networkTable.putBoolean("Cam", currentCam)
-    networkTable.putBoolean("Aligned", False)
+    #PipeLine Table Values, Unique for Each PipeLine
+    networkTableVisionPipeline.putBoolean("Driver", False)
+    networkTableVisionPipeline.putBoolean("Tape", True)
+    networkTableVisionPipeline.putBoolean("PowerCell", False)
+    #networkTable.putBoolean("ControlPanel", False)
+    networkTableVisionPipeline.putBoolean("WriteImages", False)
+    networkTableVisionPipeline.putBoolean("SendMask", False)
+    networkTableVisionPipeline.putBoolean("TopCamera", False)
+    networkTableVisionPipeline.putBoolean("Cam", currentCam)
+    #networkTable.putBoolean("Aligned", False)
+
     matchNumberDefault = random.randint(1, 1000)
     processed = 0
 
     # choose Method HERE !!!!!
     Method = 7 # likely not needed
-    networkTable.putNumber("Method", 7)
+    networkTableVisionPipeline.putNumber("Method", 7)
 
     # Method 1 is based on measuring distance between leftmost and rightmost
     # Method 2 is based on measuring the minimum enclosing circle
@@ -399,18 +409,18 @@ if __name__ == "__main__":
         
         if (startedImageWrite == False and networkTableMatchVariables.getBoolean("StartUp",False)):
             startedImageWrite = True
-            networkTable.putBoolean("WriteImages", True)
+            networkTableVisionPipeline.putBoolean("WriteImages", True)
 
         if (stoppedImageWrite == False and networkTableMatchVariables.getBoolean("ShutDown",False)):
             stoppedImageWrite = True
-            networkTable.putBoolean("WriteImages", False)     
+            networkTableVisionPipeline.putBoolean("WriteImages", False)     
 
-        if networkTable.getBoolean("TopCamera", False):
+        if networkTableVisionPipeline.getBoolean("TopCamera", False):
             currentCam = 1
         else:
             currentCam = 0
 
-        if networkTable.getNumber("Cam", currentCam) != prevCam:
+        if networkTableVisionPipeline.getNumber("Cam", currentCam) != prevCam:
             switchCam()
 
         # Tell the CvSink to grab a frame from the camera and put it
@@ -423,7 +433,7 @@ if __name__ == "__main__":
             cv2.imwrite('/mnt/VisionImages/visionImg-' + str(matchNumber) + "-" + str(ImageCounter) + '_Raw.png',
                         img)
         # Uncomment if camera is mounted upside down
-        if networkTable.getBoolean("TopCamera", False):
+        if networkTableVisionPipeline.getBoolean("TopCamera", False):
             frame = flipImage(img)
         else:
             frame = img
@@ -442,42 +452,42 @@ if __name__ == "__main__":
         
 
         #Check if Network Table value Tape is True
-        if (networkTable.getBoolean("Tape", True)):
+        if (networkTableVisionPipeline.getBoolean("Tape", True)):
             switch = 2
-            Method = int(networkTable.getNumber("Method", 7))
+            Method = int(networkTableVisionPipeline.getNumber("Method", 7))
             threshold = threshold_video(lower_green, upper_green, frame)
-            if (networkTable.getBoolean("SendMask", False)):
+            if (networkTableVisionPipeline.getBoolean("SendMask", False)):
                 processed = threshold
             else:    
                 processed = findTargets(frame, threshold, Method)
 
         else:
-            if (networkTable.getBoolean("PowerCell", True)):
+            if (networkTableVisionPipeline.getBoolean("PowerCell", True)):
                 # Checks if you just want to look for PowerCells
                 switch = 3
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                if (networkTable.getBoolean("SendMask", False)):
+                if (networkTableVisionPipeline.getBoolean("SendMask", False)):
                     processed = threshold
                 else:   
                     processed = findPowerCell(frame, threshold)
 
-            elif (networkTable.getBoolean("ControlPanel", True)):
-                # Checks if you just want camera for Control Panel, by dent of everything else being false, true by default
-                switch = 4
-                #cap.autoExpose = True
-                boxBlur = blurImg(frame, yellow_blur)
-                # Need to create proper mask for control panel
-                threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                if (networkTable.getBoolean("SendMask", False)):
-                    processed = threshold
-                else:    
-                    processed = findControlPanel(frame, threshold)
+            # elif (networkTableVisionPipeline.getBoolean("ControlPanel", True)):
+            #     # Checks if you just want camera for Control Panel, by dent of everything else being false, true by default
+            #     switch = 4
+            #     #cap.autoExpose = True
+            #     boxBlur = blurImg(frame, yellow_blur)
+            #     # Need to create proper mask for control panel
+            #     threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
+            #     if (networkTableVisionPipeline.getBoolean("SendMask", False)):
+            #         processed = threshold
+            #     else:    
+            #         processed = findControlPanel(frame, threshold)
 
         # Puts timestamp of camera on network tables
-        networkTable.putNumber("VideoTimestamp", timestamp)
+        networkTableVisionPipeline.putNumber("VideoTimestamp", timestamp)
 
-        if (networkTable.getBoolean("WriteImages", True)):
+        if (networkTableVisionPipeline.getBoolean("WriteImages", True)):
             frameStop = frameStop + 1
             if frameStop == 15 :
                 matchNumber = networkTableMatch.getNumber("MatchNumber", 0)

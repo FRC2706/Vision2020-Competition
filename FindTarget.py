@@ -586,13 +586,15 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
             else:
                 #If Nothing is found, publish -99 and -1 to Network table
                 publishNumber("YawToTarget", -99)
-                publishNumber("DistanceToTarget", -1)    
+                publishNumber("DistanceToTarget", -1)  
+                publishNumber("RobotYawToTarget", -99)  
 
 
     else:
         #If Nothing is found, publish -99 and -1 to Network table
         publishNumber("YawToTarget", -99)
-        publishNumber("DistanceToTarget", -1)    
+        publishNumber("DistanceToTarget", -1) 
+        publishNumber("RobotYawToTarget", -99)     
              
     #     # pushes vision target angle to network table
     return image
