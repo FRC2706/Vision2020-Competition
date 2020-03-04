@@ -309,6 +309,7 @@ if __name__ == "__main__":
     networkTableTime = NetworkTables.getTable("SmartDashboard")
     networkTableMatchVariables = NetworkTables.getTable("VisionControl")
 
+
     if server:
         #print("Setting up NetworkTables server")
         ntinst.startServer()
@@ -338,6 +339,10 @@ if __name__ == "__main__":
 
     # cap.autoExpose=True;
     tape = True
+
+    
+    networkTableMatchVariables.putBoolean("StartUp",False)
+    networkTableMatchVariables.putBoolean("ShutDown",False)
 
     networkTable.putBoolean("Driver", False)
     networkTable.putBoolean("Tape", True)
@@ -380,11 +385,25 @@ if __name__ == "__main__":
     start = begin
     prev_update = start
 
+    #Make sure Start and Stop images only publish network table values once
+    startedImageWrite = False
+    stoppedImageWrite = False
+
     # loop forever
     while True:
 
-        if networkTableTime.getNumber("Match Time", 1) == 0:
-            networkTable.putBoolean("WriteImages", False)
+
+        #if networkTableTime.getNumber("Match Time", 1) == 0:
+        #    networkTable.putBoolean("WriteImages", False)
+
+        
+        if (startedImageWrite == False and networkTableMatchVariables.getBoolean("StartUp",False)):
+            startedImageWrite = True
+            networkTable.putBoolean("WriteImages", True)
+
+        if (stoppedImageWrite == False and networkTableMatchVariables.getBoolean("ShutDown",False)):
+            stoppedImageWrite = True
+            networkTable.putBoolean("WriteImages", False)     
 
         if networkTable.getBoolean("TopCamera", False):
             currentCam = 1
@@ -409,7 +428,7 @@ if __name__ == "__main__":
         else:
             frame = img
         # Comment out if camera is mounted upside down
-        # img = findCargo(frame,img)
+    
         
         if timestamp == 0:
             # Send the output the error.
