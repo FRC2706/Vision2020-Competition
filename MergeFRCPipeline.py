@@ -187,7 +187,13 @@ configFile = "/boot/frc.json"
 
 pipelineConfig = "pipelineConfig.json"
 
-MergeVisionPipeLineTableName = "MergeVisionPipeline"
+with open(pipelineConfig) as json_file:
+    data = json.load(json_file)
+
+MergeVisionPipeLineTableName = data["networkTableName"]
+TapeEnabled = data["Tape"]
+PowerCellEnabled = data["PowerCell"]
+
 #MergeVisionPublishingTable = "MergeVision"
 
 class CameraConfig: pass
@@ -354,8 +360,8 @@ if __name__ == "__main__":
 
     #PipeLine Table Values, Unique for Each PipeLine
     networkTableVisionPipeline.putBoolean("Driver", False)
-    networkTableVisionPipeline.putBoolean("Tape", True)
-    networkTableVisionPipeline.putBoolean("PowerCell", False)
+    networkTableVisionPipeline.putBoolean("Tape", TapeEnabled)
+    networkTableVisionPipeline.putBoolean("PowerCell", PowerCellEnabled)
     #networkTable.putBoolean("ControlPanel", False)
     networkTableVisionPipeline.putBoolean("WriteImages", False)
     networkTableVisionPipeline.putBoolean("SendMask", False)
