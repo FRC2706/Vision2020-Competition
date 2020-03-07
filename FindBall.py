@@ -14,7 +14,7 @@ except ImportError:
 # Draws Contours and finds center and yaw of orange ball
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
-def findBall(contours, image, centerX, centerY):
+def findBall(contours, image, centerX, centerY, MergeVisionPipeLineTableName):
     screenHeight, screenWidth, channels = image.shape
     # Seen vision targets (correct angle, adjacent to each other)
     #cargo = []
@@ -129,8 +129,8 @@ def findBall(contours, image, centerX, centerY):
             cv2.line(image, (xCoord, screenHeight), (xCoord, 0), blue, 2)
 
             # pushes cargo angle to network tables
-            publishNumber("YawToPowerCell", finalTarget[0])
-            publishNumber("DistanceToPowerCell", finalYaw)
+            publishNumber(MergeVisionPipeLineTableName, "YawToPowerCell", finalTarget[0])
+            publishNumber(MergeVisionPipeLineTableName, "DistanceToPowerCell", finalYaw)
 
         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
@@ -138,7 +138,7 @@ def findBall(contours, image, centerX, centerY):
 
 
 # Finds the balls from the masked image and displays them on original stream + network tables
-def findPowerCell(frame, mask):
+def findPowerCell(frame, mask, MergeVisionPipeLineTableName):
     # Finds contours
     if is_cv3():
         _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
@@ -155,7 +155,7 @@ def findPowerCell(frame, mask):
     image = frame.copy()
     # Processes the contours, takes in (contours, output_image, (centerOfImage)
     if len(contours) != 0:
-        image = findBall(contours, image, centerX, centerY)
+        image = findBall(contours, image, centerX, centerY, MergeVisionPipeLineTableName)
     # Shows the contours overlayed on the original video
     return image
 

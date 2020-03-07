@@ -164,6 +164,7 @@ displayFPS = 3.14159265
 begin = milliSince1970()
 start = begin
 prev_update = start
+MergeVisionPipeLineTableName = "DummyNetworkTableName"
 
 while stayInLoop or cap.isOpened():
 
@@ -187,12 +188,12 @@ while stayInLoop or cap.isOpened():
     else:
         if Tape:
             threshold = threshold_video(lower_green, upper_green, frame)
-            processed = findTargets(frame, threshold, Method)
+            processed = findTargets(frame, threshold, Method, MergeVisionPipeLineTableName)
         else:
             if PowerCell:
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                processed = findPowerCell(frame, threshold)
+                processed = findPowerCell(frame, threshold, MergeVisionPipeLineTableName)
             elif ControlPanel:
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)

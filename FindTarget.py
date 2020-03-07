@@ -83,7 +83,7 @@ real_world_coordinates_inner_five = np.array([
 MAXIMUM_TARGET_AREA = 4400
 
 # Finds the tape targets from the masked image and displays them on original stream + network tales
-def findTargets(frame, mask, CornerMethod):
+def findTargets(frame, mask, CornerMethod, MergeVisionPipeLineTableName):
 
     # Taking a matrix of size 5 as the kernel 
     #kernel = np.ones((3,3), np.uint8) 
@@ -134,7 +134,7 @@ def findTargets(frame, mask, CornerMethod):
     image = frame.copy()
     # Processes the contours, takes in (contours, output_image, (centerOfImage)
     if len(contours) != 0:
-        image = findTape(contours, image, centerX, centerY, mask, CornerMethod)
+        image = findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionPipeLineTableName)
     # Shows the contours overlayed on the original video
     return image
 
@@ -432,7 +432,7 @@ def displaycorners(image, outer_corners):
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
 
-def findTape(contours, image, centerX, centerY, mask, CornerMethod):
+def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionPipeLineTableName):
 
     #global warped
     screenHeight, screenWidth, channels = image.shape
@@ -579,22 +579,22 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
                         #publishResults(name,value)
-                        publishNumber("YawToTarget", YawToTarget)
-                        publishNumber("DistanceToTarget", round(distance/12,2))
-                        publishNumber("RobotYawToTarget", round(RobotYawToTarget,2))
+                        publishNumber(MergeVisionPipeLineTableName, "YawToTarget", YawToTarget)
+                        publishNumber(MergeVisionPipeLineTableName, "DistanceToTarget", round(distance/12,2))
+                        publishNumber(MergeVisionPipeLineTableName, "RobotYawToTarget", round(RobotYawToTarget,2))
 
             else:
                 #If Nothing is found, publish -99 and -1 to Network table
-                publishNumber("YawToTarget", -99)
-                publishNumber("DistanceToTarget", -1)  
-                publishNumber("RobotYawToTarget", -99)  
+                publishNumber(MergeVisionPipeLineTableName, "YawToTarget", -99)
+                publishNumber(MergeVisionPipeLineTableName, "DistanceToTarget", -1)  
+                publishNumber(MergeVisionPipeLineTableName, "RobotYawToTarget", -99)  
 
 
     else:
         #If Nothing is found, publish -99 and -1 to Network table
-        publishNumber("YawToTarget", -99)
-        publishNumber("DistanceToTarget", -1) 
-        publishNumber("RobotYawToTarget", -99)     
+        publishNumber(MergeVisionPipeLineTableName, "YawToTarget", -99)
+        publishNumber(MergeVisionPipeLineTableName, "DistanceToTarget", -1) 
+        publishNumber(MergeVisionPipeLineTableName, "RobotYawToTarget", -99)     
              
     #     # pushes vision target angle to network table
     return image

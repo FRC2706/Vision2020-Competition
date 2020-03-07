@@ -73,8 +73,8 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
-        self.webcam.setExposureManual(60)
-        self.webcam.setExposureManual(7)
+        #self.webcam.setExposureManual(60)
+        #self.webcam.setExposureManual(7)
         #self.webcam.setExposureAuto()
 
         # Some booleans so that we don't keep setting exposure over and over to the same value
@@ -155,7 +155,7 @@ frameStop = 0
 ImageCounter = 0
 
 # Set Default to find the Tape target
-switch = 2
+#switch = 2
 
 # Masks the video based on a range of hsv colors
 # Takes in a frame, range of color, and a blurred frame, returns a masked frame
@@ -193,6 +193,12 @@ with open(pipelineConfig) as json_file:
 MergeVisionPipeLineTableName = data["networkTableName"]
 TapeEnabled = data["Tape"]
 PowerCellEnabled = data["PowerCell"]
+
+if TapeEnabled:
+    switch = 2
+
+if PowerCellEnabled:
+    switch = 3
 
 #MergeVisionPublishingTable = "MergeVision"
 
@@ -453,7 +459,7 @@ if __name__ == "__main__":
             continue
         # Checks if you just want camera for driver (No processing), False by default
 
-        switch = 2
+        #switch = 2
 
         
 
@@ -465,7 +471,7 @@ if __name__ == "__main__":
             if (networkTableVisionPipeline.getBoolean("SendMask", False)):
                 processed = threshold
             else:    
-                processed = findTargets(frame, threshold, Method)
+                processed = findTargets(frame, threshold, Method, MergeVisionPipeLineTableName)
 
         else:
             if (networkTableVisionPipeline.getBoolean("PowerCell", True)):
@@ -476,7 +482,7 @@ if __name__ == "__main__":
                 if (networkTableVisionPipeline.getBoolean("SendMask", False)):
                     processed = threshold
                 else:   
-                    processed = findPowerCell(frame, threshold)
+                    processed = findPowerCell(frame, threshold, MergeVisionPipeLineTableName)
 
             # elif (networkTableVisionPipeline.getBoolean("ControlPanel", True)):
             #     # Checks if you just want camera for Control Panel, by dent of everything else being false, true by default
