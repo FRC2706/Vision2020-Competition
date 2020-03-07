@@ -51,7 +51,7 @@ showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
-useVideo = True
+useVideo = False
 # integer for usb camera to use, boolean for live webcam
 useWebCam = False
 webCamNumber = 1
@@ -87,10 +87,11 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./PowerCell25Scale")
     #images, imagename = load_images_from_folder("./PowerCellImages")
     #images, imagename = load_images_from_folder("./PowerCellFullScale")
-    images, imagename = load_images_from_folder("./PowerCellUpperFull")
+    #images, imagename = load_images_from_folder("./PowerCellUpperFull")
     #images, imagename = load_images_from_folder("./PowerCellFullMystery")
     #images, imagename = load_images_from_folder("./PowerCellSketchup")
     #images, imagename = load_images_from_folder("./LifeCamPhotos")
+    images, imagename = load_images_from_folder("./PowerCellFullRobot")
 
     # Outer Target Images
     #images, imagename = load_images_from_folder("./OuterTargetProblems")
@@ -117,8 +118,8 @@ server = False
 cameraConfigs = []
 
 Driver = False
-Tape = True
-PowerCell = False
+Tape = False
+PowerCell = True
 ControlPanel = False
 
 # Method 1 is based on measuring distance between leftmost and rightmost
