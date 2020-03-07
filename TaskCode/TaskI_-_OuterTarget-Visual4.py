@@ -45,7 +45,10 @@ minAreaContour = 200
 
 # from https://stackoverflow.com/questions/41462419/python-slope-given-two-points-find-the-slope-answer-works-doesnt-work/41462583
 def get_slope(x1, y1, x2, y2):
-    return (y2-y1)/(x2-x1) 
+    if x2-x1 == 0:
+        return 1000
+    else:
+        return (y2-y1)/(x2-x1) 
 
 # homemade! http://home.windstream.net/okrebs/Ch9-1.gif
 def get_opposit(hyp, theta):
@@ -81,13 +84,13 @@ def displaycorners(image, outer_corners):
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
 #strImageFolder = str(strVisionRoot / 'OuterTargetFullDistance')
-#strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
+strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetSketchup')
 #strImageFolder = str(strVisionRoot / 'OuterTargetHalfScale')
 #strImageFolder = str(strVisionRoot / 'OuterTargetImages')
 #strImageFolder = str(strVisionRoot / 'OuterTargetLiger')
 #strImageFolder = str(strVisionRoot / 'OuterTargetRingTest')
-strImageFolder = str(strVisionRoot / 'OuterTargetProblems')
+#strImageFolder = str(strVisionRoot / 'OuterTargetProblems')
 
 print (strImageFolder)
 booBlankUpper = False
@@ -106,7 +109,7 @@ else:
 print (photos)
 
 # set index of files
-i = 0
+i = 9
 intLastFile = len(photos) -1
 
 # begin main loop indent 1
@@ -168,6 +171,7 @@ while (True):
     #print (contours)
 
     initialFilteredContours = []
+    initialSquareDots = []
 
     if initialSortedContours:
 
@@ -178,12 +182,16 @@ while (True):
             # Area
             area = cv2.contourArea(indiv)
             print('area = ', area)
-            if area < minAreaContour: continue
+            if area == 0: continue
+            # remove to calculate slope of two dots
+            #if area < minAreaContour: continue
 
             # rotated rectangle
             rect = cv2.minAreaRect(indiv)
             print('rotated rectangle = ',rect)
             (xr,yr),(wr,hr),ar = rect
+            if (wr == 0 or hr == 0): continue
+
             #### more research https://stackoverflow.com/questions/15956124/minarearect-angles-unsure-about-the-angle-returned
             if hr > wr:
                 ar = ar + 90
@@ -195,14 +203,14 @@ while (True):
 
             box = cv2.boxPoints(rect)
             box = np.int0(box)
-            cv2.drawContours(imgContours,[box],0,blue,2)
             minAAspect = float(wr)/hr
             minAextent = float(area)/(wr*hr) 
             print('minimum area rectangle aspect = ', minAAspect)
             print('minimum area rectangle extent = ', minAextent)
 
-            if (minAextent < 0.16 or minAextent > 0.26): continue
-            if (minAAspect < 2.0 or minAAspect > 3.0): continue
+            # remove to calculate slope of two dots
+            #if (minAextent < 0.16 or minAextent > 0.26): continue
+            #if (minAAspect < 2.0 or minAAspect > 3.0): continue
 
             # Hull
             hull = cv2.convexHull(indiv)
@@ -212,10 +220,16 @@ while (True):
             print('area of convex hull',hull_area)
             solidity = float(area)/hull_area
             print('solidity from convex hull', float(area)/hull_area)
+            # remove to calculate slope of two dots
+            #if (solidity < 0.22 or solidity > 0.30): continue
 
-            if (solidity < 0.22 or solidity > 0.30): continue
-
-            initialFilteredContours.append(indiv)
+            if len(initialFilteredContours) > 0 and len(initialSquareDots) < 2:
+                initialSquareDots.append(indiv)
+                print('added dot indiv', j)
+            elif (solidity > 0.22 or solidity < 0.30):
+                cv2.drawContours(imgContours,[box],0,blue,2)
+                initialFilteredContours.append(indiv)
+                print('added goal indiv', j)
 
     if initialFilteredContours:
 
@@ -264,6 +278,8 @@ while (True):
             ar = ar + 180
         if ar == 180:
             ar = 0
+
+        horSlopeTarget = ar
 
         box = cv2.boxPoints(rect)
         box = np.int0(box)
@@ -368,7 +384,6 @@ while (True):
         imgFindContourReturn, ROIcontours, hierarchy = cv2.findContours(ROI_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
 
-
         # send chosen contour to 4 point finder, get back found points or None
         try_get_four = get_four(bounding_rect, intROMWidth, intROMHeight, ROISortedContours[0])
         if try_get_four is None:
@@ -386,6 +401,53 @@ while (True):
             #cv2.circle(imgContours, (brx,bry), 10, blue, -1)
             #cv2.circle(imgContours, (urx,ury), 10, red, -1)
         # End of visual4
+
+    # this will identify the slope of the vertical line
+
+    verticalDotCentroids = []
+    if len(initialSquareDots) > 1:
+ 
+        for (k, indiv) in enumerate(initialSquareDots):
+
+            # Area
+            area = cv2.contourArea(indiv)
+            print('area = ', area)
+            if area == 0: continue
+
+            # rotated rectangle
+            rect = cv2.minAreaRect(indiv)
+            print('dot rotated rectangle = ',rect)
+            (xr,yr),(wr,hr),ar = rect
+            #### more research https://stackoverflow.com/questions/15956124/minarearect-angles-unsure-about-the-angle-returned
+            if hr > wr:
+                ar = ar + 90
+                wr, hr = [hr, wr]
+            else:
+                ar = ar + 180
+            if ar == 180:
+                ar = 0
+
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            cv2.drawContours(imgContours,[box],0,yellow,2)
+            minAAspect = float(wr)/hr
+            minAextent = float(area)/(wr*hr) 
+            print('dot minimum area rectangle aspect = ', minAAspect)
+            print('dot minimum area rectangle extent = ', minAextent)
+
+            # Moment and Centroid
+            M = cv2.moments(indiv)
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+            print('dot centroid', k,' = ',cx,cy)
+            verticalDotCentroids.append(cx)
+            verticalDotCentroids.append(cy)
+    
+    #fix this breaks if only 1 dots or none
+    verSlope = get_slope(verticalDotCentroids[0],verticalDotCentroids[1],verticalDotCentroids[2],verticalDotCentroids[3])
+    print ('slope of dots =',verSlope)
+    print ('slope of targets =', horSlopeTarget)
+    print ('ratio of slopes = ', verSlope/horSlopeTarget)
 
     stop = milliSince1970()
     # because we are timing in this file, have to add the fps to image processed 

@@ -7,16 +7,31 @@ import cv2
 import importlib
 import numpy as np
 
-from adrian_pyimage import FPS
-from adrian_pyimage import WebcamVideoStream
 from pathlib import Path
 from threading import Thread
-from visual4 import get_four
+
+from visual4_old import get_four
+from adrian_pyimage_old import FPS, AdrianVideoStream
+#from cscore import CameraServer, VideoSource
+from piVideoBits import WebcamVideoStream, startCamera, VideoShow
 
 booWebCam = False
 booThreaded = False
-num_frames = 30
+booCSCore = False
+
+num_frames = 1000
 display = 1
+
+# from MergeFRCPipeline
+global currentCam, webcam, cameras, streams, cameraServer, cap, image_width, image_height, prevCam
+
+# setup various variables used
+currentCam = 0
+cameraConfigs = []
+cameras = []
+streams = []
+image_width = 480
+image_height = 640
 
 # define colors
 purple = (165, 0, 120)
@@ -45,17 +60,42 @@ strImageFolder = str(strVisionRoot / 'OuterTargetFullScale')
 strImageInput = strImageFolder + '/' + 'outer+120f+295d.jpg'
 
 if booWebCam:
-    if booThreaded:
+    if booThreaded and not booCSCore:
         # created a *threaded* video stream, allow the camera sensor to warmup,
         # and start the FPS counter
         print('[INFO] sampling', num_frames,'THREADED frames from webcam...')
-        vs = WebcamVideoStream(src=0).start()
+        vs = AdrianVideoStream(src=0).start()   
+
+    elif booThreaded and booCSCore:
+        # this is copied from MergeFRCPipeline
+        # start cameras
+        for cameraConfig in cameraConfigs:
+            cs, cameraCapture = startCamera(cameraConfig)
+            streams.append(cs)
+            cameras.append(cameraCapture)
+
+        # Get the first camera
+        webcam = cameras[currentCam]
+        cameraServer = streams[currentCam]
+
+        # Start thread reading camera
+        cap = WebcamVideoStream(webcam, cameraServer, image_width, image_height).start()
+        # cap = cap.findTape
+        # (optional) Setup a CvSource. This will send images back to the Dashboard
+
     else:
         # grab a pointer to the video stream and initialize the FPS counter
         print('[INFO] sampling', num_frames,'frames from file somewhere...')
         stream = cv2.VideoCapture(0)
 else:
     print('[INFO] sampling', num_frames,'THREADED frames from file...')
+
+# Allocating new images is very expensive, always try to preallocate
+imgImageInput = np.zeros(shape=(image_height, image_width, 3), dtype=np.uint8)
+
+if booThreaded and booCSCore:
+    # Start thread outputing stream
+    streamViewer = VideoShow(image_width, image_height, cameraServer, frame=imgImageInput).start()
 
 fps = FPS().start()
 
@@ -64,23 +104,21 @@ while fps._numFrames < num_frames:
 
     #
     if booWebCam:
-        if booThreaded:
-            # grab the frame from the threaded video stream and resize it
-            # to have a maximum width of 400 pixels
+        if booThreaded and not booCSCore:
+            # grab the frame from the threaded video stream
             imgImageInput = vs.read()
-            #frame = imutils.resize(frame, width=400)
+
+        elif booThreaded and booCSCore:
+            pass
         else:
-            # grab the frame from the stream and resize it to have a maximum
-            # width of 400 pixels
+            # grab the frame from the stream
             (grabbed, imgImageInput) = stream.read()
-            #frame = imutils.resize(frame, width=400)
     else:
         imgImageInput = cv2.imread(strImageInput)
         
     # process start
-
-    # need image dimensions later
-    intImageHeight, intImageWidth = imgImageInput.shape[:2]
+    cv2.imshow('input stream', imgImageInput)
+    cv2.moveWindow('input stream',10,50)
 
     # Convert BGR to HSV
     hsvImageInput = cv2.cvtColor(imgImageInput, cv2.COLOR_BGR2HSV)
@@ -102,9 +140,10 @@ while fps._numFrames < num_frames:
     #cv2.moveWindow('hsvImageInput',10,50)
 
     #cv2.imshow('binary_mask',binary_mask)
-    cv2.imshow('green_masked',green_mask)
     #cv2.moveWindow('green_masked',400,550)
-    cv2.moveWindow('green_masked',20,50) 
+
+    #cv2.imshow('green_masked',green_mask)
+    #cv2.moveWindow('green_masked',20,50) 
       
     # generate the contours and display
     imgFindContourReturn, contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -143,6 +182,9 @@ while fps._numFrames < num_frames:
 
         # straight bounding rectangle
         xb,yb,wb,hb = cv2.boundingRect(indiv)
+        # store for passing to get_four
+        bounding_rect = (xb,yb,wb,hb)
+    
         #print('straight bounding rectangle = ', (xb,yb) ,wb,hb)
         cv2.rectangle(imgContours,(xb,yb),(xb+wb,yb+hb),green,2)
         #print('bounding rectangle aspect = ', float(wb)/float(hb))
@@ -173,7 +215,7 @@ while fps._numFrames < num_frames:
         ROISortedContours = sorted(ROIcontours, key = cv2.contourArea, reverse = True)[:1]
         
         # send chosen contour to 4 point finder, get back found points
-        try_get_four = get_four(intROMWidth, intROMHeight, ROISortedContours[0])
+        try_get_four = get_four(bounding_rect,intROMWidth, intROMHeight, ROISortedContours[0])
 
         if try_get_four is None:
             pass
@@ -209,13 +251,17 @@ while fps._numFrames < num_frames:
 
     # process Finish
 
-    # check to see if the frame should be displayed to our screen
-    if display > 0:
-        cv2.imshow('Frame', imgContours)
-        key = cv2.waitKey(1) & 0xFF
-
     # update the FPS counter
     fps.update()
+
+    # check to see if the frame should be displayed to our screen
+    if display > 0:
+        cv2.putText(imgContours, "frame number: " + str(int(fps._numFrames)), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+        cv2.imshow('Frame', imgContours)
+        key = cv2.waitKey(1) & 0xFF
+        if key == 27:
+            break
+
 
 # stop the timer and display FPS information
 fps.stop()
