@@ -448,36 +448,81 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
             for (j, cnt) in enumerate(cntsSorted):
 
+                if j >= 1: continue
+
                 # Calculate Contour area
                 cntArea = cv2.contourArea(cnt)
 
                 # rotated rectangle 
                 rect = cv2.minAreaRect(cnt)
+                #rect = cv2.boundingRect(cnt)
                 (xr,yr),(wr,hr),ar = rect #x,y width, height, angle of rotation = rotated rect
+                print("wr=", wr, " hr=", hr, " ar=", ar)
+                box = cv2.boxPoints(rect)
+                box = np.int0(box)
+                mask_copy = mask.copy()
+                cv2.drawContours(mask_copy,[box],0,blue,2)
+                #xr,yr,wr,hr = rect #x,y width, height, angle of rotation = rotated rect
 
                 #to get rid of height and width switching
                 if hr > wr: 
                     ar = ar + 90
                     wr, hr = [hr, wr]
                 else:
-                    ar = ar + 180
-                if ar == 180:
-                    ar = 0
+                    #ar = ar + 180
+                    ar = -ar
+                #if ar == 180:
+                #    ar = 0
+
+                print("ar=", ar)
 
                 if hr == 0: continue
 
                 #brian's method here
 
                 #change xr to an integer or else it's giving decimals and that gives an error
-                xrInt = int(xr)
-                ROI_column1 = mask[:, xrInt:xrInt+160]
-                cv2.imshow('roi1', ROI_column1)
-                ROI_column2 = mask[:, xrInt+160:xrInt+320]
-                ROI_column3 = mask[:, xrInt+320:xrInt+480]
-                ROI_column4 = mask[:, xrInt+480:xrInt+640]
+                
+                center = (int(xr), int(yr))
+
+                outer_target = subimage(mask, center, -ar, int(wr), int(hr))
+
+                x1a = 0
+                x1b = int(0.2*wr)
+                x2a = int(0.3*wr)
+                x2b = int(0.5*wr)
+                x3a = int(0.5*wr)
+                x3b = int(0.7*wr)
+                x4a = int(0.8*wr)
+                x4b = int(wr)
+                y1 = int(hr)
+
+                rect1 = np.array([[x1a,0],[x1a,y1],[x1b,y1],[x1b,0]])
+                cv2.drawContours(outer_target,[rect1],0,blue,2)
+                rect2 = np.array([[x2a,0],[x2a,y1],[x2b,y1],[x2b,0]])
+                cv2.drawContours(outer_target,[rect2],0,blue,2)
+                rect3 = np.array([[x3a,0],[x3a,y1],[x3b,y1],[x3b,0]])
+                cv2.drawContours(outer_target,[rect3],0,blue,2)
+                rect4 = np.array([[x4a,0],[x4a,y1],[x4b,y1],[x4b,0]])
+                cv2.drawContours(outer_target,[rect4],0,blue,2)
+                cv2.imshow("outer_target", outer_target)
+
+                ROI_column1 = outer_target[0:y1, x1a:x1b]
+                ROI_column2 = outer_target[0:y1, x2a:x2b]
+                ROI_column3 = outer_target[0:y1, x3a:x3b]
+                ROI_column4 = outer_target[0:y1, x4a:x4b]
 
                 #find contour and then area in each part
+                ROI1_mean = np.mean(ROI_column1)/255.0
+                ROI2_mean = np.mean(ROI_column2)/255.0
+                ROI3_mean = np.mean(ROI_column3)/255.0
+                ROI4_mean = np.mean(ROI_column4)/255.0
 
+                print("ROI1_mean=", ROI1_mean)
+                print("ROI2_mean=", ROI2_mean)
+                print("ROI3_mean=", ROI3_mean)
+                print("ROI4_mean=", ROI4_mean)
+
+                """
                 imgFindContourReturn, contoursROI1, hierarchy = cv2.findContours(ROI_column1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 cntAreaROI1 = cv2.contourArea(contoursROI1[0])
                 if len(contoursROI1) > 1:
@@ -519,6 +564,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                 print('percent 3 = ', percentROI3)
                 if (percentROI4 < 0.22 or percentROI4 > 0.24): continue
                 print('percent 4 = ', percentROI4)
+                """
                 
                 #np.average collapses x and y axis and gives percentage of white contour vs black
                 #then normalize
@@ -774,3 +820,31 @@ def get_four_points2(cnt, image):
 
     return True, four_points
 
+import cv2
+import numpy as np
+
+# Taken from https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python
+def subimage(image, center, theta, width, height):
+
+   ''' 
+   Rotates OpenCV image around center with angle theta (in deg)
+   then crops the image according to width and height.
+   '''
+
+   # Uncomment for theta in radians
+   #theta *= 180/np.pi
+
+   cx = int(center[0])
+   cy = int(center[1])
+
+   shape = ( image.shape[1], image.shape[0] ) # cv2.warpAffine expects shape in (length, height)
+
+   matrix = cv2.getRotationMatrix2D( center=center, angle=theta, scale=1 )
+   image = cv2.warpAffine( src=image, M=matrix, dsize=shape )
+
+   x = int( center[0] - width/2  )
+   y = int( center[1] - height/2 )
+
+   image = image[ y:y+height, x:x+width ]
+
+   return image
