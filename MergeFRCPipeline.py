@@ -74,7 +74,7 @@ class WebcamVideoStream:
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
         #self.webcam.setExposureManual(60)
-        #self.webcam.setExposureManual(7)
+        #self.webcam.setExposureManual(17)
         #self.webcam.setExposureAuto()
 
         # Some booleans so that we don't keep setting exposure over and over to the same value
@@ -123,7 +123,7 @@ class WebcamVideoStream:
                 self.autoExpose = False
                 if self.autoExpose != self.prevValue:
                     self.webcam.setExposureManual(60)
-                    self.webcam.setExposureManual(7)
+                    self.webcam.setExposureManual(17)
                     self.prevValue = self.autoExpose
 
             elif switch == 3: #Power Cell Mode - set exposure to 39
@@ -391,7 +391,7 @@ if __name__ == "__main__":
     # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
     # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
     # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
-    # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
+    # Method 10 is a four point SolvePNP blending M7 and M8 (everybody!)
 
     #Setup variables for average framecount
     frameCount = 0
