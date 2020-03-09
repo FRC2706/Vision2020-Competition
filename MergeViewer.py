@@ -91,7 +91,8 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./PowerCellFullMystery")
     #images, imagename = load_images_from_folder("./PowerCellSketchup")
     #images, imagename = load_images_from_folder("./LifeCamPhotos")
-    images, imagename = load_images_from_folder("./PowerCellFullRobot")
+    # This is the one with the power cell
+    #images, imagename = load_images_from_folder("./PowerCellFullRobot")
 
     # Outer Target Images
     #images, imagename = load_images_from_folder("./OuterTargetProblems")
@@ -100,7 +101,7 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./OuterTargetFullScale")
     #images, imagename = load_images_from_folder("./OuterTargetRingTest")
     #images, imagename = load_images_from_folder("./OuterTargetHalfDistance")
-    #images, imagename = load_images_from_folder("./OuterTargetFullDistance")
+    images, imagename = load_images_from_folder("./OuterTargetFullDistance")
     #images, imagename = load_images_from_folder("./OuterTargetSketchup")
     #images, imagename = load_images_from_folder("./OuterTargetLiger")
 
@@ -118,8 +119,8 @@ server = False
 cameraConfigs = []
 
 Driver = False
-Tape = False
-PowerCell = True
+Tape = True
+PowerCell = False
 ControlPanel = False
 
 # Method 1 is based on measuring distance between leftmost and rightmost
