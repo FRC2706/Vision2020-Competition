@@ -204,8 +204,8 @@ OutputStream = data["OutputStream"]
 ExposureTape = data["ExposureTarget"]
 ExposureBall = data["ExposureBall"]
 
-print("ExposureT: "+ str(ExposureTape))
-print("ExposureB: " + str(ExposureBall))
+#print("ExposureT: "+ str(ExposureTape))
+#print("ExposureB: " + str(ExposureBall))
 
 if TapeEnabled:
     switch = 2
@@ -408,7 +408,7 @@ if __name__ == "__main__":
     # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
     # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
     # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
-    # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
+    # Method 10 is a four point SolvePNP blending M7 and M8 (everybody!)
 
     #Setup variables for average framecount
     frameCount = 0
