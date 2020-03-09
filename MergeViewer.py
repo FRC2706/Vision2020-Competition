@@ -51,7 +51,7 @@ showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
-useVideo = True
+useVideo = False
 # integer for usb camera to use, boolean for live webcam
 useWebCam = False
 webCamNumber = 1
@@ -83,11 +83,11 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./PowerCellImages")
     #images, imagename = load_images_from_folder("./PowerCellFullScale")
     #images, imagename = load_images_from_folder("./PowerCellFullMystery")
-    #images, imagename = load_images_from_folder("./PowerCellSketchup")
+    #images, imagename = load_images_from_folder("./PowerCellSketchup")z
     #images, imagename = load_images_from_folder("./LifeCamPhotos")
 
     # Outer Target Images
-    #images, imagename = load_images_from_folder("./OuterTargetProblems")
+    images, imagename = load_images_from_folder("./OuterTargetProblems")
     #images, imagename = load_images_from_folder("./OuterTargetImages")
     #images, imagename = load_images_from_folder("./OuterTargetHalfScale")
     #images, imagename = load_images_from_folder("./OuterTargetFullScale")
