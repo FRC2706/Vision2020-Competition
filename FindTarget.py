@@ -386,7 +386,7 @@ def compute_output_values(rvec, tvec):
 
     # The tilt angle only affects the distance and angle1 calcs
     # This is a major impact on calculations
-    tilt_angle = math.radians(27)
+    tilt_angle = math.radians(32)
 
     x = tvec[0][0]
     z = math.sin(tilt_angle) * tvec[1][0] + math.cos(tilt_angle) * tvec[2][0]
