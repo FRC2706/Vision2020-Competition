@@ -1,7 +1,7 @@
 {
-    "networkTableName": "MergeVisionPipelinePi20",
-    "Tape": false,
-    "PowerCell": true,
+    "networkTableName": "MergeVisionPipelinePi21",
+    "Tape": true,
+    "PowerCell": false,
     "OutputStream": "2706_out_target",
     "ExposureTarget": 17,
     "ExposureBall": 35
