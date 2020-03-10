@@ -438,6 +438,9 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionP
     screenHeight, screenWidth, channels = image.shape
     # Seen vision targets (correct angle, adjacent to each other)
     targets = []
+    # Constant used as minimum area for fingerprinting is equal to 60% of screenWidth. (Using 
+    # a value based on screenWidth scales properly if the resolution ever changes.)
+    minContourArea = 0.6 * screenWidth;
 
     if len(contours) >= 1:
         # Sort contours by area size (biggest to smallest)
@@ -445,6 +448,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionP
        
         cntsFiltered = []
 
+        # First contour has largest area, so only go further if that one meets minimum area criterion
         if cntsSorted:
 
             for (j, cnt) in enumerate(cntsSorted):
@@ -474,11 +478,13 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionP
                 hull_area = cv2.contourArea(hull)
                 solidity = float(cntArea)/hull_area
 
-                #previous values: 0.16-0.26
+                # Filter based on area
+                if (cntArea < minContourArea): continue 
+                # Filter based on minimum area extent (previous values: 0.16-0.26)
                 if (minAextent < 0.139 or minAextent > 1.1): continue
-                #previous values: 2-3
+                # Filter based on aspect ratio (previous values: 2-3)
                 if (cntAspectRatio < 1.7 or cntAspectRatio > 3.3): continue
-                #previous values: 0.22-0.35
+                # Filter based on solidity (previous values: 0.22-0.35)
                 if (solidity < 0.19 or solidity > 0.35): continue
 
                 cntsFiltered.append(cnt)
