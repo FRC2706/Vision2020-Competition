@@ -589,9 +589,9 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionP
                             colour = yellow
                             
                             if (blingColour != 1):
-                                publishNumber("blingTable", "blue",255)
+                                publishNumber("blingTable", "red",255)
                                 publishNumber("blingTable", "green",255)
-                                publishNumber("blingTable", "red",0)
+                                publishNumber("blingTable", "blue",0)
                                 publishNumber("blingTable", "wait_ms",0)
                                 publishString("blingTable","command","solid")
                                 blingColour = 1
