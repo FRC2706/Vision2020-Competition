@@ -51,7 +51,7 @@ showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
-useVideo = False
+useVideo = True
 # integer for usb camera to use, boolean for live webcam
 useWebCam = False
 webCamNumber = 1
@@ -117,8 +117,8 @@ server = False
 cameraConfigs = []
 
 Driver = False
-Tape = False
-PowerCell = True
+Tape = True
+PowerCell = False
 ControlPanel = False
 
 # Method 1 is based on measuring distance between leftmost and rightmost

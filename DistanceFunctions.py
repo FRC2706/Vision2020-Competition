@@ -123,8 +123,9 @@ def calculatePitch(pixelY, centerY, vFocalLength):
     pitch *= -1
     return round(pitch)
 
+avgDist = [0 for i in range(0,4)]
 def calculateDistWPILibRyan(cntHeight, targetHeight,knownObjectPixelHeight,knownObjectDistance ):
-    global image_height, avg
+    global image_height, avg, avgDist
 
     for cnt in avg:
         if cnt == 0:
@@ -161,4 +162,12 @@ def calculateDistWPILibRyan(cntHeight, targetHeight,knownObjectPixelHeight,known
     VIEWANGLE1 = -0.0325*distance1 + 1.25
     distance = 39.25/12*640/(2*PIX_HEIGHT* VIEWANGLE1)
 
-    return distance    
+    #del avgDist[len(avgDist) - 1]
+    #avgDist.insert(0, distance)
+    #PIX_HEIGHT = 0
+    #distance = np.average(avgDist)
+
+    if(distance <= 8):
+        return distance
+    else:
+        return -1

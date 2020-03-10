@@ -381,6 +381,7 @@ def findTvecRvec(image, outer_corners, real_world_coordinates):
 #angle 1 is the Yaw to the target
 #distance is the distance to the target
 #angle 2 is the Yaw of the Robot to the target
+
 def compute_output_values(rvec, tvec):
     '''Compute the necessary output distance and angles'''
 
@@ -392,7 +393,7 @@ def compute_output_values(rvec, tvec):
     z = math.sin(tilt_angle) * tvec[1][0] + math.cos(tilt_angle) * tvec[2][0]
 
     # distance in the horizontal plane between camera and target
-    distance = math.sqrt(x**2 + z**2)
+    distance = math.sqrt(x**2 + z**2)      
 
     # horizontal angle between camera center line and target
     angleInRad = math.atan2(x, z)
@@ -432,7 +433,13 @@ def displaycorners(image, outer_corners):
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
 
+avgYaw = [0 for i in range(0, 20)]
+avgRobotYaw = [0 for i in range(0, 20)]
+avgDist = [0 for i in range(0, 20)]
+
 def findTape(contours, image, centerX, centerY, mask, CornerMethod):
+
+    global avgYaw, avgRobotYaw, avgDist
 
     #global warped
     screenHeight, screenWidth, channels = image.shape
@@ -559,14 +566,58 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
                     YawToTarget = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
                     
+                    for cnt in avgYaw:
+                        if cnt == 0:
+                            cnt = YawToTarget
+
+                    del avgYaw[len(avgYaw) - 1]
+                    avgYaw.insert(0, YawToTarget)
+
+                    #print(avgYaw)
+
+                    AvgYawToTarget = sum(avgYaw) / len(avgYaw)   
+                    #print("length AvgYaw: "+ str(len(avgYaw)))                             
+                    #print("AvgYawToTarget: "+ str(AvgYawToTarget))
+                    # If success then print values to screen     
+                                              
+                    if success:
+                        distance, angle1, angle2 = compute_output_values(rvec, tvec)
+                        for cnt in avgDist:
+                            if cnt == 0:
+                                cnt = distance
+
+                        del avgDist[len(avgDist) - 1]
+                        avgDist.insert(0, distance)
+
+                        AvgDistanceToTarget = sum(avgDist) / len(avgDist)
+
+                        #calculate RobotYawToTarget based on Robot offset (subtract 180 degrees)
+                        RobotYawToTarget = 180-abs(angle2)
+
+                        for cnt in avgRobotYaw:
+                            if cnt == 0:
+                                cnt = RobotYawToTarget
+
+                        del avgRobotYaw[len(avgRobotYaw) - 1]
+                        avgRobotYaw.insert(0, RobotYawToTarget)
+
+                        print(avgRobotYaw)
+
+                        AvgRobotYawToTarget = sum(avgRobotYaw) / len(avgRobotYaw)   
+                        print("length AvgRobotYaw: "+ str(len(avgRobotYaw)))                             
+                        print("AvgRobotYawToTarget: "+ str(AvgRobotYawToTarget))
+
                     # If success then print values to screen                               
                     if success:
                         distance, angle1, angle2 = compute_output_values(rvec, tvec)
                         #calculate RobotYawToTarget based on Robot offset (subtract 180 degrees)
                         RobotYawToTarget = 180-abs(angle2)
+                        cv2.putText(image, "AvgTargetYawToCenter: " + str(round(AvgYawToTarget,2)), (40, 300), cv2.FONT_HERSHEY_COMPLEX, .6,red)                        
+                        cv2.putText(image, "AvgRobotYawToTarget: " + str(round(AvgRobotYawToTarget,1)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,red)             
+                        cv2.putText(image, "AvgDistanceToTarget: " + str(round((AvgDistanceToTarget/12),2)), (40, 220), cv2.FONT_HERSHEY_COMPLEX, .6,red)                                   
                         cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                        cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                        cv2.putText(image, "RobotYawToTarget: " + str(round(RobotYawToTarget,2)), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 260), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        cv2.putText(image, "RobotYawToTarget: " + str(round(RobotYawToTarget,1)), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         cv2.putText(image, "SolvePnPTargetYawToCenter: " + str(round(angle1,2)), (40, 460), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         if (YawToTarget >= -2 and YawToTarget <= 2):
                             colour = green
