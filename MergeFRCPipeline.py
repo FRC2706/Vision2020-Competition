@@ -128,16 +128,16 @@ class WebcamVideoStream:
                 if self.switchTape != True:
                     self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(ExposureTape)
-                    self.switchTape == True
+                    self.switchTape = True
                     #self.prevValue = self.autoExpose
 
             elif switch == 3: #Power Cell Mode - set exposure to 39
                 #self.autoExpose = False
                 #if self.autoExpose != self.prevValue:
                 if self.switchBall != True:
-                    self.webcam.setExposureManual(60)
+                    self.webcam.setExposureManual(100)
                     self.webcam.setExposureManual(ExposureBall)
-                    self.switchBall == True
+                    self.switchBall = True
                     #self.prevValue = self.autoExpose
 
             # gets the image and timestamp from cameraserver
