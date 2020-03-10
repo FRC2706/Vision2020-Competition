@@ -386,7 +386,7 @@ def compute_output_values(rvec, tvec):
 
     # The tilt angle only affects the distance and angle1 calcs
     # This is a major impact on calculations
-    tilt_angle = math.radians(27)
+    tilt_angle = math.radians(32)
 
     x = tvec[0][0]
     z = math.sin(tilt_angle) * tvec[1][0] + math.cos(tilt_angle) * tvec[2][0]
@@ -433,7 +433,7 @@ def displaycorners(image, outer_corners):
 # centerY is center y coordinate of image
 
 def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionPipeLineTableName):
-
+    global blingColour
     #global warped
     screenHeight, screenWidth, channels = image.shape
     # Seen vision targets (correct angle, adjacent to each other)
@@ -574,12 +574,42 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionP
                         cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         cv2.putText(image, "RobotYawToTarget: " + str(round(RobotYawToTarget,2)), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         cv2.putText(image, "SolvePnPTargetYawToCenter: " + str(round(angle1,2)), (40, 460), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        
+                        #start with a non-existing colour
+                        
+                        # color 0 is red
+                        # color 1 is yellow
+                        # color 2 is green
                         if (YawToTarget >= -2 and YawToTarget <= 2):
                             colour = green
+                            #Use Bling
+                            #Set Green colour
+                            if (blingColour != 2):
+                                publishNumber("blingTable", "green",255)
+                                publishNumber("blingTable", "blue", 0)
+                                publishNumber("blingTable", "red", 0)
+                                publishNumber("blingTable", "wait_ms",0)
+                                publishString("blingTable","command","solid")
+                                blingColour = 2
                         if ((YawToTarget >= -5 and YawToTarget < -2) or (YawToTarget > 2 and YawToTarget <= 5)):  
                             colour = yellow
+                            
+                            if (blingColour != 1):
+                                publishNumber("blingTable", "red",255)
+                                publishNumber("blingTable", "green",255)
+                                publishNumber("blingTable", "blue",0)
+                                publishNumber("blingTable", "wait_ms",0)
+                                publishString("blingTable","command","solid")
+                                blingColour = 1
                         if ((YawToTarget < -5 or YawToTarget > 5)):  
                             colour = red
+                            if (blingColour != 0):
+                                publishNumber("blingTable", "red",255)
+                                publishNumber("blingTable", "blue",0)
+                                publishNumber("blingTable", "green",0)
+                                publishNumber("blingTable", "wait_ms",0)
+                                publishString("blingTable","command","solid")
+                                blingColour = 0
 
                         cv2.line(image, (cx, screenHeight), (cx, 0), colour, 2)
                         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
@@ -588,19 +618,21 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionP
                         publishNumber(MergeVisionPipeLineTableName, "YawToTarget", YawToTarget)
                         publishNumber(MergeVisionPipeLineTableName, "DistanceToTarget", round(distance/12,2))
                         publishNumber(MergeVisionPipeLineTableName, "RobotYawToTarget", round(RobotYawToTarget,2))
-
+                       
             else:
                 #If Nothing is found, publish -99 and -1 to Network table
                 publishNumber(MergeVisionPipeLineTableName, "YawToTarget", -99)
                 publishNumber(MergeVisionPipeLineTableName, "DistanceToTarget", -1)  
-                publishNumber(MergeVisionPipeLineTableName, "RobotYawToTarget", -99)  
+                publishNumber(MergeVisionPipeLineTableName, "RobotYawToTarget", -99)
+                publishString("blingTable","command","clear")
 
 
     else:
         #If Nothing is found, publish -99 and -1 to Network table
         publishNumber(MergeVisionPipeLineTableName, "YawToTarget", -99)
         publishNumber(MergeVisionPipeLineTableName, "DistanceToTarget", -1) 
-        publishNumber(MergeVisionPipeLineTableName, "RobotYawToTarget", -99)     
+        publishNumber(MergeVisionPipeLineTableName, "RobotYawToTarget", -99) 
+        publishString("blingTable","command","clear")    
              
     #     # pushes vision target angle to network table
     return image

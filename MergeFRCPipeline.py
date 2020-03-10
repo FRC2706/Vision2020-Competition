@@ -46,7 +46,9 @@ class VideoShow:
     """
 
     def __init__(self, imgWidth, imgHeight, cameraServer, frame=None):
-        self.outputStream = cameraServer.putVideo("2706_out", imgWidth, imgHeight)
+        self.outputStream = cameraServer.putVideo(OutputStream, imgWidth, imgHeight)
+        #self.outputStream = cameraServer.putVideo("2706_out", imgWidth, imgHeight)
+        #OutputStream
         self.frame = frame
         self.stopped = False
 
@@ -73,13 +75,13 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
-        #self.webcam.setExposureManual(60)
-        #self.webcam.setExposureManual(17)
-        #self.webcam.setExposureAuto()
-
+     
         # Some booleans so that we don't keep setting exposure over and over to the same value
         self.autoExpose = True
         self.prevValue = True
+
+        self.switchBall = False
+        self.switchTape = False
         
         # Make a blank image to write on
         self.img = np.zeros(shape=(frameWidth, frameHeight, 3), dtype=np.uint8)
@@ -120,18 +122,23 @@ class WebcamVideoStream:
                     self.prevValue = self.autoExpose
              
             elif switch == 2: #Tape Target Mode - set manual exposure to 20
-                self.autoExpose = False
-                if self.autoExpose != self.prevValue:
+                #self.autoExpose = False
+                #self.switchTape = True
+                #if self.autoExpose != self.prevValue:
+                if self.switchTape != True:
                     self.webcam.setExposureManual(60)
-                    self.webcam.setExposureManual(17)
-                    self.prevValue = self.autoExpose
+                    self.webcam.setExposureManual(ExposureTape)
+                    self.switchTape == True
+                    #self.prevValue = self.autoExpose
 
             elif switch == 3: #Power Cell Mode - set exposure to 39
-                self.autoExpose = False
-                if self.autoExpose != self.prevValue:
+                #self.autoExpose = False
+                #if self.autoExpose != self.prevValue:
+                if self.switchBall != True:
                     self.webcam.setExposureManual(60)
-                    self.webcam.setExposureManual(35)
-                    self.prevValue = self.autoExpose
+                    self.webcam.setExposureManual(ExposureBall)
+                    self.switchBall == True
+                    #self.prevValue = self.autoExpose
 
             # gets the image and timestamp from cameraserver
             (self.timestamp, self.img) = self.stream.grabFrame(self.img)
@@ -193,6 +200,12 @@ with open(pipelineConfig) as json_file:
 MergeVisionPipeLineTableName = data["networkTableName"]
 TapeEnabled = data["Tape"]
 PowerCellEnabled = data["PowerCell"]
+OutputStream = data["OutputStream"]
+ExposureTape = data["ExposureTarget"]
+ExposureBall = data["ExposureBall"]
+
+#print("ExposureT: "+ str(ExposureTape))
+#print("ExposureB: " + str(ExposureBall))
 
 if TapeEnabled:
     switch = 2
@@ -326,6 +339,10 @@ if __name__ == "__main__":
     networkTableTime = NetworkTables.getTable("SmartDashboard")
     networkTableMatchVariables = NetworkTables.getTable("VisionControl")
 
+    networkTableBling = NetworkTables.getTable("blingTable")
+    
+
+
     #Used to control MergeVisionPipeLineSettings
     networkTableVisionPipeline = NetworkTables.getTable(MergeVisionPipeLineTableName)
 
@@ -411,10 +428,13 @@ if __name__ == "__main__":
     startedImageWrite = False
     stoppedImageWrite = False
 
+    #global blingColour
+    blingColour = 0
+
     # loop forever
     while True:
 
-
+        #print("bling Colour" + str(blingColour))
         #if networkTableTime.getNumber("Match Time", 1) == 0:
         #    networkTable.putBoolean("WriteImages", False)
 
@@ -472,6 +492,7 @@ if __name__ == "__main__":
                 processed = threshold
             else:    
                 processed = findTargets(frame, threshold, Method, MergeVisionPipeLineTableName)
+               
 
         else:
             if (networkTableVisionPipeline.getBoolean("PowerCell", True)):

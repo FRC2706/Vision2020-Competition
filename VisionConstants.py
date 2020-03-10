@@ -65,3 +65,4 @@ upper_green = np.array([100, 255, 255])
 lower_yellow = np.array([10, 150, 65]) # was 14, 150, 150
 upper_yellow = np.array([30, 255, 255])
 
+blingColour = 0
