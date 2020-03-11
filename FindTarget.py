@@ -386,7 +386,7 @@ def compute_output_values(rvec, tvec):
 
     # The tilt angle only affects the distance and angle1 calcs
     # This is a major impact on calculations
-    tilt_angle = math.radians(32)
+    tilt_angle = math.radians(28)
 
     x = tvec[0][0]
     z = math.sin(tilt_angle) * tvec[1][0] + math.cos(tilt_angle) * tvec[2][0]
@@ -570,10 +570,10 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod, MergeVisionP
                         distance, angle1, angle2 = compute_output_values(rvec, tvec)
                         #calculate RobotYawToTarget based on Robot offset (subtract 180 degrees)
                         RobotYawToTarget = 180-abs(angle2)
-                        cv2.putText(image, "TargetYawToCenter: " + str(YawToTarget), (40, 340), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                        cv2.putText(image, "Distance: " + str(round((distance/12),2)), (40, 380), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                        cv2.putText(image, "RobotYawToTarget: " + str(round(RobotYawToTarget,2)), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
-                        cv2.putText(image, "SolvePnPTargetYawToCenter: " + str(round(angle1,2)), (40, 460), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        cv2.putText(image, "TargetYaw: " + str(YawToTarget), (20, 400), cv2.FONT_HERSHEY_COMPLEX, 1.0,white)
+                        cv2.putText(image, "Distance: " + str(round((distance/12),2)), (20, 460), cv2.FONT_HERSHEY_COMPLEX, 1.0,white)
+                        #cv2.putText(image, "RobotYawToTarget: " + str(round(RobotYawToTarget,2)), (40, 420), cv2.FONT_HERSHEY_COMPLEX, .6,white)
+                        #cv2.putText(image, "SolvePnPTargetYawToCenter: " + str(round(angle1,2)), (40, 460), cv2.FONT_HERSHEY_COMPLEX, .6,white)
                         
                         #start with a non-existing colour
                         
