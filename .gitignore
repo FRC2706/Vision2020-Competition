@@ -1,2 +1,5 @@
 
 *.pyc
+.vscode/launch.json
+.vscode/settings.json
+.gitignore
