@@ -24,6 +24,7 @@ def findBall(contours, image, centerX, centerY, MergeVisionPipeLineTableName):
         cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)[:5]
         cntHeight = 0
         biggestPowerCell = []
+        pairOfPowerCells = []
         for cnt in cntsSorted:
             x, y, w, h = cv2.boundingRect(cnt)
 
@@ -78,18 +79,33 @@ def findBall(contours, image, centerX, centerY, MergeVisionPipeLineTableName):
                     # Appends important info to array
                     if [cx, cy, cnt, bottomHeight] not in biggestPowerCell:
                         biggestPowerCell.append([cx, cy, cnt, bottomHeight])
+                        pairOfPowerCells.append(cnt)
 
         # Check if there are PowerCell seen
         if (len(biggestPowerCell) > 0):
+            # copy
+            tallestPowerCell = biggestPowerCell
+
             # pushes that it sees cargo to network tables
 
             finalTarget = []
-            # Sorts targets based on largest height (bottom of contour to top of screen or y position)
-            biggestPowerCell.sort(key=lambda height: math.fabs(height[3]))
+            # Sorts targets based on tallest height (bottom of contour to top of screen or y position)
+            tallestPowerCell.sort(key=lambda height: math.fabs(height[3]))
+
+
+            # Sorts targets based on area
+            pairOfPowerCells = sorted(pairOfPowerCells, key=lambda x: cv2.contourArea(x), reverse=True)[:2]
+            if len(pairOfPowerCells) >= 2:
+                M0 = cv2.moments(pairOfPowerCells[0])
+                M1 = cv2.moments(pairOfPowerCells[1])
+                if M0["m00"] != 0 and M1["m00"] != 0:
+                    cx0 = int(M0["m10"] / M0["m00"])
+                    cx1 = int(M1["m10"] / M1["m00"])    
+                    avecxof2 = int((cx0+cx1)/2.0)
 
             #sorts closestPowerCell - contains center-x, center-y, contour and contour height from the
             #bounding rectangle.  The closest one has the largest bottom point
-            closestPowerCell = min(biggestPowerCell, key=lambda height: (math.fabs(height[3] - centerX)))
+            closestPowerCell = min(tallestPowerCell, key=lambda height: (math.fabs(height[3] - centerX)))
 
             # extreme points
             #topmost = tuple(closestPowerCell[2][closestPowerCell[2][:,:,1].argmin()][0])
@@ -107,18 +123,28 @@ def findBall(contours, image, centerX, centerY, MergeVisionPipeLineTableName):
             #print("bottommost[1]: " + str(bottommost[1]))
             #print("screenheight: " + str(screenHeight))
 
-            #Contour that fills up bottom seems to reside on one less than 
+            # Contour that fills up bottom seems to reside on one less than 
             # screen height.  For example, screenHeight of 480 has bottom
             # pixel as 479, probably because 0-479 = 480 pixel rows
             if (int(bottommost[1]) >= screenHeight - 1):
+                # This is handing over centoid X when bottommost is in bottom row
                 xCoord = closestPowerCell[0]
             else:
+                # This is handing over X of bottommost point
                 xCoord = bottommost[0]   
 
+            # calculate yaw and store in fT0
             finalTarget.append(calculateYaw(xCoord, centerX, H_FOCAL_LENGTH))
+            # calculate dist and store in fT1
             finalTarget.append(calculateDistWPILibRyan(closestPowerCell[3],TARGET_BALL_HEIGHT,KNOWN_BALL_PIXEL_HEIGHT,KNOWN_BALL_DISTANCE ))
-            #print("Yaw: " + str(finalTarget[0]))
+            # calculate yaw from pure centroid and store in fT2
+            finalTarget.append(calculateYaw(closestPowerCell[0], centerX, H_FOCAL_LENGTH))
 
+            # calculate yaw to two largest contours for end trench condition, store in fT3
+            if (len(biggestPowerCell) > 1):
+                finalTarget.append(calculateYaw(avecxof2, centerX, H_FOCAL_LENGTH))
+
+            #print("Yaw: " + str(finalTarget[0]))
             # Puts the yaw on screen
             # Draws yaw of target + line where center of target is
             finalYaw = round(finalTarget[1]*1000)/1000
@@ -128,9 +154,20 @@ def findBall(contours, image, centerX, centerY, MergeVisionPipeLineTableName):
                         white)
             cv2.line(image, (xCoord, screenHeight), (xCoord, 0), blue, 2)
 
-            # pushes cargo angle to network tables
+            cv2.putText(image, "cxYaw: " + str(finalTarget[2]), (450, 360), cv2.FONT_HERSHEY_COMPLEX, .6,
+                        white)
+            if (len(biggestPowerCell) > 1):
+                cv2.putText(image, "cxYaw2: " + str(finalTarget[3]), (450, 400), cv2.FONT_HERSHEY_COMPLEX, .6,
+                        white)
+
+            # pushes power cell angle to network tables
             publishNumber(MergeVisionPipeLineTableName, "YawToPowerCell", finalTarget[0])
             publishNumber(MergeVisionPipeLineTableName, "DistanceToPowerCell", finalYaw)
+            publishNumber(MergeVisionPipeLineTableName, "PowerCentroid1Yaw", finalTarget[2])
+            if (len(biggestPowerCell) > 1):
+                publishNumber(MergeVisionPipeLineTableName, "PowerCentroid2Yaw", finalTarget[3])
+                cv2.line(image, (avecxof2, int(screenHeight*0.7)), (avecxof2, int(screenHeight*0.3)), green, 1)
+
 
         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
