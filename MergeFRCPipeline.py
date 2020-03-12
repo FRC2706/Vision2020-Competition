@@ -492,7 +492,10 @@ if __name__ == "__main__":
                 processed = threshold
             else:    
                 processed = findTargets(frame, threshold, Method, MergeVisionPipeLineTableName)
-               
+
+                #Read RPM From Network Table
+                rpm = networkTableVisionPipeline.getNumber("RPM", 0)
+                cv2.putText(processed, "RPM: " + str(round(rpm,2)), (20, 340), cv2.FONT_HERSHEY_COMPLEX, 1.0,white)
 
         else:
             if (networkTableVisionPipeline.getBoolean("PowerCell", True)):
