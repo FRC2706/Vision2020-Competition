@@ -50,8 +50,8 @@ def onmouse_mas_pixel_color(event,x,y,flags,params):
 
 # select folder of interest
 posCodePath = Path(__file__).absolute()
-strVisionRoot = posCodePath.parent.parent
-strImageFolder = str(strVisionRoot / 'PowerCellUpperFull')
+strVisionRoot = posCodePath.parent
+strImageFolder = str(strVisionRoot / 'ControlPanelSquares' / 'panel-02.png')
 print (strImageFolder)
 
 # read file names, and filter file names
