@@ -150,7 +150,7 @@ while stayInLoop or cap.isOpened():
         first_time = False
 
 
-    if (leftmost[0] - leftmost_prev[0] > 2):
+    if (leftmost[0] - leftmost_prev[0] > 2): # moved more than 2 pixels from the x coordinate of leftmost
         if moving == False:
             # Just started moving
             num_frames_moving = 1
@@ -160,6 +160,7 @@ while stayInLoop or cap.isOpened():
             num_frames_moving += 1
     else:
         if moving == True:
+            # just stopped
             total_time_moving = num_frames_moving * (1.0/fps)
             print("total_time_moving = ", total_time_moving)
             moving = False

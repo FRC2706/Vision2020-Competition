@@ -188,4 +188,4 @@ def findMagnet(imgImageInput):
     # cleanup and exit
     #cv2.destroyAllWindows()
 
-    return leftmost
+    return leftmost # to make it return the leftmost coordinate 
