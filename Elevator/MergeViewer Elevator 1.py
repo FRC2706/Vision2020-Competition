@@ -145,10 +145,6 @@ while stayInLoop or cap.isOpened():
     #
 
     leftmost = findMagnet(frame)
-    if leftmost == None:
-        print('')
-
-        
     if first_time == True:
         leftmost_prev = leftmost
         first_time = False

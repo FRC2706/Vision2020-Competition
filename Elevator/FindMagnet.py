@@ -16,11 +16,14 @@ def findMagnet(imgImageInput):
 
     # define range of yellow color in HSV
     #28 44 48 is actual square
-    lower_yellow = np.array([26,30,30]) 
-    upper_yellow = np.array([32,255,255])
+    #lower_yellow = np.array([26,30,30]) 
+    #upper_yellow = np.array([32,255,255])
+    #green is 178 100 99 - halved = 89 50 49
+    lower_green = np.array([80,220,220]) 
+    upper_green = np.array([100,255,255])
 
     # Threshold the HSV image to get only yellow colors
-    binary_mask = cv2.inRange(hsvImageInput, lower_yellow, upper_yellow)
+    binary_mask = cv2.inRange(hsvImageInput, lower_green, upper_green)
 
     # mask the image to only show yellow or green images
     # Bitwise-AND mask and original image
@@ -29,7 +32,8 @@ def findMagnet(imgImageInput):
     # display the masked images to screen
     #cv2.imshow('hsvImageInput', hsvImageInput)
     cv2.imshow('binary_mask',binary_mask)
-    cv2.imshow('yellow_masked',yellow_mask)
+    #cv2.imshow('yellow_masked',yellow_mask)
+    #cv2.imshow('og image',imgImageInput)
 
     # generate the contours and display
     imgFindContourReturn, contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -37,6 +41,10 @@ def findMagnet(imgImageInput):
     cv2.drawContours(imgContours, contours, -1, purple, 10)
     print('Found ', len(contours), 'contours in image')
 
+    if len(contours) == 0:
+        print('no contours')
+        return False, -1
+    
     # Moment and Centroid
     cnt = contours[0]
     #print(cnt)
@@ -44,14 +52,15 @@ def findMagnet(imgImageInput):
     print('original contour length = ', len(cnt))
     M = cv2.moments(cnt)
     #print( M )
-    cx = int(M['m10']/M['m00'])
-    cy = int(M['m01']/M['m00'])
-    print('centroid = ',cx,cy)
-    cv2.line(imgContours,(cx-10,cy-10),(cx+10,cy+10),red,2)
-    cv2.line(imgContours,(cx-10,cy+10),(cx+10,cy-10),red,2)
+    if M['m00'] != 0:
+        cx = int(M['m10']/M['m00'])
+        cy = int(M['m01']/M['m00'])
+        print('centroid = ',cx,cy)
+        cv2.line(imgContours,(cx-10,cy-10),(cx+10,cy+10),red,2)
+        cv2.line(imgContours,(cx-10,cy+10),(cx+10,cy-10),red,2)
 
     cv2.drawContours(imgContours, cnt, -1, purple, 10)
-    cv2.imshow('contours', imgContours)
+    #cv2.imshow('contours', imgContours)
 
     # Area
     area = cv2.contourArea(cnt)
@@ -67,16 +76,17 @@ def findMagnet(imgImageInput):
     #print('approx', approx)
     #cv2.drawContours(imgContours, approx, -1, red, 10)
     print('approx contour length = ', len(approx))
-    cv2.imshow('approx over yellow mask', imgContours)
+    #cv2.imshow('approx over yellow mask', imgContours)
 
     # Hull
     hull = cv2.convexHull(cnt)
     #print('hull', hull)
     print('hull contour length = ', len(hull))
     cv2.drawContours(imgContours, hull, -1, red, 10)
-    cv2.imshow('hull over yellow mask', imgContours)
+    #cv2.imshow('hull over yellow mask', imgContours)
     hull_area = cv2.contourArea(hull)
-    print('solidity from convex hull', float(area)/hull_area)
+    if hull_area != 0:
+        print('solidity from convex hull', float(area)/hull_area)
 
     # Check Convexity
     print('convexity is', cv2.isContourConvex(cnt))
@@ -95,8 +105,9 @@ def findMagnet(imgImageInput):
     box = cv2.boxPoints(rect)
     box = np.int0(box)
     cv2.drawContours(imgContours,[box],0,blue,2)
-    print('minimum area rectangle aspect = ', float(width)/height)
-    print('minimum area rectangle extent = ', float(area)/(width*height))
+    if height != 0:
+        print('minimum area rectangle aspect = ', float(width)/height)
+        print('minimum area rectangle extent = ', float(area)/(width*height))
 
     # minimum enclosing circle
     (x,y),radius = cv2.minEnclosingCircle(cnt)
@@ -107,47 +118,7 @@ def findMagnet(imgImageInput):
     equi_diameter = np.sqrt(4*area/np.pi)
     cv2.circle(imgContours, (cx,cy), int(equi_diameter/2), purple, 3)
 
-    # fitting an elipse
-    ellipse = cv2.fitEllipse(cnt)
-    #print(ellipse)
-    # search ellipse to find it return a rotated rectangle in which the ellipse fits
-    (x,y),(majAxis,minAxis),angleofrotation = ellipse
-    print('ellipse center, maj axis, min axis, rotation = ', (x,y) ,(majAxis, minAxis), angleofrotation)
-    # search major and minor axis from ellipse
-    # https://namkeenman.wordpress.com/2015/12/21/opencv-determine-orientation-of-ellipserotatedrect-in-fitellipse/
-    cv2.ellipse(imgContours,ellipse,red,2)
-    print('ellipse aspect = ', float(majAxis)/minAxis)
-
-    # fitting a line
-    rows,cols = binary_mask.shape[:2]
-    #[vx,vy,x,y] = cv.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01) #errors in VS Code, search online and found fix
-    [vx,vy,x,y] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
-    lefty = int((-x*vy/vx) + y)
-    righty = int(((cols-x)*vy/vx)+y)
-    cv2.line(imgContours,(cols-1,righty),(0,lefty),green,2)
-    # http://ottonello.gitlab.io/selfdriving/nanodegree/python/line%20detection/2016/12/18/extrapolating_lines.html
-    slope = vy / vx
-    intercept = y - (slope * x)
-    print('fitLine y = ', slope, '* x + ', intercept)
-
-    # aspect ratio
-    # added retroactively to bounding, min area and elipse
-
-    # extent calculation
-    # added retroactively to bounding and min area
-
-    # solidity
-    # added retroactively to the hull
-
-    # equivalent diameter
-    # added retroactively to the enclosing circle
-
-    # orientation
-    # tweaked ellipse above to reflect details in link
-
-    # mask and pixel points
-    # skipping this one...
-
+    
     # Maximum Value, Minimum Value and their locations of a binary mask not contour!
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(binary_mask)
     print('min_val = ', min_val)
@@ -163,7 +134,7 @@ def findMagnet(imgImageInput):
     # look at the result of mean_val2 on colorizer.org
     mean_val3 = cv2.mean(yellow_mask)
     print('mean value from colored mask = ', mean_val3)
-
+    
     # extreme points
     leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
     print('the leftmost point is: ', leftmost)
@@ -180,12 +151,12 @@ def findMagnet(imgImageInput):
     print('extreme points', leftmost,rightmost,topmost,bottommost)
 
     # Display the contours and maths generated
-    cv2.imshow('contours and math over yellow mask', imgContours)
+    #cv2.imshow('contours and math over yellow mask', imgContours)
 
     # wait for user input to close
-    k = cv2.waitKey(0)
+    #k = cv2.waitKey(0)
 
     # cleanup and exit
     #cv2.destroyAllWindows()
 
-    return leftmost # to make it return the leftmost coordinate 
+    return True, leftmost # to make it return the leftmost coordinate 

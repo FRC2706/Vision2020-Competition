@@ -38,8 +38,11 @@ frameStop = 0
 ImageCounter = 0
 showAverageFPS = False
 first_time = True
-moving = False
+in_moving_state = False
 fps = 2
+found = False
+check_stop_count = 0
+check_stop_count_max = 1 #when it's over one frame not moving, stop
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
@@ -144,36 +147,62 @@ while stayInLoop or cap.isOpened():
     # Put elevator code here
     #
 
-    leftmost = findMagnet(frame)
-    if leftmost == None:
-        print('')
+    print('------------------------')
+    print('before findMagnet')
+    found, leftmost = findMagnet(frame)
+    print('after findMagnet')
 
-        
-    if first_time == True:
-        leftmost_prev = leftmost
-        first_time = False
+    if found == True:
 
+        if first_time == True:
+            leftmost_prev = leftmost
 
-    if (leftmost[0] - leftmost_prev[0] > 2): # moved more than 2 pixels from the x coordinate of leftmost
-        if moving == False:
+            first_time = False
+        print('leftmost = ', leftmost)
+        print('leftmost_prev = ', leftmost_prev)
+        if (leftmost[0] - leftmost_prev[0] > 2): # moved more than 2 pixels from the x coordinate of leftmost
+            moving_since_last_frame = True
+            print('is moving since last frame')
+        else:
+            moving_since_last_frame = False
+
+        leftmost_prev = leftmost  # Setup for next time through loop
+
+    else:
+        moving_since_last_frame = False
+        print('contour not found')
+
+    print('moving since last frame is ', moving_since_last_frame)  
+    print('in moving state (before) ', in_moving_state)  
+
+    if moving_since_last_frame == True:
+        check_stop_count = 0
+        if in_moving_state == False:
             # Just started moving
             num_frames_moving = 1
-            moving = True
-            print('started moving')
+            in_moving_state = True
+            print('just started moving')
         else:
+            # Is continuing to move
             num_frames_moving += 1
+            print('is continuing to move')
     else:
-        if moving == True:
-            # just stopped
-            total_time_moving = num_frames_moving * (1.0/fps)
-            print("total_time_moving = ", total_time_moving)
-            moving = False
-            print('stopped moving')
+        if in_moving_state == True:
+            # stopped
+            check_stop_count += 1
+            if check_stop_count > check_stop_count_max:
+                #we're really stopped
+                total_time_moving = (num_frames_moving - (check_stop_count + 1)) * (1.0/fps)
+                print("total_time_moving = ", total_time_moving)
+                in_moving_state = False
+                print('stopped moving')
+                k = cv2.waitKey(0)
+        # else nothing to update 
 
-    leftmost_prev = leftmost
+    print('in moving state (after) ', in_moving_state)  
 
     if useVideo or useWebCam:
-        cv2.imshow('videoname', processed)
+        #cv2.imshow('videoname', processed)
 
         key = cv2.waitKey(1)
         if key == 27:
