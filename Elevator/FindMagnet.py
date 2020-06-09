@@ -43,7 +43,7 @@ def findMagnet(imgImageInput):
 
     if len(contours) == 0:
         print('no contours')
-        return False, -1
+        return False, -1, -1
     
     # Moment and Centroid
     cnt = contours[0]
@@ -109,14 +109,7 @@ def findMagnet(imgImageInput):
         print('minimum area rectangle aspect = ', float(width)/height)
         print('minimum area rectangle extent = ', float(area)/(width*height))
 
-    # minimum enclosing circle
-    (x,y),radius = cv2.minEnclosingCircle(cnt)
-    print('minimum enclosing circle = ', (x,y),radius)
-    center = (int(x),int(y))
-    radius = int(radius)
-    cv2.circle(imgContours,center,radius,green,2)
-    equi_diameter = np.sqrt(4*area/np.pi)
-    cv2.circle(imgContours, (cx,cy), int(equi_diameter/2), purple, 3)
+
 
     
     # Maximum Value, Minimum Value and their locations of a binary mask not contour!
@@ -159,4 +152,4 @@ def findMagnet(imgImageInput):
     # cleanup and exit
     #cv2.destroyAllWindows()
 
-    return True, leftmost # to make it return the leftmost coordinate 
+    return True, leftmost, rightmost # to make it return the leftmost coordinate 

@@ -39,6 +39,7 @@ ImageCounter = 0
 showAverageFPS = False
 first_time = True
 in_moving_state = False
+moving_since_last_frame = False
 fps = 2
 found = False
 check_stop_count = 0
@@ -69,7 +70,7 @@ def draw_circle(event,x,y,flags,param):
 
 # choose video to process -> Outer Target Videos
 #videoname = './OuterTargetVideos/ThirdScale-01.mp4'
-videoname = '../ElevatorVideos/elevator greentape moving right.mp4'
+videoname = '../ElevatorVideos/greentape elevator moving left.mp4'
 
 if useVideo: # test against video
     showAverageFPS = True
@@ -149,24 +150,37 @@ while stayInLoop or cap.isOpened():
 
     print('------------------------')
     print('before findMagnet')
-    found, leftmost = findMagnet(frame)
+    found, leftmost, rightmost = findMagnet(frame)
     print('after findMagnet')
 
     if found == True:
 
         if first_time == True:
             leftmost_prev = leftmost
+            rightmost_prev = rightmost
 
             first_time = False
         print('leftmost = ', leftmost)
-        print('leftmost_prev = ', leftmost_prev)
-        if (leftmost[0] - leftmost_prev[0] > 2): # moved more than 2 pixels from the x coordinate of leftmost
+        print ('leftmost_prev = ', leftmost_prev)
+        print('rightmost = ', rightmost)
+        print ('rightmost_prev = ', rightmost_prev)
+        
+        if (moving_since_last_frame == False) or (moving_right == True): 
+            if (leftmost[0] - leftmost_prev[0] > 2) : # moved more than 2 pixels from the x coordinate of leftmost
+                moving_since_last_frame = True 
+                moving_right = True #direction of the elevator door moving
+                print('moving_right = ', moving_right)
+            else:
+                moving_since_last_frame = False
+        elif (rightmost[0] - rightmost_prev[0] < -2):
             moving_since_last_frame = True
-            print('is moving since last frame')
+            moving_right = False #direction of the elevator door moving
+            print('moving_right =', moving_right)
         else:
-            moving_since_last_frame = False
+            moving_since_last_frame = False 
 
-        leftmost_prev = leftmost  # Setup for next time through loop
+        leftmost_prev = leftmost
+        rightmost_prev = rightmost  # Setup for next time through loop
 
     else:
         moving_since_last_frame = False
