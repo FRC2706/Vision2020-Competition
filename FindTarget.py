@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import time
 
 from VisionConstants import *
 from VisionMasking import *
@@ -437,9 +438,22 @@ avgYaw = [0 for i in range(0, 20)]
 avgRobotYaw = [0 for i in range(0, 20)]
 avgDist = [0 for i in range(0, 20)]
 
+avgFrames = [0 for i in range(0, 5)]
+avgX = [0 for i in range(0, len(avgFrames))]
+timer = [0 for i in range(0, 30)]
+tupTime = (0, 0)
+start = True
+counter = 0
+startingFrame = True
+initTime = True
+averageX = 0
+timeElapsed = 0
+startX = 0
+oldTime = 0
+
 def findTape(contours, image, centerX, centerY, mask, CornerMethod):
 
-    global avgYaw, avgRobotYaw, avgDist
+    global avgYaw, avgRobotYaw, avgDist, avgFrames, avgX, start, counter, averageX, timer, time, startingFrame, timeElapsed, startX, initTime, oldTime
 
     #global warped
     screenHeight, screenWidth, channels = image.shape
@@ -556,6 +570,10 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                     displaycorners(image, outer_corners)
                     success, rvec, tvec = findTvecRvec(image, outer_corners, rw_coordinates) 
 
+                    # Get the left and right extreme points
+                    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
+                    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
+
                     #Calculate the Yaw
                     M = cv2.moments(cnt)
                     if M["m00"] != 0:
@@ -579,7 +597,46 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                     #print("length AvgYaw: "+ str(len(avgYaw)))                             
                     #print("AvgYawToTarget: "+ str(AvgYawToTarget))
                     # If success then print values to screen     
-                                              
+                    if success:
+                        for cnt in avgFrames:
+                            if cnt == 0:
+                                cnt = leftmost
+
+                        while start:
+                            del avgFrames[len(avgFrames) - 1]
+                            avgFrames.insert(0, leftmost)
+                            if(counter == len(avgFrames) - 1):
+                                start = False
+                            counter += 1
+
+                        del avgFrames[len(avgFrames) - 1]
+                        avgFrames.insert(0, leftmost)
+
+                        for x in range(0, len(avgX)):
+                            avgX[x] = (avgFrames[x])[0]
+
+                        #print(avgX)
+
+                        averageX = sum(avgX) / len(avgX)
+                        if startingFrame:
+                            startX = averageX
+                            startingFrame = False
+
+                        print('Average Leftmost: ' + str(avgX))
+
+                        if startX > averageX:
+                            now = time.time()
+                            if initTime:
+                                oldTime = now
+                                initTime = False
+                            print('Now = ' + str(now))
+
+                            timeElapsed = now - oldTime
+                            tupTime = (timeElapsed, averageX)
+                            
+                            print('The Time Elapsed: ' + str(timeElapsed))
+                            print('Timer array ' + str(timer))
+
                     if success:
                         distance, angle1, angle2 = compute_output_values(rvec, tvec)
                         for cnt in avgDist:
@@ -590,7 +647,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                         avgDist.insert(0, distance)
 
                         AvgDistanceToTarget = sum(avgDist) / len(avgDist)
-
+                        
                         #calculate RobotYawToTarget based on Robot offset (subtract 180 degrees)
                         RobotYawToTarget = 180-abs(angle2)
 
@@ -639,6 +696,7 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                 publishNumber("YawToTarget", -99)
                 publishNumber("DistanceToTarget", -1)  
                 publishNumber("RobotYawToTarget", -99)  
+            
 
 
     else:
@@ -665,6 +723,7 @@ def get_four_points2(cnt, image):
 
     # Order of extreme points in contour found to be: top, left, bottom, right
     # Determine indices of leftmost and rightmost point
+   
     cnt_list = cnt[:,0].tolist()
     if list(leftmost) in cnt_list:
         leftmost_index = cnt_list.index(list(leftmost))
@@ -779,13 +838,15 @@ def get_four_points2(cnt, image):
     dist_sq = diffs[:,0,0]**2 + diffs[:,0,1]**2
     min_index = dist_sq.argmin()
     bottom_right = cnt_pts[min_index][0]
-    
+
     four_points = np.array([
                             leftmost,
                             rightmost,
                             bottom_left,
                             bottom_right
                            ], dtype="double")
+                           
+    
 
     return True, four_points
 

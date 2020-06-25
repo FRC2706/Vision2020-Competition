@@ -290,7 +290,7 @@ while (True):
 
     for corner in corners:
         x,y = corner.ravel()
-        cv2.circle([cnt],(x,y),3,255,-1)
+        cv2.circle([green_mask],(x,y),3,255,-1)
     cv2.imshow('corners', green_mask)
     cv2.moveWindow('corners', 0,0)
         

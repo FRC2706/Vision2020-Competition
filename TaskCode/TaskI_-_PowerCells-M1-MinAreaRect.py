@@ -37,6 +37,23 @@ black = (0, 0, 0)
 white = (252, 252, 252)
 orange = (3, 64, 252) 
 
+# instance variables
+avgYaw = [0 for i in range(0, 20)]
+avgRobotYaw = [0 for i in range(0, 20)]
+avgDist = [0 for i in range(0, 20)]
+
+avgFrames = [0 for i in range(0, 5)]
+avgX = [0 for i in range(0, len(avgFrames))]
+avgY = [0 for i in range(0, len(avgFrames))]
+timer = [0 for i in range(0, 30)]
+tupTime = (0, 0)
+start = True
+counter = 0
+counter2 = 0
+averageX = 0
+averageY = 0
+timeElapsed = 0
+startX = 0
 # select folder of interest
 posCodePath = Path(__file__).absolute()
 strVisionRoot = posCodePath.parent.parent
@@ -265,6 +282,56 @@ while (True):
     rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
     topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
     bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+
+    for cnt in avgFrames:
+        if cnt == 0:
+            cnt = leftmost
+
+    while start:
+        del avgFrames[len(avgFrames) - 1]
+        avgFrames.insert(0, leftmost)
+        counter += 1
+        if(counter == len(avgFrames) - 1):
+            start = False
+
+    del avgFrames[len(avgFrames) - 1]
+    avgFrames.insert(0, leftmost)
+
+    print(avgFrames)
+
+    for x in range(0, len(avgX)):
+        avgX[x] = (avgFrames[x])[0]
+
+    print(avgX)
+
+    for x in range(0, len(avgY)):
+        avgY[x] = (avgFrames[x])[1]
+
+    print(avgY)
+
+    averageX = sum(avgX) / len(avgX)
+    averageY = sum(avgY) / len(avgY)
+            
+    if(counter2 == 0):
+        startX = averageX
+
+    counter2 = 1
+
+    print('Average Leftmost: ' + str(avgX))
+
+    while(startX < averageX):
+        now = time.time()
+        future = now + 30
+        while time.time() < future:
+                        x = 0
+            tupTime = (time.time(), averageX)
+            timer[x] = tupTime
+            x += 1
+            timeElapsed = time.time()
+
+    print('The Time Elapsed: ' + str(timeElapsed))
+    print('Timer array ' + str(timer))
+
     # draw extreme points
     # from https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
     #cv2.circle(imgContours, leftmost, 12, green, -1)
