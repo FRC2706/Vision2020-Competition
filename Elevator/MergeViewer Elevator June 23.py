@@ -44,6 +44,10 @@ fps = 2
 found = False
 check_stop_count = 0
 check_stop_count_max = 1 #when it's over one frame not moving, stop
+time1 = 0.0 #initializing so compiler doesn't complain
+time2 = 0.0
+tArray = np.zeros(50)
+xArray = np.zeros(50)
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
@@ -196,13 +200,29 @@ while stayInLoop or cap.isOpened():
             num_frames_moving = 1
             in_moving_state = True
             print('just started moving')
+            time1 = time.time()
+            print ("time 1 is ", time1)
+            tArray[0] = time.time() #get current time
+            xArray[0] = leftmost[0]
         else:
             # Is continuing to move
             num_frames_moving += 1
             print('is continuing to move')
+            tArray[num_frames_moving - 1] = time.time() #fill up array
+            xArray[num_frames_moving - 1] = leftmost[0]
     else:
         if in_moving_state == True:
             # stopped
+            time2 = time.time()
+            print ("time 2 is ", time2)
+            print ("total time moving using timer = ", time2 - time1)
+            print("num_frames_moving = ", num_frames_moving)
+            print(leftmost[0]) #leftmost disappeared
+            tArray[num_frames_moving - 1] = time.time() 
+            xArray[num_frames_moving - 1] = leftmost[0]
+            print("tArray = ", tArray)
+            print("xArray = ", xArray)
+            print('tArray[0] is ', tArray[0])
             check_stop_count += 1
             if check_stop_count > check_stop_count_max:
                 #we're really stopped
