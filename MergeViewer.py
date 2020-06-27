@@ -52,7 +52,7 @@ showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
-useVideo = False
+useVideo = True
 # integer for usb camera to use, boolean for live webcam
 useWebCam = False
 webCamNumber = 1
@@ -76,6 +76,7 @@ def draw_circle(event,x,y,flags,param):
 # choose video to process -> Outer Target Videos
 #videoname = './OuterTargetVideos/ThirdScale-01.mp4'
 videoname = './OuterTargetVideos/FullScale-02.mp4'
+#videoname = './ElevatorVideos/FifthScale-54CO.mp4'
 
 if useVideo: # test against video
     showAverageFPS = True
@@ -88,13 +89,10 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./PowerCell25Scale")
     #images, imagename = load_images_from_folder("./PowerCellImages")
     #images, imagename = load_images_from_folder("./PowerCellFullScale")
-    #images, imagename = load_images_from_folder("./PowerCellUpperFull")
+    images, imagename = load_images_from_folder("./PowerCellUpperFull")
     #images, imagename = load_images_from_folder("./PowerCellFullMystery")
     #images, imagename = load_images_from_folder("./PowerCellSketchup")
     #images, imagename = load_images_from_folder("./LifeCamPhotos")
-
-    # This is the one with the power cell
-    images, imagename = load_images_from_folder("./PowerCellFullRobot")
 
     # Outer Target Images
     #images, imagename = load_images_from_folder("./OuterTargetProblems")
@@ -121,8 +119,8 @@ server = False
 cameraConfigs = []
 
 Driver = False
-Tape = False
-PowerCell = True
+Tape = True
+PowerCell = False
 ControlPanel = False
 
 # Method 1 is based on measuring distance between leftmost and rightmost
@@ -134,7 +132,7 @@ ControlPanel = False
 # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
 # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
 # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
-# Method 10 is a four point SolvePNP blending M7 and M8 (everybody!)
+# Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
 
 Method = 7
 
@@ -167,7 +165,6 @@ displayFPS = 3.14159265
 begin = milliSince1970()
 start = begin
 prev_update = start
-MergeVisionPipeLineTableName = "DummyNetworkTableName"
 
 while stayInLoop or cap.isOpened():
 
@@ -191,12 +188,12 @@ while stayInLoop or cap.isOpened():
     else:
         if Tape:
             threshold = threshold_video(lower_green, upper_green, frame)
-            processed = findTargets(frame, threshold, Method, MergeVisionPipeLineTableName)
+            processed = findTargets(frame, threshold, Method)
         else:
             if PowerCell:
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                processed = findPowerCell(frame, threshold, MergeVisionPipeLineTableName)
+                processed = findPowerCell(frame, threshold)
             elif ControlPanel:
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)
@@ -225,8 +222,8 @@ while stayInLoop or cap.isOpened():
     # because we are timing in this file, have to add the fps to image processed 
     #cv2.putText(processed, 'elapsed time: {:.2f}'.format(fps.elapsed()), (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
     #cv2.putText(processed, 'FPS: {:.7f}'.format(3.14159265), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-    cv2.putText(processed, "frame time: " + str(int(processedMilli)) + " ms", (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
-    cv2.putText(processed, 'Instant FPS: {:.2f}'.format(1000/(processedMilli)), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    #cv2.putText(processed, "frame time: " + str(int(processedMilli)) + " ms", (40, 40), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
+    #cv2.putText(processed, 'Instant FPS: {:.2f}'.format(1000/(processedMilli)), (40, 80), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
     
     if (showAverageFPS): 
         cv2.putText(processed, 'Grouped FPS: {:.2f}'.format(1000/(displayFPS)), (40, 120), cv2.FONT_HERSHEY_COMPLEX, 0.6 ,white)
