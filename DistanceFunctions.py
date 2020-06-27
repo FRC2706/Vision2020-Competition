@@ -46,11 +46,11 @@ def calculateDistWPILib(cntHeight, targetHeight,knownObjectPixelHeight,knownObje
 
     PIX_HEIGHT = PIX_HEIGHT / len(avg)
 
-    print (PIX_HEIGHT)
+    #print (PIX_HEIGHT)
 
 
 
-    print(PIX_HEIGHT, avg)  # print("The contour height is: ", cntHeight)
+    #print(PIX_HEIGHT, avg)  # print("The contour height is: ", cntHeight)
 
     #TARGET_HEIGHT is actual height (for balls 7/12 7 inches)   
     #TARGET_HEIGHT = 0.583
@@ -139,11 +139,11 @@ def calculateDistWPILibRyan(cntHeight, targetHeight,knownObjectPixelHeight,known
 
     PIX_HEIGHT = PIX_HEIGHT / len(avg)
 
-    print (PIX_HEIGHT)
+    #print (PIX_HEIGHT)
 
 
 
-    print(PIX_HEIGHT, avg)  # print("The contour height is: ", cntHeight)
+    #print(PIX_HEIGHT, avg)  # print("The contour height is: ", cntHeight)
 
     #TARGET_HEIGHT is actual height (for balls 7/12 7 inches)   
     #TARGET_HEIGHT = 0.583

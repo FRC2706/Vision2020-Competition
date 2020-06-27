@@ -687,23 +687,23 @@ def findTape(contours, image, centerX, centerY, mask, CornerMethod):
                         cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), white, 2)
 
                         #publishResults(name,value)
-                        publishNumber("YawToTarget", YawToTarget)
-                        publishNumber("DistanceToTarget", round(distance/12,2))
-                        publishNumber("RobotYawToTarget", round(RobotYawToTarget,2))
+                        #publishNumber("YawToTarget", YawToTarget)
+                        #publishNumber("DistanceToTarget", round(distance/12,2))
+                        #publishNumber("RobotYawToTarget", round(RobotYawToTarget,2))
 
-            else:
+            #else:
                 #If Nothing is found, publish -99 and -1 to Network table
-                publishNumber("YawToTarget", -99)
-                publishNumber("DistanceToTarget", -1)  
-                publishNumber("RobotYawToTarget", -99)  
+                #publishNumber("YawToTarget", -99)
+                #publishNumber("DistanceToTarget", -1)  
+                #publishNumber("RobotYawToTarget", -99)  
             
 
 
-    else:
+    #else:
         #If Nothing is found, publish -99 and -1 to Network table
-        publishNumber("YawToTarget", -99)
-        publishNumber("DistanceToTarget", -1) 
-        publishNumber("RobotYawToTarget", -99)     
+        #publishNumber("YawToTarget", -99)
+        #publishNumber("DistanceToTarget", -1) 
+        #publishNumber("RobotYawToTarget", -99)     
              
     #     # pushes vision target angle to network table
     return image
@@ -849,4 +849,3 @@ def get_four_points2(cnt, image):
     
 
     return True, four_points
-

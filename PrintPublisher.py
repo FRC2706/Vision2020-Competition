@@ -1,4 +1,7 @@
 
 
-def publishNumber(name, value):
-   print(name + ": " + str(value))
+def publishNumber(MergeVisionPipeLineTableName, name, value):
+   print(MergeVisionPipeLineTableName + ": " + name + " : " + str(value))
+
+def publishString(TableName, name, value):
+   print(TableName + ": " + name + " : " + str(value))

@@ -46,7 +46,9 @@ class VideoShow:
     """
 
     def __init__(self, imgWidth, imgHeight, cameraServer, frame=None):
-        self.outputStream = cameraServer.putVideo("2706_out", imgWidth, imgHeight)
+        self.outputStream = cameraServer.putVideo(OutputStream, imgWidth, imgHeight)
+        #self.outputStream = cameraServer.putVideo("2706_out", imgWidth, imgHeight)
+        #OutputStream
         self.frame = frame
         self.stopped = False
 
@@ -73,13 +75,13 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
-        self.webcam.setExposureManual(60)
-        self.webcam.setExposureManual(7)
-        #self.webcam.setExposureAuto()
-
+     
         # Some booleans so that we don't keep setting exposure over and over to the same value
         self.autoExpose = True
         self.prevValue = True
+
+        self.switchBall = False
+        self.switchTape = False
         
         # Make a blank image to write on
         self.img = np.zeros(shape=(frameWidth, frameHeight, 3), dtype=np.uint8)
@@ -120,18 +122,23 @@ class WebcamVideoStream:
                     self.prevValue = self.autoExpose
              
             elif switch == 2: #Tape Target Mode - set manual exposure to 20
-                self.autoExpose = False
-                if self.autoExpose != self.prevValue:
+                #self.autoExpose = False
+                #self.switchTape = True
+                #if self.autoExpose != self.prevValue:
+                if self.switchTape != True:
                     self.webcam.setExposureManual(60)
-                    self.webcam.setExposureManual(7)
-                    self.prevValue = self.autoExpose
+                    self.webcam.setExposureManual(ExposureTape)
+                    self.switchTape = True
+                    #self.prevValue = self.autoExpose
 
             elif switch == 3: #Power Cell Mode - set exposure to 39
-                self.autoExpose = False
-                if self.autoExpose != self.prevValue:
-                    self.webcam.setExposureManual(60)
-                    self.webcam.setExposureManual(35)
-                    self.prevValue = self.autoExpose
+                #self.autoExpose = False
+                #if self.autoExpose != self.prevValue:
+                if self.switchBall != True:
+                    self.webcam.setExposureManual(100)
+                    self.webcam.setExposureManual(ExposureBall)
+                    self.switchBall = True
+                    #self.prevValue = self.autoExpose
 
             # gets the image and timestamp from cameraserver
             (self.timestamp, self.img) = self.stream.grabFrame(self.img)
@@ -155,7 +162,7 @@ frameStop = 0
 ImageCounter = 0
 
 # Set Default to find the Tape target
-switch = 2
+#switch = 2
 
 # Masks the video based on a range of hsv colors
 # Takes in a frame, range of color, and a blurred frame, returns a masked frame
@@ -193,6 +200,18 @@ with open(pipelineConfig) as json_file:
 MergeVisionPipeLineTableName = data["networkTableName"]
 TapeEnabled = data["Tape"]
 PowerCellEnabled = data["PowerCell"]
+OutputStream = data["OutputStream"]
+ExposureTape = data["ExposureTarget"]
+ExposureBall = data["ExposureBall"]
+
+#print("ExposureT: "+ str(ExposureTape))
+#print("ExposureB: " + str(ExposureBall))
+
+if TapeEnabled:
+    switch = 2
+
+if PowerCellEnabled:
+    switch = 3
 
 #MergeVisionPublishingTable = "MergeVision"
 
@@ -320,6 +339,10 @@ if __name__ == "__main__":
     networkTableTime = NetworkTables.getTable("SmartDashboard")
     networkTableMatchVariables = NetworkTables.getTable("VisionControl")
 
+    networkTableBling = NetworkTables.getTable("blingTable")
+    
+
+
     #Used to control MergeVisionPipeLineSettings
     networkTableVisionPipeline = NetworkTables.getTable(MergeVisionPipeLineTableName)
 
@@ -385,7 +408,7 @@ if __name__ == "__main__":
     # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
     # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
     # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
-    # Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
+    # Method 10 is a four point SolvePNP blending M7 and M8 (everybody!)
 
     #Setup variables for average framecount
     frameCount = 0
@@ -405,10 +428,13 @@ if __name__ == "__main__":
     startedImageWrite = False
     stoppedImageWrite = False
 
+    #global blingColour
+    blingColour = 0
+
     # loop forever
     while True:
 
-
+        #print("bling Colour" + str(blingColour))
         #if networkTableTime.getNumber("Match Time", 1) == 0:
         #    networkTable.putBoolean("WriteImages", False)
 
@@ -453,7 +479,7 @@ if __name__ == "__main__":
             continue
         # Checks if you just want camera for driver (No processing), False by default
 
-        switch = 2
+        #switch = 2
 
         
 
@@ -465,7 +491,11 @@ if __name__ == "__main__":
             if (networkTableVisionPipeline.getBoolean("SendMask", False)):
                 processed = threshold
             else:    
-                processed = findTargets(frame, threshold, Method)
+                processed = findTargets(frame, threshold, Method, MergeVisionPipeLineTableName)
+
+                #Read RPM From Network Table
+                rpm = networkTableVisionPipeline.getNumber("RPM", 0)
+                cv2.putText(processed, "RPM: " + str(round(rpm,2)), (20, 340), cv2.FONT_HERSHEY_COMPLEX, 1.0,white)
 
         else:
             if (networkTableVisionPipeline.getBoolean("PowerCell", True)):
@@ -476,7 +506,7 @@ if __name__ == "__main__":
                 if (networkTableVisionPipeline.getBoolean("SendMask", False)):
                     processed = threshold
                 else:   
-                    processed = findPowerCell(frame, threshold)
+                    processed = findPowerCell(frame, threshold, MergeVisionPipeLineTableName)
 
             # elif (networkTableVisionPipeline.getBoolean("ControlPanel", True)):
             #     # Checks if you just want camera for Control Panel, by dent of everything else being false, true by default

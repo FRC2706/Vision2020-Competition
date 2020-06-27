@@ -52,7 +52,7 @@ showAverageFPS = False
 
 # CHOOSE VIDEO OR FILES HERE!!!!
 # boolean for video input, if true does video, if false images
-useVideo = True
+useVideo = False
 # integer for usb camera to use, boolean for live webcam
 useWebCam = False
 webCamNumber = 1
@@ -88,10 +88,13 @@ else:  # implies images are to be read
     #images, imagename = load_images_from_folder("./PowerCell25Scale")
     #images, imagename = load_images_from_folder("./PowerCellImages")
     #images, imagename = load_images_from_folder("./PowerCellFullScale")
-    images, imagename = load_images_from_folder("./PowerCellUpperFull")
+    #images, imagename = load_images_from_folder("./PowerCellUpperFull")
     #images, imagename = load_images_from_folder("./PowerCellFullMystery")
     #images, imagename = load_images_from_folder("./PowerCellSketchup")
     #images, imagename = load_images_from_folder("./LifeCamPhotos")
+
+    # This is the one with the power cell
+    images, imagename = load_images_from_folder("./PowerCellFullRobot")
 
     # Outer Target Images
     #images, imagename = load_images_from_folder("./OuterTargetProblems")
@@ -118,8 +121,8 @@ server = False
 cameraConfigs = []
 
 Driver = False
-Tape = True
-PowerCell = False
+Tape = False
+PowerCell = True
 ControlPanel = False
 
 # Method 1 is based on measuring distance between leftmost and rightmost
@@ -131,7 +134,7 @@ ControlPanel = False
 # Method 7 is a four point (version B) SolvePNP solution for distance (Robert, Rachel and Rebecca)
 # Method 8 is a four point visual method using SolvePNP (Brian and Erik)
 # Method 9 is a five point visual method using SolvePNP (Brian and Erik)
-# Method 10 is a four point SolvePNP blending M6 and M7 (everybody!)
+# Method 10 is a four point SolvePNP blending M7 and M8 (everybody!)
 
 Method = 7
 
@@ -164,6 +167,7 @@ displayFPS = 3.14159265
 begin = milliSince1970()
 start = begin
 prev_update = start
+MergeVisionPipeLineTableName = "DummyNetworkTableName"
 
 while stayInLoop or cap.isOpened():
 
@@ -187,12 +191,12 @@ while stayInLoop or cap.isOpened():
     else:
         if Tape:
             threshold = threshold_video(lower_green, upper_green, frame)
-            processed = findTargets(frame, threshold, Method)
+            processed = findTargets(frame, threshold, Method, MergeVisionPipeLineTableName)
         else:
             if PowerCell:
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
-                processed = findPowerCell(frame, threshold)
+                processed = findPowerCell(frame, threshold, MergeVisionPipeLineTableName)
             elif ControlPanel:
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, frame)
