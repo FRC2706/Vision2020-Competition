@@ -77,7 +77,7 @@ def draw_circle(event,x,y,flags,param):
 
 # choose video to process -> Outer Target Videos
 #videoname = './OuterTargetVideos/ThirdScale-01.mp4'
-videoname = '../ElevatorVideos/elevator greentape moving left.mp4'
+videoname = '../ElevatorVideos/elevator greentape moving right.mp4'
 
 if useVideo: # test against video
     showAverageFPS = True
@@ -252,6 +252,8 @@ while stayInLoop or cap.isOpened():
                 print("time_three_quarters = ", time_three_quarters)
                 print("tArray = ", tArray)
                 print("xArray = ", xArray)
+                time_total = time.time() - tArray[0]
+                print("time_total = ", time_total)
                 #total_time_moving = (num_frames_moving - (check_stop_count + 1)) * (1.0/fps)
                 #print("total_time_moving = ", total_time_moving)
                 in_moving_state = False
