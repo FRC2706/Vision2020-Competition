@@ -260,7 +260,7 @@ def get_four_points(cnt):
     [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
     m2 = v22/v12
     if (v12==0):
-        print("Warning v11=0")
+        #print("Warning v11=0")
         v12 = 0.1
     b2 = y02 - m2*x02
     #print("From fitline: m2=", m2, " b2=", b2)
@@ -673,14 +673,14 @@ def get_four_points2(cnt, image):
     # For Line 1, get a set of points *after* leftmost extreme point on left part of contour
     num_points_to_collect = max(int(0.1*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
-        print ("get_four_points2(): num_points_to_collect=0 (left vertical line), exiting")
+        #print ("get_four_points2(): num_points_to_collect=0 (left vertical line), exiting")
         return False, None
     line1_points = cnt[leftmost_index:leftmost_index+num_points_to_collect+1]
 
     # For Line 2, get a set of points around the middle of the bottom part of contour
     num_points_to_collect = max(int(0.15*(rightmost_index-leftmost_index)), 4)
     if num_points_to_collect == 0:
-        print ("get_four_points2(): num_points_to_collect=0 (bottom line), exiting")
+        #print ("get_four_points2(): num_points_to_collect=0 (bottom line), exiting")
         return False, None
     approx_center_of_bottom = leftmost_index + int((rightmost_index - leftmost_index)/2)
     z =  int(num_points_to_collect/2)
@@ -705,40 +705,40 @@ def get_four_points2(cnt, image):
 
     # Line 1: Best fit line for left part of contour
     if len(line1_points) < min_points_for_line_fit:
-        print("get_four_points2(): len(line1_points) < min_points_for_line_fit, exiting")
+        #print("get_four_points2(): len(line1_points) < min_points_for_line_fit, exiting")
         return False, None
     [v11,v21,x01,y01] = cv2.fitLine(line1_points, cv2.DIST_L2,0,0.01,0.01)
     if (v11==0):
-        print("get_four_points2(): Warning v11=0")
+        #print("get_four_points2(): Warning v11=0")
         v11 = 0.1
     m1 = v21/v11
     b1 = y01 - m1*x01
 
     # Line 2: Best fit line for bottom part of contour
     if len(line2_points) < min_points_for_line_fit:
-        print("get_four_points2(): len(line2_points) < min_points_for_line_fit, exiting")
+        #print("get_four_points2(): len(line2_points) < min_points_for_line_fit, exiting")
         return False, None
     [v12,v22,x02,y02] = cv2.fitLine(line2_points, cv2.DIST_L2,0,0.01,0.01)
     m2 = v22/v12
     if (v12==0):
-        print("get_four_points2(): Warning v12=0")
+        #print("get_four_points2(): Warning v12=0")
         v12 = 0.1
     b2 = y02 - m2*x02
 
     # Line 3: Best fit line for right part of contour
     if len(line3_points) < min_points_for_line_fit:
-        print("get_four_points2(): len(line3_points) < min_points_for_line_fit, exiting")
+        #print("get_four_points2(): len(line3_points) < min_points_for_line_fit, exiting")
         return False, None
     [v13,v23,x03,y03] = cv2.fitLine(line3_points, cv2.DIST_L2,0,0.01,0.01)
     m3 = v23/v13
     if (v13==0):
-        print("get_four_points2(): Warning v13=0")
+        #print("get_four_points2(): Warning v13=0")
         v13 = 0.1
     b3 = y03 - m3*x03
 
     # Intersection point for left bottom corner point is intersection of Lines 1 and 2
     if (m1 == m2):
-        print("get_four_points2(): slope of Lines 1 and 2 equal, exiting") 
+        #print("get_four_points2(): slope of Lines 1 and 2 equal, exiting") 
         return False, None
     xint_left = (b2-b1)/(m1-m2)
     yint_left = m1*xint_left+b1
@@ -746,7 +746,7 @@ def get_four_points2(cnt, image):
 
     # Intersection point for right bottom corner point is intersection of Lines 2 and 3
     if (m2 == m3):
-        print("get_four_points2(): slope of Lines 2 and 3 equal, exiting") 
+        #print("get_four_points2(): slope of Lines 2 and 3 equal, exiting") 
         return False, None
     xint_right = (b3-b2)/(m2-m3)
     yint_right = m2*xint_right+b2
@@ -775,4 +775,3 @@ def get_four_points2(cnt, image):
                            ], dtype="double")
 
     return True, four_points
-
