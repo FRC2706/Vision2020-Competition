@@ -30,10 +30,10 @@ def findMagnet(imgImageInput):
     yellow_mask = cv2.bitwise_and(imgImageInput, imgImageInput, mask=binary_mask)
 
     # display the masked images to screen
-    #cv2.imshow('hsvImageInput', hsvImageInput)
+    cv2.imshow('hsvImageInput', hsvImageInput)
     cv2.imshow('binary_mask',binary_mask)
     #cv2.imshow('yellow_masked',yellow_mask)
-    #cv2.imshow('og image',imgImageInput)
+    cv2.imshow('og image',imgImageInput)
 
     # generate the contours and display
     imgFindContourReturn, contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
