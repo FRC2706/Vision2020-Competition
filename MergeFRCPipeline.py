@@ -323,6 +323,11 @@ def switchCam():
     # Start thread reading camera
     cap = WebcamVideoStream(webcam, cameraServer, image_width, image_height).start()
 
+    try:
+        cap.setBrightness(70)
+    except:
+        cap.set(10,70)
+
 
 if __name__ == "__main__":
     if len(sys.argv) >= 2:
@@ -367,6 +372,7 @@ if __name__ == "__main__":
     cameraServer = streams[currentCam]
     # Start thread reading camera
     cap = WebcamVideoStream(webcam, cameraServer, image_width, image_height).start()
+    cap.setBrightness(70)
     # cap = cap.findTape
     # (optional) Setup a CvSource. This will send images back to the Dashboard
     # Allocating new images is very expensive, always try to preallocate
