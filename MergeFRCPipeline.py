@@ -35,12 +35,12 @@ from DistanceFunctions import *
 from ControlPanel import *
 
 # Print python version
-print('\n')
-print('Python version', sys.version, '\n')
+print('')
+print('Python version', sys.version, '\n\r')
 
 # Print version string of OpenCV
 cv2Version = '{0}'.format(cv2.__version__)
-print('OpenCV version', '{0}'.format(cv2.__version__), '\n')
+print('OpenCV version', '{0}'.format(cv2.__version__), '\n\r')
 
 # import the necessary packages
 import datetime
@@ -81,7 +81,6 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
-        self.webcam.setBrightness(73) # maybe not needed???
      
         # Some booleans so that we don't keep setting exposure over and over to the same value
         self.autoExpose = True
@@ -122,7 +121,6 @@ class WebcamVideoStream:
                 self.autoExpose = True
                 ##print("Driver mode")
                 if self.autoExpose != self.prevValue:
-                    print('switch to 1 - Driver mode')
                     self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(39)
                     self.webcam.setExposureAuto()
@@ -134,7 +132,6 @@ class WebcamVideoStream:
                 #self.switchTape = True
                 #if self.autoExpose != self.prevValue:
                 if self.switchTape != True:
-                    print('switch to 2 - Tape mode')
                     self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(ExposureTape)
                     self.switchTape = True
@@ -144,7 +141,6 @@ class WebcamVideoStream:
                 #self.autoExpose = False
                 #if self.autoExpose != self.prevValue:
                 if self.switchBall != True:
-                    print('switch to 3 - PowerCell mode')
                     # need a pause of some kind to allow Brightness to take, 2 sec wait works for sure...
                     # spamming it in between dealing with exposure that also needs special handling works too...
                     self.webcam.setBrightness(73) 
@@ -507,8 +503,6 @@ if __name__ == "__main__":
         #Check if Network Table value Tape is True
         if ntTape:
             switch = 2
-            networkTableVisionPipeline.putBoolean("Driver", False)
-            networkTableVisionPipeline.putBoolean("PowerCell", False)
             Method = int(networkTableVisionPipeline.getNumber("Method", 7))
             threshold = threshold_video(lower_green, upper_green, frame)
             if (networkTableVisionPipeline.getBoolean("SendMask", False)):
@@ -524,8 +518,6 @@ if __name__ == "__main__":
             if ntPowerCell:
                 # Checks if you just want to look for PowerCells
                 switch = 3
-                networkTableVisionPipeline.putBoolean("Driver", False)
-                networkTableVisionPipeline.putBoolean("Tape", False)
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
                 if (networkTableVisionPipeline.getBoolean("SendMask", False)):

@@ -66,5 +66,3 @@ lower_yellow = np.array([14, 245, 219]) # was 14, 150, 150
 upper_yellow = np.array([40, 255, 255])
 
 blingColour = 0
-
-# caldwell HD3000 with ring light on 16,220,135  40,255,255
