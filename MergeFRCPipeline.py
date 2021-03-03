@@ -34,7 +34,13 @@ from VisionMasking import *
 from DistanceFunctions import *
 from ControlPanel import *
 
-print('OpenCV version is', cv2.__version__)
+# Print python version
+print('\n')
+print('Python version', sys.version, '\n')
+
+# Print version string of OpenCV
+cv2Version = '{0}'.format(cv2.__version__)
+print('OpenCV version', '{0}'.format(cv2.__version__), '\n')
 
 # import the necessary packages
 import datetime
@@ -75,6 +81,7 @@ class WebcamVideoStream:
 
         # Automatically sets exposure to 0 to track tape
         self.webcam = camera
+        self.webcam.setBrightness(73) # maybe not needed???
      
         # Some booleans so that we don't keep setting exposure over and over to the same value
         self.autoExpose = True
@@ -115,6 +122,7 @@ class WebcamVideoStream:
                 self.autoExpose = True
                 ##print("Driver mode")
                 if self.autoExpose != self.prevValue:
+                    print('switch to 1 - Driver mode')
                     self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(39)
                     self.webcam.setExposureAuto()
@@ -126,6 +134,7 @@ class WebcamVideoStream:
                 #self.switchTape = True
                 #if self.autoExpose != self.prevValue:
                 if self.switchTape != True:
+                    print('switch to 2 - Tape mode')
                     self.webcam.setExposureManual(60)
                     self.webcam.setExposureManual(ExposureTape)
                     self.switchTape = True
@@ -135,8 +144,18 @@ class WebcamVideoStream:
                 #self.autoExpose = False
                 #if self.autoExpose != self.prevValue:
                 if self.switchBall != True:
+                    print('switch to 3 - PowerCell mode')
+                    # need a pause of some kind to allow Brightness to take, 2 sec wait works for sure...
+                    # spamming it in between dealing with exposure that also needs special handling works too...
+                    self.webcam.setBrightness(73) 
+                    time.sleep(2)
+                    self.webcam.setExposureAuto()
+                    self.webcam.setBrightness(72) 
                     self.webcam.setExposureManual(100)
+                    self.webcam.setBrightness(71) 
                     self.webcam.setExposureManual(ExposureBall)
+                    self.webcam.setBrightness(70) 
+                    print('set brightness to 70 for PowerCell')
                     self.switchBall = True
                     #self.prevValue = self.autoExpose
 
@@ -153,16 +172,6 @@ class WebcamVideoStream:
 
     def getError(self):
         return self.stream.getError()
-
-
-###################### PROCESSING OPENCV ################################
-
-# counts frames for writing images
-frameStop = 0
-ImageCounter = 0
-
-# Set Default to find the Tape target
-#switch = 2
 
 # Masks the video based on a range of hsv colors
 # Takes in a frame, range of color, and a blurred frame, returns a masked frame
@@ -188,6 +197,16 @@ def threshold_video(lower_color, upper_color, blur):
         cv2.imwrite('/mnt/VisionImages/visionImg-' + str(matchNumber) + "-" + str(ImageCounter) + '_mask.png',
                     combined_mask)
     return combined_mask
+
+
+###################### PROCESSING OPENCV ################################
+
+# counts frames for writing images
+frameStop = 0
+ImageCounter = 0
+
+# Set Default to be in driver mode
+switch = 1
 
 #################### FRC VISION PI Image Specific #############
 configFile = "/boot/frc.json"
@@ -322,12 +341,13 @@ def switchCam():
     cameraServer = streams[currentCam]
     # Start thread reading camera
     cap = WebcamVideoStream(webcam, cameraServer, image_width, image_height).start()
+    time.sleep(2.0)
+    #cap.set(10,185) # this is the raw_brightness value, should show brightness at 69
+    cap.set(10,187) # this is the raw_brightness value, should show brightness at 70
+    print ('set 10, to 70', cv2.CAP_PROP_BRIGHTNESS)
 
-    try:
-        cap.setBrightness(70)
-    except:
-        cap.set(10,70)
-
+#### This is the main program
+###############################
 
 if __name__ == "__main__":
     if len(sys.argv) >= 2:
@@ -343,14 +363,10 @@ if __name__ == "__main__":
     networkTableMatch = NetworkTables.getTable("FMSInfo")
     networkTableTime = NetworkTables.getTable("SmartDashboard")
     networkTableMatchVariables = NetworkTables.getTable("VisionControl")
-
     networkTableBling = NetworkTables.getTable("blingTable")
     
-
-
     #Used to control MergeVisionPipeLineSettings
     networkTableVisionPipeline = NetworkTables.getTable(MergeVisionPipeLineTableName)
-
 
     if server:
         #print("Setting up NetworkTables server")
@@ -366,24 +382,22 @@ if __name__ == "__main__":
         cs, cameraCapture = startCamera(cameraConfig)
         streams.append(cs)
         cameras.append(cameraCapture)
-    # Get the first camera
 
+    # Get the first camera
     webcam = cameras[currentCam]
     cameraServer = streams[currentCam]
+
     # Start thread reading camera
     cap = WebcamVideoStream(webcam, cameraServer, image_width, image_height).start()
-    cap.setBrightness(70)
+    
     # cap = cap.findTape
     # (optional) Setup a CvSource. This will send images back to the Dashboard
     # Allocating new images is very expensive, always try to preallocate
     img = np.zeros(shape=(image_height, image_width, 3), dtype=np.uint8)
+
     # Start thread outputing stream
     streamViewer = VideoShow(image_width, image_height, cameraServer, frame=img).start()
 
-    # cap.autoExpose=True;
-    tape = True
-
-    
     networkTableMatchVariables.putBoolean("StartUp",False)
     networkTableMatchVariables.putBoolean("ShutDown",False)
 
@@ -443,8 +457,12 @@ if __name__ == "__main__":
         #print("bling Colour" + str(blingColour))
         #if networkTableTime.getNumber("Match Time", 1) == 0:
         #    networkTable.putBoolean("WriteImages", False)
-
         
+        ntDriver = networkTableVisionPipeline.getBoolean("Driver", True)
+        ntTape = networkTableVisionPipeline.getBoolean("Tape", True)
+        ntPowerCell = networkTableVisionPipeline.getBoolean("PowerCell", True)
+        ntControlWheel = networkTableVisionPipeline.getBoolean("ControlWheel", True)
+
         if (startedImageWrite == False and networkTableMatchVariables.getBoolean("StartUp",False)):
             startedImageWrite = True
             networkTableVisionPipeline.putBoolean("WriteImages", True)
@@ -464,20 +482,21 @@ if __name__ == "__main__":
         # Tell the CvSink to grab a frame from the camera and put it
         # in the source image.  If there is an error notify the output.
         timestamp, img = cap.read()
+
+        # 
         if frameStop == 0:
             matchNumber = networkTableMatch.getNumber("MatchNumber", 0)
             if matchNumber == 0:
                 matchNumber = matchNumberDefault
-            cv2.imwrite('/mnt/VisionImages/visionImg-' + str(matchNumber) + "-" + str(ImageCounter) + '_Raw.png',
-                        img)
+            cv2.imwrite('/mnt/VisionImages/visionImg-' + str(matchNumber) + "-" + str(ImageCounter) + '_Raw.png', img)
+
         # Uncomment if camera is mounted upside down
         if networkTableVisionPipeline.getBoolean("TopCamera", False):
             frame = flipImage(img)
         else:
             frame = img
-        # Comment out if camera is mounted upside down
     
-        
+        #
         if timestamp == 0:
             # Send the output the error.
             streamViewer.notifyError(cap.getError())
@@ -485,13 +504,11 @@ if __name__ == "__main__":
             continue
         # Checks if you just want camera for driver (No processing), False by default
 
-        #switch = 2
-
-        
-
         #Check if Network Table value Tape is True
-        if (networkTableVisionPipeline.getBoolean("Tape", True)):
+        if ntTape:
             switch = 2
+            networkTableVisionPipeline.putBoolean("Driver", False)
+            networkTableVisionPipeline.putBoolean("PowerCell", False)
             Method = int(networkTableVisionPipeline.getNumber("Method", 7))
             threshold = threshold_video(lower_green, upper_green, frame)
             if (networkTableVisionPipeline.getBoolean("SendMask", False)):
@@ -504,9 +521,11 @@ if __name__ == "__main__":
                 cv2.putText(processed, "RPM: " + str(round(rpm,2)), (20, 340), cv2.FONT_HERSHEY_COMPLEX, 1.0,white)
 
         else:
-            if (networkTableVisionPipeline.getBoolean("PowerCell", True)):
+            if ntPowerCell:
                 # Checks if you just want to look for PowerCells
                 switch = 3
+                networkTableVisionPipeline.putBoolean("Driver", False)
+                networkTableVisionPipeline.putBoolean("Tape", False)
                 boxBlur = blurImg(frame, yellow_blur)
                 threshold = threshold_video(lower_yellow, upper_yellow, boxBlur)
                 if (networkTableVisionPipeline.getBoolean("SendMask", False)):
@@ -573,4 +592,5 @@ if __name__ == "__main__":
 
     # end of while true
 # end of main
+
 # end of file
